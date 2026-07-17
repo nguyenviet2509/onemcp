@@ -8,12 +8,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AccessModule } from './access/access.module';
 import { ArtifactsModule } from './artifacts/artifacts.module';
+import { AttachmentsModule } from './attachments/attachments.module';
 import { AuditModule } from './audit/audit.module';
 import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
 import { HealthModule } from './health/health.module';
 import { McpModule } from './mcp/mcp.module';
 import { SkillsModule } from './skills/skills.module';
+import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
@@ -53,8 +55,10 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     UsersModule,
     AccessModule,
     AuditModule,
+    StorageModule,
     SkillsModule,
     ArtifactsModule,
+    AttachmentsModule,
     WebhooksModule,
     McpModule,
   ],

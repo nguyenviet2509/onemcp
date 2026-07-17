@@ -24,3 +24,14 @@ export const reviewArtifactSchema = z.object({
 });
 
 export type ReviewArtifactDto = z.infer<typeof reviewArtifactSchema>;
+
+// Update flow: submit new pending version. Optimistic lock qua expected_version_no
+// — client phải gửi latest version_no đã thấy; nếu server có version mới hơn → 409.
+export const updateArtifactSchema = z.object({
+  expected_version_no: z.number().int().min(1),
+  body: z.string().min(1).max(2_000_000),
+  structured: z.record(z.unknown()).optional().default({}),
+  tags: z.array(z.string().min(1).max(32)).max(20).optional(),
+});
+
+export type UpdateArtifactDto = z.infer<typeof updateArtifactSchema>;

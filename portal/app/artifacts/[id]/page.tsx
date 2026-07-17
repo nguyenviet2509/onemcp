@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
+import { AttachmentUploader } from '../../../components/attachment-uploader';
 import { ApiError } from '../../../lib/api-client';
 import { ArtifactDetail, getArtifact, reviewArtifact } from '../../../lib/api/artifacts';
 
@@ -101,6 +102,15 @@ export default function ArtifactDetailPage({ params }: Props) {
             </div>
           )}
 
+          <div className="mt-4 flex gap-3 text-sm">
+            <Link
+              href={`/artifacts/${id}/edit`}
+              className="rounded border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Edit → new version
+            </Link>
+          </div>
+
           {detail.version && (
             <article className="mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
               <pre className="whitespace-pre-wrap font-mono text-sm text-slate-800 dark:text-slate-200">
@@ -108,6 +118,9 @@ export default function ArtifactDetailPage({ params }: Props) {
               </pre>
             </article>
           )}
+
+          <AttachmentUploader artifactId={id} />
+
 
           {detail.version?.status === 'pending' && (
             <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">

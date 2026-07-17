@@ -1,9 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
 import { ArtifactType } from './artifact-type.enum';
-import { ReviewArtifactDto, SubmitArtifactDto } from './dto/submit-artifact.dto';
+import { ReviewArtifactDto, SubmitArtifactDto, UpdateArtifactDto } from './dto/submit-artifact.dto';
 import { Artifact } from './entities/artifact.entity';
 import { ArtifactVersion } from './entities/artifact-version.entity';
 
@@ -119,6 +119,54 @@ export class ArtifactsService {
     return this.versions.find({
       where: { artifactId: artifact.id },
       order: { versionNo: 'DESC' },
+    });
+  }
+
+  // Update = tạo new pending version. Optimistic lock: expected_version_no phải khớp
+  // MAX(version_no) hiện tại; nếu có ai đó đã submit version mới sẽ 409.
+  async update(user: RequestUser, id: string, dto: UpdateArtifactDto): Promise<{ artifact: Artifact; version: ArtifactVersion }> {
+    const artifact = await this.artifacts.findOne({
+      where: { id, departmentId: user.departmentId },
+    });
+    if (!artifact) throw new NotFoundException('Artifact không tồn tại');
+    // Chỉ owner + reviewer update được.
+    if (artifact.ownerId !== user.id && !this.isReviewer(user)) {
+      throw new ForbiddenException('Chỉ owner hoặc maintainer update được');
+    }
+
+    return this.ds.transaction(async (m) => {
+      const aRepo = m.getRepository(Artifact);
+      const vRepo = m.getRepository(ArtifactVersion);
+
+      const latest = await vRepo.findOne({
+        where: { artifactId: artifact.id },
+        order: { versionNo: 'DESC' },
+      });
+      const currentNo = latest?.versionNo ?? 0;
+      if (dto.expected_version_no !== currentNo) {
+        throw new ConflictException(
+          `Version conflict: expected ${dto.expected_version_no} but current is ${currentNo}`,
+        );
+      }
+
+      const nextNo = currentNo + 1;
+      const version = await vRepo.save(
+        vRepo.create({
+          artifactId: artifact.id,
+          versionNo: nextNo,
+          authorId: user.id,
+          body: dto.body,
+          structured: dto.structured ?? {},
+          status: 'pending',
+        }),
+      );
+
+      // Reset artifact status về pending (còn currentVersionId trỏ published cũ cho reader tiếp tục thấy).
+      artifact.status = 'pending';
+      artifact.updatedAt = new Date();
+      if (dto.tags) artifact.tags = dto.tags;
+      const saved = await aRepo.save(artifact);
+      return { artifact: saved, version };
     });
   }
 

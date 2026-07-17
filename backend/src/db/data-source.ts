@@ -10,13 +10,14 @@ import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillLoadEvent } from '../skills/entities/skill-load-event.entity';
 import { Artifact } from '../artifacts/entities/artifact.entity';
 import { ArtifactVersion } from '../artifacts/entities/artifact-version.entity';
+import { Attachment } from '../attachments/entities/attachment.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.POSTGRES_URL,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion],
+  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, Attachment],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsRun: false,
 };

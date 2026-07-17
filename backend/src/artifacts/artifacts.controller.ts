@@ -14,7 +14,7 @@ import { CurrentUser } from '../access/current-user.decorator';
 import { RequestUser } from '../common/user-request';
 import { ArtifactType } from './artifact-type.enum';
 import { ArtifactsService } from './artifacts.service';
-import { reviewArtifactSchema, submitArtifactSchema } from './dto/submit-artifact.dto';
+import { reviewArtifactSchema, submitArtifactSchema, updateArtifactSchema } from './dto/submit-artifact.dto';
 
 @Controller('artifacts')
 export class ArtifactsController {
@@ -63,6 +63,22 @@ export class ArtifactsController {
       });
     }
     return this.artifacts.create(user, parsed.data);
+  }
+
+  // Update — tạo pending version mới với optimistic lock (expected_version_no).
+  @Post(':id/versions')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @HttpCode(201)
+  update(@CurrentUser() user: RequestUser | undefined, @Param('id') id: string, @Body() body: unknown) {
+    if (!user) throw new UnauthorizedException();
+    const parsed = updateArtifactSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException({
+        message: 'Invalid update payload',
+        errors: parsed.error.errors.map((e) => ({ path: e.path.join('.'), message: e.message })),
+      });
+    }
+    return this.artifacts.update(user, id, parsed.data);
   }
 
   // Review — approve/reject pending version. Rate limit 20/min.

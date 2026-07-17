@@ -11,10 +11,12 @@ export const envSchema = z.object({
   // Redis
   REDIS_URL: z.string().url(),
 
-  // MinIO (used in P3, present now for validation)
+  // MinIO (P3 attachments).
   MINIO_ENDPOINT: z.string().url(),
   MINIO_ACCESS_KEY: z.string().min(1),
   MINIO_SECRET_KEY: z.string().min(8),
+  MINIO_BUCKET: z.string().default('onemcp-artifacts'),
+  ATTACHMENT_MAX_MB: z.coerce.number().default(100),
 
   // Access control (v1 defer auth)
   USER_ALLOW_CIDR: z.string().min(1),
