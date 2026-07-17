@@ -1,9 +1,18 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { MinioService } from '../storage/minio.service';
 
-// Minimal health + readiness probes.
-// Full checks (Postgres/Redis/MinIO reachability) added when those modules land.
+// Liveness: process alive.
+// Readiness: dependency reachability (Postgres, MinIO). Redis check optional (BullMQ
+// tự retry, không cần block ready).
 @Controller()
 export class HealthController {
+  constructor(
+    @InjectDataSource() private readonly ds: DataSource,
+    private readonly minio: MinioService,
+  ) {}
+
   @Get('health')
   liveness() {
     return {
@@ -16,11 +25,27 @@ export class HealthController {
   }
 
   @Get('ready')
-  readiness() {
-    // Placeholder — will check Postgres/Redis/MinIO in later P1 steps.
+  async readiness() {
     if (process.env.EMERGENCY_LOCKDOWN === 'true') {
       throw new ServiceUnavailableException('OneMCP under emergency lockdown');
     }
-    return { status: 'ready' };
+    const checks = {
+      postgres: false,
+      minio: false,
+    };
+
+    try {
+      await this.ds.query('SELECT 1');
+      checks.postgres = true;
+    } catch {
+      // fall through
+    }
+    checks.minio = await this.minio.ping();
+
+    const ok = checks.postgres && checks.minio;
+    if (!ok) {
+      throw new ServiceUnavailableException({ status: 'not-ready', checks });
+    }
+    return { status: 'ready', checks };
   }
 }

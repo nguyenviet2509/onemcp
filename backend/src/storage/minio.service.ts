@@ -36,6 +36,15 @@ export class MinioService implements OnModuleInit {
     return this.bucket;
   }
 
+  // Readiness probe helper — bucketExists() call rẻ, không side-effect.
+  async ping(): Promise<boolean> {
+    try {
+      return await this.client.bucketExists(this.bucket);
+    } catch {
+      return false;
+    }
+  }
+
   async putObject(key: string, buffer: Buffer, contentType: string): Promise<void> {
     await this.client.putObject(this.bucket, key, buffer, buffer.length, {
       'Content-Type': contentType,

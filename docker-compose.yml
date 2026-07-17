@@ -136,6 +136,30 @@ services:
       timeout: 5s
       retries: 5
 
+  backup:
+    build:
+      context: ./ops/backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-onemcp}
+      POSTGRES_USER: ${POSTGRES_USER:-onemcp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-onemcp}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-change-me-min-8-chars}
+      MINIO_BUCKET: ${MINIO_BUCKET:-onemcp-artifacts}
+      BACKUP_RETAIN_DAYS: ${BACKUP_RETAIN_DAYS:-14}
+      BACKUP_CRON: ${BACKUP_CRON:-0 3 * * *}
+    volumes:
+      - ./backups:/backups
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped

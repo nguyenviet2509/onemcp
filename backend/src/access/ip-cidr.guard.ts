@@ -27,8 +27,9 @@ export class IpCidrGuard implements CanActivate {
       throw new ServiceUnavailableException('OneMCP under emergency lockdown');
     }
 
-    // Health/ready open (dùng cho docker healthcheck từ internal network).
-    if (path === '/health' || path === '/ready') return true;
+    // Health/ready/metrics open (docker healthcheck + Prometheus scrape từ internal net).
+    // /metrics restrict qua nginx location ở prod.
+    if (path === '/health' || path === '/ready' || path === '/metrics') return true;
 
     // Webhooks bypass CIDR — GitLab egress IPs không cố định.
     // Auth thông qua HMAC (GitlabHmacGuard) + shared secret.

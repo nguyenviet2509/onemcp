@@ -14,6 +14,7 @@ import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
 import { HealthModule } from './health/health.module';
 import { McpModule } from './mcp/mcp.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { SearchModule } from './search/search.module';
 import { SkillsModule } from './skills/skills.module';
 import { StorageModule } from './storage/storage.module';
@@ -56,6 +57,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     UsersModule,
     AccessModule,
     AuditModule,
+    MetricsModule,
     StorageModule,
     SkillsModule,
     ArtifactsModule,

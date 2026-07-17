@@ -31,7 +31,7 @@ export class TrustUserMiddleware implements NestMiddleware {
 
   async use(req: AuthedRequest, _res: Response, next: NextFunction): Promise<void> {
     const path = req.originalUrl || req.url;
-    if (path === '/health' || path === '/ready') {
+    if (path === '/health' || path === '/ready' || path === '/metrics') {
       next();
       return;
     }
