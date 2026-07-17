@@ -1,4 +1,6 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import express, { type Request } from 'express';
 import { Logger } from 'nestjs-pino';
 import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
@@ -8,7 +10,21 @@ async function bootstrap() {
   // Fail fast on invalid env.
   validateEnv(process.env);
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+    // Buffer raw body for /api/webhooks/gitlab HMAC verification.
+    rawBody: true,
+    bodyParser: false,
+  });
+  app.use(
+    express.json({
+      limit: '2mb',
+      verify: (req: Request & { rawBody?: Buffer }, _res, buf) => {
+        req.rawBody = Buffer.from(buf);
+      },
+    }),
+  );
+  app.use(express.urlencoded({ extended: true }));
   app.useLogger(app.get(Logger));
 
   // Run migrations pending trước khi accept traffic.

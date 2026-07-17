@@ -30,6 +30,10 @@ export class IpCidrGuard implements CanActivate {
     // Health/ready open (dùng cho docker healthcheck từ internal network).
     if (path === '/health' || path === '/ready') return true;
 
+    // Webhooks bypass CIDR — GitLab egress IPs không cố định.
+    // Auth thông qua HMAC (GitlabHmacGuard) + shared secret.
+    if (path.startsWith('/api/webhooks/')) return true;
+
     const clientIp = this.resolveClientIp(req);
     req.clientIp = clientIp;
 

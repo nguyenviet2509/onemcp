@@ -29,6 +29,16 @@ export const envSchema = z.object({
   // Storage paths
   GIT_MIRROR_ROOT: z.string().default('/var/lib/onemcp/mirrors'),
 
+  // GitLab skill sync (P2). GITLAB_BASE_URL rỗng = disable webhook processing,
+  // vẫn cho phép manual trigger để test integration.
+  GITLAB_BASE_URL: z.string().default(''),
+  GITLAB_WEBHOOK_SECRET: z.string().default(''),
+  GITLAB_MIRROR_TOKEN: z.string().default(''),
+  SKILLS_MONO_REPO: z.string().default('onemcp/skills-kythuat'),
+  SKILLS_MONO_BRANCH: z.string().default('main'),
+  SKILL_SYNC_CRON: z.string().default('*/15 * * * *'),
+  SKILL_APPROVE_RATE_LIMIT: z.coerce.number().default(20),
+
   // Observability
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
 });

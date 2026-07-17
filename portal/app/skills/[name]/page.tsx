@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { ApiError } from '../../../lib/api-client';
-import { getSkill, listSkillVersions, Skill, SkillVersion } from '../../../lib/api/skills';
+import {
+  approveSkillVersion,
+  getSkill,
+  listSkillVersions,
+  rejectSkillVersion,
+  Skill,
+  SkillVersion,
+} from '../../../lib/api/skills';
 
 interface Props {
   params: Promise<{ name: string }>;
@@ -15,17 +22,47 @@ export default function SkillDetailPage({ params }: Props) {
   const [versions, setVersions] = useState<SkillVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
+  const reload = () =>
     Promise.all([getSkill(name), listSkillVersions(name)])
       .then(([s, vs]) => {
         setSkill(s);
         setVersions(vs);
       })
-      .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
-      .finally(() => setLoading(false));
+      .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)));
+
+  useEffect(() => {
+    setLoading(true);
+    reload().finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
+
+  async function handleApprove(id: number) {
+    setBusyId(id);
+    setError(null);
+    try {
+      await approveSkillVersion(name, id);
+      await reload();
+    } catch (e) {
+      setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReject(id: number) {
+    setBusyId(id);
+    setError(null);
+    try {
+      await rejectSkillVersion(name, id);
+      await reload();
+    } catch (e) {
+      setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
@@ -107,6 +144,7 @@ export default function SkillDetailPage({ params }: Props) {
                     <th>Commit</th>
                     <th>Status</th>
                     <th>Approved at</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -136,6 +174,28 @@ export default function SkillDetailPage({ params }: Props) {
                       </td>
                       <td className="text-slate-500">
                         {v.approvedAt ? new Date(v.approvedAt).toLocaleString() : '—'}
+                      </td>
+                      <td>
+                        {v.status === 'pending' ? (
+                          <div className="flex gap-2">
+                            <button
+                              disabled={busyId === v.id}
+                              onClick={() => handleApprove(v.id)}
+                              className="rounded bg-green-600 px-2 py-0.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                            >
+                              approve
+                            </button>
+                            <button
+                              disabled={busyId === v.id}
+                              onClick={() => handleReject(v.id)}
+                              className="rounded bg-red-600 px-2 py-0.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                              reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}

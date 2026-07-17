@@ -34,6 +34,11 @@ export class TrustUserMiddleware implements NestMiddleware {
       next();
       return;
     }
+    // Webhooks không có identity header — bypass, auth qua HMAC.
+    if (path.startsWith('/api/webhooks/')) {
+      next();
+      return;
+    }
 
     const raw = req.headers[this.headerName];
     const claim = Array.isArray(raw) ? raw[0] : raw;

@@ -1,14 +1,19 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
-import { dataSourceOptions } from './db/data-source';
 import { AccessModule } from './access/access.module';
 import { AuditModule } from './audit/audit.module';
+import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
-import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
 import { SkillsModule } from './skills/skills.module';
+import { UsersModule } from './users/users.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -24,12 +29,31 @@ import { SkillsModule } from './skills/skills.module';
       },
     }),
     TypeOrmModule.forRoot({ ...dataSourceOptions, autoLoadEntities: false }),
+    // BullMQ shared Redis config — parsed from REDIS_URL.
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => {
+        const url = new URL(cfg.get<string>('REDIS_URL', 'redis://redis:6379'));
+        return {
+          connection: {
+            host: url.hostname,
+            port: Number(url.port || 6379),
+            password: url.password || undefined,
+          },
+        };
+      },
+    }),
+    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     HealthModule,
     DepartmentsModule,
     UsersModule,
     AccessModule,
     AuditModule,
     SkillsModule,
+    WebhooksModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

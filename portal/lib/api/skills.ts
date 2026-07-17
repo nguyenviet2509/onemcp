@@ -40,3 +40,21 @@ export function getSkill(name: string) {
 export function listSkillVersions(name: string) {
   return apiFetch<SkillVersion[]>(`/skills/${encodeURIComponent(name)}/versions`);
 }
+
+export function approveSkillVersion(name: string, versionId: number) {
+  return apiFetch<SkillVersion>(
+    `/skills/${encodeURIComponent(name)}/versions/${versionId}/approve`,
+    { method: 'POST' },
+  );
+}
+
+export function rejectSkillVersion(name: string, versionId: number) {
+  return apiFetch<SkillVersion>(
+    `/skills/${encodeURIComponent(name)}/versions/${versionId}/reject`,
+    { method: 'POST' },
+  );
+}
+
+export function triggerSkillSync() {
+  return apiFetch<{ accepted: boolean; jobId?: string }>(`/skills/sync`, { method: 'POST' });
+}

@@ -100,6 +100,12 @@ services:
       ADMIN_USERNAMES: ${ADMIN_USERNAMES:-}
       EMERGENCY_LOCKDOWN: ${EMERGENCY_LOCKDOWN:-false}
       GIT_MIRROR_ROOT: /var/lib/onemcp/mirrors
+      GITLAB_BASE_URL: ${GITLAB_BASE_URL:-}
+      GITLAB_WEBHOOK_SECRET: ${GITLAB_WEBHOOK_SECRET:-}
+      GITLAB_MIRROR_TOKEN: ${GITLAB_MIRROR_TOKEN:-}
+      SKILLS_MONO_REPO: ${SKILLS_MONO_REPO:-onemcp/skills-kythuat}
+      SKILLS_MONO_BRANCH: ${SKILLS_MONO_BRANCH:-main}
+      SKILL_SYNC_CRON: ${SKILL_SYNC_CRON:-*/15 * * * *}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
