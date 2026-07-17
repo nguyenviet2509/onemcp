@@ -1,0 +1,51 @@
+# Deps
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Data (dev)
+data/
+volumes/
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/settings.example.json
+!.vscode/extensions.json
+.idea/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Onnx model artifacts (fetched at deploy)
+ops/models/*/model.onnx
+ops/models/*/tokenizer.json
+
+# Secrets
+*.pem
+*.key
+!ops/nginx/*.example.key

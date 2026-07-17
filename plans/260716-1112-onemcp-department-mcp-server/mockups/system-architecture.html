@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>OneMCP — System Architecture Mockups</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #131a2e;
+    --border: #2a3352;
+    --text: #e6ebf5;
+    --muted: #9aa4bf;
+    --accent: #7c9cff;
+    --accent-2: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.6; }
+  header {
+    padding: 32px 48px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0e1530 0%, #0b1020 100%);
+  }
+  header h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(11,16,32,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 48px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 13px;
+  }
+  nav a { color: var(--accent); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+  nav a:hover { background: rgba(124,156,255,0.12); }
+  main { padding: 24px 48px 80px; max-width: 1400px; margin: 0 auto; }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  section h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .mermaid {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    text-align: center;
+  }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; border-top: 1px solid var(--border); margin-top: 40px; }
+  .badge {
+    display: inline-block;
+    background: rgba(74,222,128,0.12);
+    color: var(--accent-2);
+    border: 1px solid rgba(74,222,128,0.3);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 11px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>OneMCP — System Architecture Mockups <span class="badge">v1 pilot Kỹ thuật</span></h1>
+  <p>Sơ đồ hệ thống — 2026-07-16 · Plan: 260716-1112-onemcp-department-mcp-server</p>
+  <p style="margin-top:8px;color:#4ade80;font-size:13px;">🎯 <b>Primary Use Case:</b> Bug-trace KB reuse — Dev A resolve bug → viết KB → Dev B (3 tháng sau) paste error → tìm ra KB → apply fix</p>
+</header>
+
+<nav>
+  <a href="#s0">0. Primary Use Case</a>
+  <a href="#s1">1. System Overview</a>
+  <a href="#s2">2. Deployment Topology</a>
+  <a href="#s3">3. Skills Lifecycle</a>
+  <a href="#s4">4. Artifact Flow</a>
+  <a href="#s5">5. Auth &amp; RBAC</a>
+  <a href="#s6">6. Data Model (ERD)</a>
+  <a href="#s7">7. Search Ranking</a>
+</nav>
+
+<main>
+
+<section id="s0">
+  <h2>0. Primary Use Case — Bug-Trace KB Reuse</h2>
+  <div class="sub">Flow tối ưu chính của OneMCP. KB schema có <code>symptoms[]</code> required (error msg, stack trace). FTS weight A cho <code>title + symptoms + tags</code> để paste error message → top-3 recall.</div>
+  <div class="mermaid">
+sequenceDiagram
+    actor A as Dev A (bug fighter)
+    participant AgA as Agent A (Claude)
+    participant BE as OneMCP
+    participant PG as Postgres
+    participant Q as Embed Queue
+    actor M as Maintainer
+
+    Note over A,AgA: T0 — production bug
+    A->>AgA: trace log + debug
+    AgA->>AgA: find root cause
+    A->>A: apply fix, verify
+    Note over AgA: session-wrapup skill fires
+    AgA->>BE: submit_artifact(kind=kb)<br/>{ symptoms:['ECONNRESET...'],<br/> root_cause, solution, tags }
+    BE->>BE: Ajv validate kb@1.0
+    BE->>PG: INSERT artifact_version(pending)
+    BE->>Q: enqueue embed
+    Q-->>PG: UPDATE embedding + tsv (weight A on symptoms)
+    M->>BE: approve
+    BE->>PG: status=published
+
+    Note over A,M: ...3 tháng sau...
+
+    actor B as Dev B (new hit)
+    participant AgB as Agent B
+    B->>AgB: 'Service X đang lỗi ECONNRESET billing'
+    AgB->>BE: search_artifacts(q='ECONNRESET billing')
+    BE->>PG: FTS (weight A hits symptoms) + pgvector
+    PG-->>BE: KB Dev A viết @top-1
+    BE-->>AgB: KB + attachments
+    AgB->>B: 'Đã có KB — root cause: pool exhaust,<br/>fix: tăng maxConnections=50'
+    B->>B: apply fix trong 5 phút<br/>(thay vì 4h trace lại)
+    BE->>PG: audit_events(artifact_view, actor=B)
+  </div>
+</section>
+
+<section id="s1">
+  <h2>1. High-level System Overview</h2>
+  <div class="sub">Toàn cảnh client, edge, core backend, workers, data layer, external IdP.</div>
+  <div class="mermaid">
+flowchart TB
+    subgraph Clients["Clients"]
+        WEB["🌐 Web Portal<br/>Next.js 15"]
+        CC["🤖 Claude Code / Desktop<br/>MCP Client"]
+        AGT["⚙️ Automation Agents<br/>CI/CD, Cron"]
+    end
+
+    subgraph Edge["Edge / VPN"]
+        NGX["Nginx<br/>TLS + Rate Limit"]
+    end
+
+    subgraph Core["OneMCP Backend — NestJS"]
+        AUTH["Auth Gateway<br/>INET OIDC + GitLab OAuth"]
+        RBAC["RBAC Guard<br/>role × dept scope"]
+        MCP["MCP Server<br/>HTTP+SSE"]
+        API["REST API<br/>Skills · Artifacts · Search · Admin"]
+        AUD["Audit Interceptor"]
+    end
+
+    subgraph Workers["Async Workers"]
+        WSKL["Skill Sync Worker<br/>BullMQ"]
+        WEMB["Embedding Worker<br/>ONNX e5-small"]
+    end
+
+    subgraph Data["Data Layer"]
+        PG[("🐘 PostgreSQL 16<br/>+ pgvector + FTS")]
+        RDS[("⚡ Redis<br/>cache · queue · jti")]
+        S3[("📦 MinIO<br/>attachments + backups")]
+        GIT["🦊 GitLab Self-host<br/>skills repos"]
+    end
+
+    subgraph Ext["External IdP"]
+        INET["INET SSO"]
+    end
+
+    WEB -->|HTTPS| NGX
+    CC -->|MCP HTTPS+SSE| NGX
+    AGT -->|Bearer PAT| NGX
+    NGX --> AUTH
+    NGX --> MCP
+    NGX --> API
+
+    AUTH -->|OIDC/SAML| INET
+    AUTH -->|OAuth link| GIT
+
+    API --> RBAC
+    MCP --> RBAC
+    RBAC --> AUD
+
+    AUD --> PG
+    API --> PG
+    MCP --> PG
+    API --> RDS
+    MCP --> RDS
+    API --> S3
+
+    GIT -->|webhook merge| API
+    API --> WSKL
+    WSKL --> GIT
+    WSKL --> PG
+
+    API --> WEMB
+    WEMB --> PG
+  </div>
+</section>
+
+<section id="s2">
+  <h2>2. Deployment Topology</h2>
+  <div class="sub">1 VPS · Ubuntu 24.04 · 8 vCPU · 32 GB RAM · 1 TB NVMe · Docker Compose · VPN-only access.</div>
+  <div class="mermaid">
+flowchart TB
+    subgraph VPS["Single VPS — Ubuntu 24.04 · 8 vCPU · 32 GB · 1 TB"]
+        subgraph DC["Docker Compose Network"]
+            NGX2["nginx:alpine :443"]
+            BE["backend<br/>NestJS Node 20"]
+            FE["portal<br/>Next.js 15"]
+            WKR["workers<br/>BullMQ + ONNX"]
+            PGD["postgres:16<br/>pgvector+unaccent"]
+            RD["redis:7"]
+            MIN["minio"]
+            PROM["prometheus"]
+            GRA["grafana"]
+            ALM["alertmanager"]
+        end
+
+        subgraph Vol["Volumes"]
+            V1["postgres data<br/>200 GB"]
+            V2["minio<br/>600 GB"]
+            V3["git mirrors<br/>20 GB"]
+            V4["logs + tsdb<br/>80 GB"]
+        end
+    end
+
+    subgraph Cloud["Outside VPS"]
+        VPN["🔒 Company VPN"]
+        USR["👥 Kỹ thuật users"]
+        INET2["INET SSO"]
+        GL2["GitLab Self-host"]
+    end
+
+    USR -->|VPN| NGX2
+    NGX2 --> BE
+    NGX2 --> FE
+    BE --> PGD
+    BE --> RD
+    BE --> MIN
+    WKR --> PGD
+    WKR --> RD
+    PGD -.WAL archive.-> MIN
+    BE -.metrics.-> PROM
+    PROM --> GRA
+    PROM --> ALM
+
+    BE -.OIDC.-> INET2
+    BE -.webhook + git.-> GL2
+
+    PGD --- V1
+    MIN --- V2
+    WKR --- V3
+    PROM --- V4
+  </div>
+</section>
+
+<section id="s3">
+  <h2>3. Skills Lifecycle</h2>
+  <div class="sub">Dev submit skill qua MR → CI validate → merge → webhook → registry → MCP load.</div>
+  <div class="mermaid">
+sequenceDiagram
+    actor Dev
+    participant GL as GitLab
+    participant CI as CI Runner
+    participant BE as OneMCP Backend
+    participant PG as Postgres
+    participant Agent as MCP Client
+    actor User
+
+    Dev->>GL: MR: add skills/foo
+    GL->>CI: pipeline start
+    CI->>CI: validate manifest + secret scan
+    CI-->>GL: pass
+    Dev->>GL: maintainer approve + merge
+    GL->>BE: POST /webhooks/gitlab (HMAC)
+    BE->>BE: verify HMAC → enqueue sync
+    BE->>GL: git fetch mirror
+    BE->>PG: upsert skill_versions
+    BE->>PG: audit_events(skill_published)
+
+    User->>Agent: run task
+    Agent->>BE: MCP list_skills (Bearer PAT)
+    BE->>PG: SELECT WHERE dept ∈ user.depts
+    BE-->>Agent: skills[]
+    Agent->>BE: MCP load_skill(name)
+    BE->>BE: git show @commit_sha
+    BE-->>Agent: SKILL.md + resources
+    BE->>PG: skill_load_events
+  </div>
+</section>
+
+<section id="s4">
+  <h2>4. Artifact Submit &amp; Search Flow</h2>
+  <div class="sub">Agent submit → schema validate → pending → embed → maintainer review → publish → hybrid search.</div>
+  <div class="mermaid">
+sequenceDiagram
+    actor Agent
+    participant BE as Backend API
+    participant VAL as Ajv Validator
+    participant PG as Postgres
+    participant Q as Redis Queue
+    participant EW as Embedding Worker
+    actor Maint as Maintainer
+    actor Reader
+
+    Agent->>BE: MCP submit_artifact(payload)
+    BE->>VAL: validate report@1.0
+    alt invalid
+        VAL-->>Agent: 400 { pointer, hint }
+    else valid
+        BE->>PG: INSERT artifact + version(pending)
+        BE->>Q: enqueue embedding_job
+        BE-->>Agent: 201 { id, version_no }
+    end
+
+    Q->>EW: dequeue
+    EW->>EW: chunk + ONNX embed(e5-small)
+    EW->>PG: UPDATE embedding vector(384)
+
+    Maint->>BE: GET /reviews/pending
+    BE-->>Maint: list + diff
+    Maint->>BE: POST approve
+    BE->>PG: UPDATE current_version_id, status=published
+
+    Reader->>BE: MCP search_artifacts(q)
+    BE->>PG: FTS + pgvector (hybrid)
+    BE-->>Reader: ranked results
+  </div>
+</section>
+
+<section id="s5">
+  <h2>5. Auth &amp; RBAC</h2>
+  <div class="sub">INET OIDC primary login + GitLab OAuth linking cho dev.</div>
+  <div class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant P as Portal
+    participant BE as Backend
+    participant INET
+    participant GL as GitLab
+    participant PG
+
+    U->>P: /login
+    P->>BE: /auth/inet/start
+    BE-->>U: 302 → INET authorize
+    U->>INET: credentials
+    INET-->>U: 302 → callback?code
+    U->>BE: /auth/inet/callback
+    BE->>INET: token exchange
+    INET-->>BE: id_token
+    BE->>PG: upsert user + audit(login)
+    BE-->>U: Set-Cookie JWT
+
+    Note over U,GL: Link GitLab (optional)
+    U->>P: /profile → Link GitLab
+    P->>BE: /auth/gitlab/start
+    BE-->>U: 302 → GitLab OAuth
+    U->>GL: authorize
+    GL-->>BE: code → token
+    BE->>PG: UPDATE gitlab_id + audit
+
+    U->>BE: any API/MCP request
+    BE->>BE: RBAC guard (role × dept)
+    alt denied
+        BE-->>U: 403
+    else allowed
+        BE-->>U: 200 + audit
+    end
+  </div>
+</section>
+
+<section id="s6">
+  <h2>6. Data Model (ERD)</h2>
+  <div class="sub">Multi-tenant schema — mọi bảng dữ liệu có department_id.</div>
+  <div class="mermaid">
+erDiagram
+    DEPARTMENT ||--o{ USER : has
+    USER ||--o{ USER_ROLE : has
+    ROLE ||--o{ USER_ROLE : assigned
+    USER ||--o{ PERSONAL_ACCESS_TOKEN : owns
+    USER ||--o{ AUDIT_EVENT : actor
+
+    DEPARTMENT ||--o{ SKILL : owns
+    SKILL ||--o{ SKILL_VERSION : versions
+    SKILL_VERSION ||--o{ SKILL_LOAD_EVENT : loaded
+
+    DEPARTMENT ||--o{ ARTIFACT : owns
+    ARTIFACT ||--o{ ARTIFACT_VERSION : versions
+    ARTIFACT_VERSION ||--o{ ATTACHMENT : has
+    ARTIFACT_VERSION ||--o{ ARTIFACT_REVIEW : reviewed
+
+    TEMPLATE ||--o{ ARTIFACT_VERSION : validates
+
+    DEPARTMENT { int id PK
+        string code
+        string name
+    }
+    USER { int id PK
+        string inet_sub
+        string gitlab_id
+        string email
+        int department_id FK
+    }
+    ROLE { int id PK
+        string code
+    }
+    USER_ROLE {
+        int user_id FK
+        int role_id FK
+        int department_id FK
+    }
+    SKILL { int id PK
+        string name
+        int department_id FK
+        string repo_url
+        int current_version_id
+        string status
+    }
+    SKILL_VERSION { int id PK
+        int skill_id FK
+        string commit_sha
+        jsonb manifest
+        timestamptz approved_at
+    }
+    ARTIFACT { int id PK
+        string type
+        int department_id FK
+        int current_version_id
+        string status
+    }
+    ARTIFACT_VERSION { int id PK
+        int artifact_id FK
+        string title
+        text body
+        jsonb structured "symptoms[]·root_cause·solution·..."
+        tsvector tsv "weight A/B/C/D per field"
+        vector embedding
+        string template_version "e.g. kb@1.0"
+    }
+    ATTACHMENT { int id PK
+        int artifact_version_id FK
+        string minio_key
+        string mime
+        int size
+    }
+    AUDIT_EVENT { int id PK
+        int actor_id FK
+        string action
+        string resource_type
+        int resource_id
+        jsonb before
+        jsonb after
+        timestamptz ts
+    }
+    TEMPLATE { int id PK
+        string kind
+        string version
+        jsonb schema
+        bool active
+    }
+  </div>
+</section>
+
+<section id="s7">
+  <h2>7. Search Hybrid Ranking</h2>
+  <div class="sub">Postgres FTS (field-weighted) + pgvector semantic → merge + normalize → RBAC filter. Weight A boost cho <code>symptoms</code> để bug-trace query match top-3.</div>
+  <div class="mermaid">
+flowchart LR
+    Q["query:<br/>'ECONNRESET billing api'"] --> FTS
+    Q --> QE["Query Embed<br/>(Redis cache 5m)"]
+
+    subgraph FTS["Postgres FTS — tsvector field weights"]
+        WA["Weight A<br/>title + symptoms + tags"]
+        WB["Weight B<br/>root_cause + solution + summary"]
+        WC["Weight C<br/>body"]
+        WD["Weight D<br/>references"]
+    end
+    FTS --> R1["Top 50<br/>ts_rank_cd (weighted)"]
+
+    QE --> VEC["pgvector<br/>ORDER BY embedding &lt;=&gt; $1"] --> R2["Top 50<br/>1 - cosine"]
+
+    R1 --> MRG["Merge + Normalize"]
+    R2 --> MRG
+    MRG --> RANK["score = 0.6·fts + 0.4·semantic"]
+    RANK --> RBAC2["RBAC filter<br/>dept × role"]
+    RBAC2 --> OUT["Top N results<br/>(KB match symptoms → top-1)"]
+  </div>
+</section>
+
+</main>
+
+<footer>
+  OneMCP · Generated 2026-07-16 · Open in modern browser (Chrome/Edge/Firefox) — no server needed.
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "default",
+    themeVariables: {
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { htmlLabels: true, curve: 'basis' },
+    sequence: { showSequenceNumbers: false },
+    er: { useMaxWidth: true }
+  });
+</script>
+</body>
+</html>
