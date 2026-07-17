@@ -5,6 +5,7 @@ import { ArtifactType } from '../artifacts/artifact-type.enum';
 import { ArtifactsService } from '../artifacts/artifacts.service';
 import { submitArtifactSchema } from '../artifacts/dto/submit-artifact.dto';
 import { AuthedRequest } from '../common/user-request';
+import { SearchEntityKind, SearchService } from '../search/search.service';
 import { Skill } from '../skills/entities/skill.entity';
 import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillsService } from '../skills/skills.service';
@@ -17,6 +18,7 @@ export class McpToolsService {
   constructor(
     private readonly skills: SkillsService,
     private readonly artifacts: ArtifactsService,
+    private readonly searchSvc: SearchService,
     @InjectRepository(SkillVersion) private readonly versions: Repository<SkillVersion>,
     @InjectRepository(Skill) private readonly skillsRepo: Repository<Skill>,
   ) {}
@@ -65,6 +67,20 @@ export class McpToolsService {
         },
       },
       {
+        name: 'search',
+        description:
+          'Search full-text (keyword + fuzzy) qua skills + artifacts trong dept. Dùng khi cần tìm KB đã có cho vấn đề tương tự (bug trace, previous fix, existing report).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            q: { type: 'string', description: 'Query text — bỏ dấu OK (unaccent auto)' },
+            kind: { type: 'string', enum: ['all', 'skill', 'artifact'], description: 'Filter loại' },
+            limit: { type: 'number', description: 'Max results (default 20, max 50)' },
+          },
+          required: ['q'],
+        },
+      },
+      {
         name: 'submit_artifact',
         description:
           'Submit artifact mới (type: report|research|kb). Trạng thái=pending chờ maintainer approve. Dùng cuối session để nộp report/KB.',
@@ -97,9 +113,25 @@ export class McpToolsService {
         return this.getArtifact(args, req);
       case 'submit_artifact':
         return this.submitArtifact(args, req);
+      case 'search':
+        return this.doSearch(args, req);
       default:
         return this.errorResult(`unknown tool: ${name}`);
     }
+  }
+
+  private async doSearch(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+    const q = String(args.q ?? '').trim();
+    if (!q) return this.errorResult('q is required');
+    const kind = (args.kind as SearchEntityKind | 'all' | undefined) ?? 'all';
+    const limit = typeof args.limit === 'number' ? args.limit : undefined;
+    const hits = await this.searchSvc.search(req.user!, { q, kind, limit });
+    if (hits.length === 0) return { content: [{ type: 'text', text: `No results for "${q}"` }] };
+    const lines = hits.map((h, i) => {
+      const idPart = h.kind === 'skill' ? h.name : `#${h.id}`;
+      return `${i + 1}. [${h.kind}] ${idPart} — ${h.name}\n   snippet: ${h.snippet.slice(0, 200)}\n   tags: ${h.tags.join(', ') || '-'} · rank=${h.rank.toFixed(3)}`;
+    });
+    return { content: [{ type: 'text', text: `Found ${hits.length} result(s) for "${q}":\n\n${lines.join('\n\n')}` }] };
   }
 
   private async listSkills(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {

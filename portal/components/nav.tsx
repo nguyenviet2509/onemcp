@@ -10,6 +10,9 @@ export function Nav() {
             OneMCP
           </Link>
           <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/search" className="hover:text-slate-900 dark:hover:text-slate-100">
+              Search
+            </Link>
             <Link href="/skills" className="hover:text-slate-900 dark:hover:text-slate-100">
               Skills
             </Link>
