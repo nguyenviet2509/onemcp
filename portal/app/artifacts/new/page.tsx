@@ -2,22 +2,34 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { StructuredEditor } from '../../../components/structured-editor';
 import { ApiError } from '../../../lib/api-client';
 import { ArtifactType, submitArtifact } from '../../../lib/api/artifacts';
+import { getTemplate, Template } from '../../../lib/api/templates';
 
 const TYPES: ArtifactType[] = ['report', 'research', 'kb'];
 
-// Simple textarea editor v1 — Tiptap/section-builder defer.
 export default function NewArtifactPage() {
   const router = useRouter();
-  const [type, setType] = useState<ArtifactType>('report');
+  const [type, setType] = useState<ArtifactType>('kb');
+  const [template, setTemplate] = useState<Template | null>(null);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [body, setBody] = useState('');
   const [tags, setTags] = useState('');
+  const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getTemplate(type)
+      .then((t) => {
+        setTemplate(t);
+        // Reset fields khi đổi type — tránh drift key giữa templates.
+        setFields({});
+      })
+      .catch((e) => setError(String(e)));
+  }, [type]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,11 +40,8 @@ export default function NewArtifactPage() {
         type,
         title: title.trim(),
         slug: slug.trim().toLowerCase(),
-        body,
-        tags: tags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
+        structured: fields,
+        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       });
       router.push(`/artifacts/${result.artifact.id}`);
     } catch (e) {
@@ -50,7 +59,7 @@ export default function NewArtifactPage() {
       </div>
       <h1 className="mt-4 text-2xl font-bold">Submit new artifact</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Sau khi submit sẽ ở trạng thái <code>pending</code>. Maintainer sẽ approve để publish.
+        Chọn type → điền các sections theo template. Submit sẽ tạo <code>pending</code> version chờ maintainer approve.
       </p>
 
       {error && (
@@ -92,7 +101,7 @@ export default function NewArtifactPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Slug (URL-friendly)</label>
+          <label className="mb-1 block text-sm font-medium">Slug</label>
           <input
             required
             value={slug}
@@ -102,7 +111,6 @@ export default function NewArtifactPage() {
             pattern="[a-z0-9][a-z0-9-]*"
             maxLength={160}
           />
-          <p className="mt-1 text-xs text-slate-500">lowercase + dashes only</p>
         </div>
 
         <div>
@@ -111,27 +119,21 @@ export default function NewArtifactPage() {
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-            placeholder="postmortem, payment, sepay"
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">Body (markdown)</label>
-          <textarea
-            required
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={16}
-            className="w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm dark:border-slate-700 dark:bg-slate-900"
-            placeholder={'# Summary\n\n...\n\n## Root cause\n\n...\n\n## Fix\n\n...'}
+        {template && (
+          <StructuredEditor
+            template={template}
+            values={fields}
+            onChange={(k, v) => setFields((prev) => ({ ...prev, [k]: v }))}
           />
-          <p className="mt-1 text-xs text-slate-500">Max 2MB.</p>
-        </div>
+        )}
 
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            disabled={busy || !title.trim() || !slug.trim() || !body.trim()}
+            disabled={busy || !title.trim() || !slug.trim() || !template}
             className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {busy ? 'Submitting...' : 'Submit for review'}

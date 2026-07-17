@@ -3,31 +3,44 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
+import { StructuredEditor } from '../../../../components/structured-editor';
 import { ApiError } from '../../../../lib/api-client';
-import { getArtifact, updateArtifact } from '../../../../lib/api/artifacts';
+import { ArtifactType, getArtifact, updateArtifact } from '../../../../lib/api/artifacts';
+import { getTemplate, Template } from '../../../../lib/api/templates';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+interface StructuredShape {
+  template_version?: number;
+  fields?: Record<string, string>;
+}
+
 export default function EditArtifactPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
-  const [body, setBody] = useState('');
-  const [tags, setTags] = useState('');
-  const [expectedVersion, setExpectedVersion] = useState<number | null>(null);
   const [title, setTitle] = useState('');
+  const [type, setType] = useState<ArtifactType>('kb');
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [tags, setTags] = useState('');
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [expectedVersion, setExpectedVersion] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getArtifact(id)
-      .then((d) => {
+      .then(async (d) => {
         setTitle(d.artifact.title);
+        setType(d.artifact.type);
         setTags(d.artifact.tags.join(', '));
-        setBody(d.version?.body ?? '');
         setExpectedVersion(d.version?.versionNo ?? 0);
+        const structured = (d.version?.structured ?? {}) as StructuredShape;
+        setFields(structured.fields ?? {});
+        const t = await getTemplate(d.artifact.type);
+        setTemplate(t);
       })
       .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
       .finally(() => setLoading(false));
@@ -41,7 +54,7 @@ export default function EditArtifactPage({ params }: Props) {
     try {
       await updateArtifact(id, {
         expected_version_no: expectedVersion,
-        body,
+        structured: fields,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       });
       router.push(`/artifacts/${id}`);
@@ -60,7 +73,7 @@ export default function EditArtifactPage({ params }: Props) {
       </div>
       <h1 className="mt-4 text-2xl font-bold">Edit: {title || '...'}</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Update sẽ tạo pending version mới. Maintainer approve để publish.
+        Update sẽ tạo pending version mới (type={type}). Maintainer approve để publish.
       </p>
 
       {loading && <p className="mt-6 text-slate-500">Loading...</p>}
@@ -70,11 +83,10 @@ export default function EditArtifactPage({ params }: Props) {
         </div>
       )}
 
-      {!loading && expectedVersion !== null && (
+      {!loading && expectedVersion !== null && template && (
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <p className="text-xs text-slate-500">
-            Editing on top of version <code>{expectedVersion}</code>. If someone else submits before you save,
-            you&apos;ll get a 409 conflict — reload to see latest.
+            Editing on top of version <code>{expectedVersion}</code>. Concurrent submit → 409 conflict.
           </p>
 
           <div>
@@ -86,24 +98,19 @@ export default function EditArtifactPage({ params }: Props) {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Body (markdown)</label>
-            <textarea
-              required
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={20}
-              className="w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm dark:border-slate-700 dark:bg-slate-900"
-            />
-          </div>
+          <StructuredEditor
+            template={template}
+            values={fields}
+            onChange={(k, v) => setFields((prev) => ({ ...prev, [k]: v }))}
+          />
 
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
-              disabled={busy || !body.trim()}
+              disabled={busy}
               className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {busy ? 'Saving...' : 'Submit new version for review'}
+              {busy ? 'Saving...' : 'Submit new version'}
             </button>
             <Link href={`/artifacts/${id}`} className="text-sm text-slate-500 hover:underline">
               Cancel

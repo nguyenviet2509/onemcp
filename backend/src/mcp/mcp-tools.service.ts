@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ArtifactType } from '../artifacts/artifact-type.enum';
+import { ARTIFACT_TYPES, ArtifactType } from '../artifacts/artifact-type.enum';
 import { ArtifactsService } from '../artifacts/artifacts.service';
 import { submitArtifactSchema } from '../artifacts/dto/submit-artifact.dto';
+import { getTemplate, listTemplates } from '../artifacts/templates/template-registry';
 import { AuthedRequest } from '../common/user-request';
 import { SearchEntityKind, SearchService } from '../search/search.service';
 import { Skill } from '../skills/entities/skill.entity';
@@ -67,6 +68,18 @@ export class McpToolsService {
         },
       },
       {
+        name: 'get_artifact_template',
+        description:
+          'Trả về template (sections bắt buộc + optional) cho artifact type. Gọi TRƯỚC submit_artifact để biết cấu trúc mong đợi (avoid validation reject).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', enum: ['report', 'research', 'kb'] },
+          },
+          required: ['type'],
+        },
+      },
+      {
         name: 'search',
         description:
           'Search full-text (keyword + fuzzy) qua skills + artifacts trong dept. Dùng khi cần tìm KB đã có cho vấn đề tương tự (bug trace, previous fix, existing report).',
@@ -115,9 +128,32 @@ export class McpToolsService {
         return this.submitArtifact(args, req);
       case 'search':
         return this.doSearch(args, req);
+      case 'get_artifact_template':
+        return this.getTemplateTool(args);
       default:
         return this.errorResult(`unknown tool: ${name}`);
     }
+  }
+
+  private getTemplateTool(args: Record<string, unknown>): McpToolResult {
+    const type = String(args.type ?? '').trim() as ArtifactType;
+    if (!ARTIFACT_TYPES.includes(type)) {
+      return this.errorResult(`type must be one of ${ARTIFACT_TYPES.join(', ')}`);
+    }
+    const t = getTemplate(type);
+    const lines = [
+      `Template: ${t.type} v${t.version}`,
+      t.description,
+      '',
+      'Fields (JSON structured payload keys):',
+      ...t.fields.map(
+        (f) =>
+          `- ${f.key} (${f.type}${f.required ? ', REQUIRED' : ', optional'}${f.minLength ? `, min=${f.minLength}` : ''}): ${f.label}${f.placeholder ? ` — e.g. ${f.placeholder.split('\n')[0]}` : ''}`,
+      ),
+      '',
+      'Usage: submit_artifact với structured = { "field_key": "markdown text", ... }',
+    ];
+    return { content: [{ type: 'text', text: lines.join('\n') }] };
   }
 
   private async doSearch(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {

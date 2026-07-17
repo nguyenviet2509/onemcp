@@ -6,6 +6,7 @@ import { ArtifactType } from './artifact-type.enum';
 import { ReviewArtifactDto, SubmitArtifactDto, UpdateArtifactDto } from './dto/submit-artifact.dto';
 import { Artifact } from './entities/artifact.entity';
 import { ArtifactVersion } from './entities/artifact-version.entity';
+import { TemplateValidator } from './templates/template-validator';
 
 export interface ArtifactListFilter {
   type?: ArtifactType;
@@ -23,7 +24,25 @@ export class ArtifactsService {
     @InjectRepository(Artifact) private readonly artifacts: Repository<Artifact>,
     @InjectRepository(ArtifactVersion) private readonly versions: Repository<ArtifactVersion>,
     @InjectDataSource() private readonly ds: DataSource,
+    private readonly templates: TemplateValidator,
   ) {}
+
+  // Nếu client gửi structured → validate + compile body. Ngược lại chấp nhận body-only
+  // (backwards compat cho MCP submit đơn giản + short KB entries).
+  private prepareContent(
+    type: ArtifactType,
+    body: string | undefined,
+    structured: Record<string, unknown> | undefined,
+  ): { body: string; structured: Record<string, unknown> } {
+    if (structured && Object.keys(structured).length > 0) {
+      const result = this.templates.validateAndCompile(type, structured);
+      return { body: result.body, structured: result.structured as unknown as Record<string, unknown> };
+    }
+    if (!body || body.trim().length === 0) {
+      throw new BadRequestException('body hoặc structured phải cung cấp');
+    }
+    return { body, structured: {} };
+  }
 
   private isReviewer(user: RequestUser): boolean {
     return user.roles.some((r) => REVIEWER_ROLES.includes(r));
@@ -39,6 +58,8 @@ export class ArtifactsService {
       where: { departmentId: user.departmentId, slug: dto.slug },
     });
     if (dup) throw new BadRequestException(`slug "${dto.slug}" đã tồn tại trong dept`);
+
+    const content = this.prepareContent(dto.type, dto.body, dto.structured);
 
     return this.ds.transaction(async (m) => {
       const artifactRepo = m.getRepository(Artifact);
@@ -61,8 +82,8 @@ export class ArtifactsService {
           artifactId: artifact.id,
           versionNo: 1,
           authorId: user.id,
-          body: dto.body,
-          structured: dto.structured,
+          body: content.body,
+          structured: content.structured,
           status: 'pending',
         }),
       );
@@ -150,13 +171,14 @@ export class ArtifactsService {
       }
 
       const nextNo = currentNo + 1;
+      const content = this.prepareContent(artifact.type, dto.body, dto.structured);
       const version = await vRepo.save(
         vRepo.create({
           artifactId: artifact.id,
           versionNo: nextNo,
           authorId: user.id,
-          body: dto.body,
-          structured: dto.structured ?? {},
+          body: content.body,
+          structured: content.structured,
           status: 'pending',
         }),
       );
