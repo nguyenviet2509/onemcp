@@ -1,0 +1,14 @@
+{
+  "manifest_version": 1,
+  "name": "debug-guide",
+  "version": "1.0.0",
+  "department": "kythuat",
+  "description": "Structured debug workflow — reproduce, isolate, hypothesize, verify. Use before touching production.",
+  "tags": ["debug", "incident", "production"],
+  "entrypoint": "SKILL.md",
+  "resources": [],
+  "permissions": ["read"],
+  "authors": [
+    { "name": "OneMCP Team" }
+  ]
+}

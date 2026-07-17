@@ -1,0 +1,14 @@
+{
+  "manifest_version": 1,
+  "name": "session-wrapup",
+  "version": "1.0.0",
+  "department": "kythuat",
+  "description": "Mandatory workflow — capture session outcome (bug fix, incident, research) as artifact before ending session so future devs can search + reuse.",
+  "tags": ["session", "mandatory", "workflow", "kb"],
+  "entrypoint": "SKILL.md",
+  "resources": [],
+  "permissions": ["read"],
+  "authors": [
+    { "name": "OneMCP Team" }
+  ]
+}
