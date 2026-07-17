@@ -7,7 +7,7 @@ import { ArtifactType } from '../artifact-type.enum';
 export interface TemplateField {
   key: string; // Snake case, unique trong template.
   label: string; // UI label.
-  type: 'text' | 'markdown';
+  type: 'text' | 'markdown' | 'logs'; // 'logs' compile to ```log fence block (V7).
   required: boolean;
   minLength?: number;
   maxLength?: number;
@@ -59,10 +59,57 @@ const KB: Template = {
   ],
 };
 
+// Postmortem template — V6: 4 required fields, no minLength, all optional remain free-form.
+// Thứ tự: required fields trước, optional sau.
+const POSTMORTEM: Template = {
+  type: 'postmortem',
+  version: 1,
+  description: 'Ops post-mortem template — 4 required fields, các fields còn lại optional để không cản ops 2am.',
+  fields: [
+    // Required (V6 — chỉ 4)
+    { key: 'summary', label: 'Summary', type: 'markdown', required: true, placeholder: 'What happened — 2-3 câu mô tả sự cố.' },
+    { key: 'timeline', label: 'Timeline', type: 'markdown', required: true, placeholder: '- HH:MM - Event\n- HH:MM - Root cause identified\n- HH:MM - Mitigated' },
+    { key: 'root_cause', label: 'Root Cause', type: 'markdown', required: true, placeholder: 'Nguyên nhân gốc rễ. 5-whys nếu cần.' },
+    { key: 'action_items', label: 'Action Items', type: 'markdown', required: true, placeholder: '- [ ] Fix X (owner: @user, due: YYYY-MM-DD)\n- [ ] Add alert Y' },
+    // Optional
+    { key: 'severity', label: 'Severity', type: 'text', required: false, placeholder: 'SEV1 / SEV2 / SEV3' },
+    { key: 'incident_id', label: 'Incident ID', type: 'text', required: false, placeholder: 'INC-20260717-1' },
+    { key: 'date_occurred', label: 'Date Occurred', type: 'text', required: false, placeholder: '2026-07-17' },
+    { key: 'duration_minutes', label: 'Duration (minutes)', type: 'text', required: false, placeholder: '45' },
+    { key: 'blast_radius', label: 'Blast Radius', type: 'markdown', required: false, placeholder: 'Services + user impact.' },
+    { key: 'remediation', label: 'Remediation', type: 'markdown', required: false, placeholder: 'Fix cụ thể đã làm.' },
+    { key: 'detection_gap', label: 'Detection Gap', type: 'markdown', required: false, placeholder: 'Tại sao không phát hiện sớm hơn?' },
+    { key: 'lessons_learned', label: 'Lessons Learned', type: 'markdown', required: false },
+    // raw_logs — type=logs, compile to ```log fence (V7)
+    { key: 'raw_logs', label: 'Raw Logs', type: 'logs', required: false, description: 'Log liên quan đến sự cố. Sẽ render trong ```log fence block.' },
+  ],
+};
+
+// Runbook template — 6 required, no minLength. service field maps to artifacts.service column.
+const RUNBOOK: Template = {
+  type: 'runbook',
+  version: 1,
+  description: 'Operational runbook — symptoms → verify → mitigate → escalate. Gọi load_runbook khi paged.',
+  fields: [
+    // Required
+    { key: 'service', label: 'Service', type: 'text', required: true, placeholder: 'postgres | redis | nginx | backend | portal | minio', description: 'Tên service liên quan. Lưu vào cột artifacts.service để boost search.' },
+    { key: 'symptoms', label: 'Symptoms', type: 'markdown', required: true, placeholder: 'Alert signals + observable symptoms:\n- CPU > 90%\n- Error rate spikes' },
+    { key: 'verify_command', label: 'Verify Commands', type: 'markdown', required: true, placeholder: '```bash\npsql -c "SELECT pg_database_size(current_database());"\n```' },
+    { key: 'mitigation_steps', label: 'Mitigation Steps', type: 'markdown', required: true, placeholder: '1. Step 1\n2. Step 2\n3. Step 3' },
+    { key: 'verification_after', label: 'Verification After Mitigation', type: 'markdown', required: true, placeholder: 'Commands + expected output xác nhận đã fix.' },
+    { key: 'escalation_path', label: 'Escalation Path', type: 'markdown', required: true, placeholder: '1. On-call SRE\n2. Team Lead\n3. CTO' },
+    // Optional
+    { key: 'related_alerts', label: 'Related Alerts', type: 'text', required: false, placeholder: 'DiskFull,PostgresOOM,RedisHighMemory (comma-separated alertname)' },
+    { key: 'severity_impact', label: 'Severity Impact', type: 'markdown', required: false, placeholder: 'SEV1: full outage\nSEV2: degraded performance' },
+  ],
+};
+
 const REGISTRY: Record<ArtifactType, Template> = {
   report: REPORT,
   research: RESEARCH,
   kb: KB,
+  postmortem: POSTMORTEM,
+  runbook: RUNBOOK,
 };
 
 export function getTemplate(type: ArtifactType): Template {

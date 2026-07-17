@@ -22,8 +22,9 @@ Internal MCP server for engineering departments — v1 pilot Kỹ thuật. Statu
 - ✅ **P5 Templates**: Zod schemas per type, structured content, body auto-compile, MCP `get_artifact_template`.
 - ✅ **P5.2 Client hook**: Python PreCompact reminder script + seed skills (session-wrapup, debug-guide).
 - ✅ **P6.1 Hardening**: Prometheus metrics + HTTP instrumentation, deep `/ready` (Postgres + MinIO), daily backup service (pg_dump + MinIO mirror).
+- ✅ **P7 Ops Incident Response**: Postmortem + runbook artifact types, Alertmanager webhook integration (Bearer + dedup + 202 async + Slack), service-aware search boost, CLI tool (3 commands), MCP `load_runbook` + metrics, feature-flag gated rollout.
 
-## MCP tools (7)
+## MCP tools (8)
 
 | Tool | Purpose |
 |---|---|
@@ -31,19 +32,23 @@ Internal MCP server for engineering departments — v1 pilot Kỹ thuật. Statu
 | `load_skill` | SKILL.md content + audit log |
 | `list_artifacts` | Enumerate artifacts (published + own pending) |
 | `get_artifact` | Fetch artifact body + metadata |
-| `get_artifact_template` | Schema for type (report/research/kb) |
+| `get_artifact_template` | Schema for type (report/research/kb/postmortem/runbook) |
 | `submit_artifact` | Create pending artifact with structured validate |
 | `search` | FTS across skills + artifacts |
+| `load_runbook` | Fetch runbook by ID + log load event (P7) |
 
 ## Documentation
 
 - [System Architecture](./docs/system-architecture.md)
 - [Code Standards](./docs/code-standards.md)
 - [Development Roadmap](./docs/development-roadmap.md) — completion status
+- [Project Changelog](./docs/project-changelog.md) — P1–P7 shipping history
 - [Staging Deployment Guide](./docs/staging-deployment-guide.md)
 - [Backup & Restore](./docs/backup-restore.md)
 - [Monitoring](./docs/monitoring.md)
 - [Client Session Wrap-Up](./docs/client-session-wrapup.md) — Claude Code hook install
+- [Alertmanager Integration](./docs/alertmanager-integration.md) — P7 webhook config
+- [Ops Environment Survey](./docs/ops-env-survey.md) — P7 CLI distribution pre-flight
 
 ## Quick Start (dev — Linux/macOS/WSL)
 

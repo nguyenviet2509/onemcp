@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OneMCP · Onboarding cho phòng Kỹ thuật</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+  body {
+    background: #0b1220;
+    color: #e2e8f0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.65;
+  }
+  .kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 4px; padding: 1px 6px;
+  }
+  pre.code {
+    background: #0f172a; border: 1px solid #1e293b;
+    border-radius: 8px; padding: 1rem 1.25rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85rem; line-height: 1.55;
+    overflow-x: auto; color: #e2e8f0;
+  }
+  pre.code .k { color: #93c5fd; }
+  pre.code .s { color: #86efac; }
+  pre.code .c { color: #64748b; font-style: italic; }
+  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 1.5rem; }
+  .chip { display: inline-block; font-size: 0.7rem; letter-spacing: .08em; text-transform: uppercase; background: #1e293b; color: #93c5fd; padding: 3px 10px; border-radius: 999px; border: 1px solid #334155; }
+  .mermaid { background: #0f172a; border-radius: 12px; padding: 1.5rem; border: 1px solid #1e293b; }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.tbl th, table.tbl td { border: 1px solid #334155; padding: 10px 14px; text-align: left; vertical-align: top; }
+  table.tbl th { background: #1e293b; color: #cbd5e1; font-weight: 600; }
+  table.tbl code { color: #fbbf24; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+  .ascii { font-family: ui-monospace, monospace; font-size: 0.82rem; line-height: 1.4; white-space: pre; color: #cbd5e1; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 1.5rem; overflow-x: auto; }
+  section { scroll-margin-top: 80px; }
+  .nav-link { color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; transition: all 150ms; }
+  .nav-link:hover { color: #e2e8f0; background: #1e293b; }
+  .nav-link.active { color: #a5b4fc; background: #1e1b4b; }
+  h1, h2, h3 { letter-spacing: -0.015em; }
+  .gradient-text { background: linear-gradient(90deg, #a5b4fc, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .step-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: #312e81; color: #c7d2fe; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ============ Sticky nav ============ -->
+<nav class="sticky top-0 z-40 backdrop-blur bg-slate-950/80 border-b border-slate-800">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <a href="#hero" class="text-white font-bold text-lg">One<span class="text-indigo-400">MCP</span></a>
+    <div class="hidden md:flex gap-1">
+      <a href="#why" class="nav-link">Tại sao</a>
+      <a href="#architecture" class="nav-link">Kiến trúc</a>
+      <a href="#tools" class="nav-link">7 tools</a>
+      <a href="#setup" class="nav-link">Cài đặt</a>
+      <a href="#workflow" class="nav-link">Workflow</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </div>
+    <span class="chip">v1 pilot</span>
+  </div>
+</nav>
+
+<!-- ============ Hero ============ -->
+<section id="hero" class="max-w-6xl mx-auto px-6 pt-24 pb-20">
+  <div class="chip mb-6">Phòng Kỹ thuật · Internal INET · 2026-07</div>
+  <h1 class="text-6xl md:text-7xl font-extrabold mb-6 text-white leading-tight">
+    One<span class="gradient-text">MCP</span>
+  </h1>
+  <p class="text-2xl md:text-3xl text-slate-300 mb-6 max-w-3xl">
+    MCP server nội bộ. Biến mỗi lần fix bug thành tài sản dùng chung.
+  </p>
+  <p class="text-lg text-slate-400 max-w-2xl mb-10 leading-relaxed">
+    Dev A fix bug → capture KB tự động → Dev B tuần sau gặp lại → agent search → apply fix trong phút.
+    Không còn tri thức bay mất sau mỗi sprint.
+  </p>
+  <div class="flex flex-wrap gap-4">
+    <a href="#setup" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg font-medium transition">Cài đặt trong 3 phút</a>
+    <a href="#workflow" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg font-medium transition border border-slate-700">Xem workflow</a>
+  </div>
+
+  <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="card"><div class="text-3xl font-bold text-indigo-300">7</div><div class="text-sm text-slate-400 mt-1">MCP tools</div></div>
+    <div class="card"><div class="text-3xl font-bold text-indigo-300">3</div><div class="text-sm text-slate-400 mt-1">Loại artifact</div></div>
+    <div class="card"><div class="text-3xl font-bold text-indigo-300">15+</div><div class="text-sm text-slate-400 mt-1">Backend modules</div></div>
+    <div class="card"><div class="text-3xl font-bold text-emerald-300">100%</div><div class="text-sm text-slate-400 mt-1">Pilot-ready</div></div>
+  </div>
+</section>
+
+<!-- ============ Why ============ -->
+<section id="why" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">Vấn đề</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Kiến thức fix bug bay mất sau mỗi sprint</h2>
+  <p class="text-slate-400 max-w-3xl mb-10">
+    Dev đã fix bug rồi commit, tuần sau đồng nghiệp gặp lại lỗi tương tự, mất 2-4 giờ debug lại từ đầu.
+    KB rải rác Slack/Confluence/head. Search không hiểu tiếng Việt bỏ dấu.
+  </p>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="card">
+      <h3 class="text-lg font-semibold text-red-400 mb-3">❌ Không có OneMCP</h3>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li>• Dev A fix bug xong → commit → quên</li>
+        <li>• 3 tuần sau Dev B gặp lại lỗi tương tự</li>
+        <li>• Debug lại từ đầu, mất 2-4 giờ</li>
+        <li>• KB rải rác nhiều nơi, không tìm được</li>
+        <li>• Search không unaccent, thiếu ngữ cảnh</li>
+      </ul>
+    </div>
+    <div class="card border-emerald-800/50">
+      <h3 class="text-lg font-semibold text-emerald-400 mb-3">✅ Với OneMCP</h3>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li>• Dev A fix → agent tự submit KB có template</li>
+        <li>• KB có structure chuẩn (problem/solution/related)</li>
+        <li>• Dev B paste error → agent search → hit</li>
+        <li>• Apply fix trong 5-10 phút</li>
+        <li>• FTS unaccent-aware + fuzzy title match</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="text-2xl font-semibold text-white mt-16 mb-4">Vòng lặp giá trị</h3>
+  <div class="ascii">
+   ┌─────────────┐   fix bug     ┌──────────────┐   submit_artifact    ┌──────────────┐
+   │   Dev A     │──────────────▶│ Claude Code  │────────────────────▶ │   OneMCP     │
+   │  (debug)    │               │  + agent     │                      │ PG + MinIO   │
+   └─────────────┘               └──────────────┘                      └──────┬───────┘
+                                                                              │
+                                                                    KB pending│ review
+                                                                              ▼
+                                                                       ┌──────────────┐
+                                                                       │ Maintainer   │
+                                                                       │  approve     │
+                                                                       └──────┬───────┘
+                                                                              │
+                                                                              ▼
+   ┌─────────────┐  paste error  ┌──────────────┐    search "..."      ┌──────────────┐
+   │   Dev B     │──────────────▶│ Claude Code  │────────────────────▶ │  Hit KB #42  │
+   │ (bug lại)   │◀──────────────│  + agent     │◀──────────────────── │  apply fix   │
+   └─────────────┘               └──────────────┘                      └──────────────┘
+  </div>
+</section>
+
+<!-- ============ Architecture ============ -->
+<section id="architecture" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">Kiến trúc</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Stack tổng quan</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    NestJS backend + Next.js portal + PostgreSQL (FTS) + MinIO (attachments) + Redis (queue). Nginx TLS + IP CIDR guard.
+  </p>
+
+  <div class="mermaid mb-8">
+flowchart LR
+  subgraph Client
+    CC["Claude Code<br/>+ MCP config"]
+  end
+  subgraph Edge
+    NG["Nginx<br/>TLS + IP CIDR"]
+  end
+  subgraph App
+    API["NestJS backend<br/>REST + MCP JSON-RPC"]
+    WEB["Next.js portal<br/>skills / artifacts / search"]
+  end
+  subgraph Data
+    PG[("PostgreSQL 16<br/>FTS + pgvector")]
+    MN[("MinIO<br/>attachments")]
+    RD[("Redis<br/>BullMQ queue")]
+  end
+  subgraph Ops
+    PM["Prometheus<br/>/metrics"]
+    BK["Daily backup<br/>pg_dump + mc mirror"]
+  end
+  CC -->|HTTP JSON-RPC| NG
+  NG --> API
+  NG --> WEB
+  API --> PG
+  API --> MN
+  API --> RD
+  API --> PM
+  PG --> BK
+  MN --> BK
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Access</h4><p class="text-slate-400 text-sm">IP CIDR + trust header <code class="text-amber-300">X-Onemcp-User</code>. Admin CIDR riêng cho privileged role.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">MCP surface</h4><p class="text-slate-400 text-sm">POST <code class="text-amber-300">/api/mcp</code> JSON-RPC 2.0. 7 tools, dept-scoped tự động.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Observability</h4><p class="text-slate-400 text-sm"><code class="text-amber-300">/metrics</code> Prometheus, <code class="text-amber-300">/ready</code> deep check, pino structured logs.</p></div>
+  </div>
+</section>
+
+<!-- ============ 7 Tools ============ -->
+<section id="tools" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">Interface</div>
+  <h2 class="text-4xl font-bold text-white mb-4">7 MCP tools cho AI agent</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    Agent gọi tool phù hợp dựa vào intent của bạn. Dev chỉ cần chat tự nhiên với Claude Code.
+  </p>
+  <table class="tbl">
+    <thead><tr><th style="width:22%">Tool</th><th>Mục đích</th><th style="width:22%">Khi nào dùng</th></tr></thead>
+    <tbody>
+      <tr><td><code>list_skills</code></td><td>Liệt kê skills khả dụng, filter tag/query</td><td>Trước load_skill</td></tr>
+      <tr><td><code>load_skill</code></td><td>Tải <code>SKILL.md</code> vào context agent</td><td>Cần guide/protocol</td></tr>
+      <tr><td><code>list_artifacts</code></td><td>Liệt kê report/research/kb theo dept</td><td>Explore knowledge</td></tr>
+      <tr><td><code>get_artifact</code></td><td>Đọc chi tiết 1 artifact (body + metadata)</td><td>Xem KB cụ thể</td></tr>
+      <tr><td><code>get_artifact_template</code></td><td>Trả về schema (sections required) cho type</td><td>TRƯỚC submit</td></tr>
+      <tr><td><code>search</code></td><td>FTS keyword + fuzzy qua skills + artifacts</td><td>Tìm KB tương tự</td></tr>
+      <tr><td><code>submit_artifact</code></td><td>Nộp KB/report/research (status=pending)</td><td>Cuối session</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-2xl font-semibold text-white mt-16 mb-6">Skills vs Artifacts — phân biệt</h3>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="card">
+      <h4 class="text-xl font-semibold text-indigo-300 mb-3">📘 Skills</h4>
+      <p class="text-slate-300 text-sm mb-3"><b>Static protocol / guide / SOP</b> — do maintainer viết.</p>
+      <ul class="text-slate-400 text-sm space-y-1">
+        <li>• Source: GitLab mono-repo <code class="text-amber-300">skills-kythuat</code></li>
+        <li>• Sync tự động (webhook + cron)</li>
+        <li>• Format: <code class="text-amber-300">manifest.json</code> + <code class="text-amber-300">SKILL.md</code></li>
+        <li>• Ví dụ: <code class="text-amber-300">debug-guide</code>, <code class="text-amber-300">session-wrapup</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 class="text-xl font-semibold text-emerald-300 mb-3">📄 Artifacts</h4>
+      <p class="text-slate-300 text-sm mb-3"><b>User-generated knowledge</b> — dev submit qua MCP hoặc portal.</p>
+      <ul class="text-slate-400 text-sm space-y-1">
+        <li>• 3 loại: <code class="text-amber-300">report</code> · <code class="text-amber-300">research</code> · <code class="text-amber-300">kb</code></li>
+        <li>• Template validate structure</li>
+        <li>• Versioning (append-only)</li>
+        <li>• Review flow: pending → published</li>
+        <li>• Attachments PDF/PNG… ≤100MB</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Setup ============ -->
+<section id="setup" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">Cài đặt</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Kết nối Claude Code với OneMCP</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">3 phút cài đặt. Yêu cầu: đăng ký username với maintainer trước.</p>
+
+  <div class="space-y-6">
+    <div>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="step-num">1</div>
+        <h3 class="text-xl font-semibold text-white">Thêm MCP server vào Claude Code</h3>
+      </div>
+      <p class="text-slate-400 text-sm mb-2 ml-14">Mở file <code class="text-amber-300">~/.claude/settings.json</code> và thêm:</p>
+      <div class="ml-14">
+<pre class="code"><span class="k">{</span>
+  <span class="s">"mcpServers"</span>: <span class="k">{</span>
+    <span class="s">"onemcp"</span>: <span class="k">{</span>
+      <span class="s">"type"</span>: <span class="s">"http"</span>,
+      <span class="s">"url"</span>: <span class="s">"https://onemcp.local/api/mcp"</span>,
+      <span class="s">"headers"</span>: <span class="k">{</span> <span class="s">"X-Onemcp-User"</span>: <span class="s">"your-username"</span> <span class="k">}</span>
+    <span class="k">}</span>
+  <span class="k">}</span>
+<span class="k">}</span></pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="step-num">2</div>
+        <h3 class="text-xl font-semibold text-white">Verify kết nối</h3>
+      </div>
+      <p class="text-slate-400 text-sm mb-2 ml-14">Trong Claude Code chat, hỏi:</p>
+      <div class="ml-14">
+<pre class="code"><span class="c"># hỏi agent</span>
+liệt kê skills khả dụng trong onemcp
+
+<span class="c"># agent sẽ tự gọi list_skills và trả về danh sách skills của phòng</span></pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="step-num">3</div>
+        <h3 class="text-xl font-semibold text-white">Cài PreCompact hook (khuyến nghị)</h3>
+      </div>
+      <p class="text-slate-400 text-sm mb-2 ml-14">Nhắc bạn submit KB trước khi session compact:</p>
+      <div class="ml-14">
+<pre class="code"><span class="c"># download hook script</span>
+mkdir -p ~/.claude/hooks
+curl -o ~/.claude/hooks/onemcp-wrapup-check.py \
+  https://onemcp.local/hooks/onemcp-wrapup-check.py
+chmod +x ~/.claude/hooks/onemcp-wrapup-check.py
+
+<span class="c"># env vars (~/.bashrc hoặc ~/.zshrc)</span>
+export ONEMCP_BASE_URL=<span class="s">"https://onemcp.local"</span>
+export ONEMCP_USER=<span class="s">"your-username"</span>
+
+<span class="c"># register hook trong ~/.claude/settings.json → hooks.PreCompact</span></pre>
+      </div>
+      <p class="text-slate-500 text-xs mt-2 ml-14">Default: advisory (chỉ nhắc). <code class="text-amber-300">ONEMCP_HOOK_STRICT=1</code> để block compact nếu chưa submit.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Workflow ============ -->
+<section id="workflow" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">Workflow điển hình</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Debug bug end-to-end</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">6 bước từ khi gặp error đến khi KB dùng chung được cho dev khác.</p>
+
+  <div class="space-y-4">
+    <div class="card flex gap-4"><div class="step-num">1</div>
+      <div><b class="text-white block mb-1">Gặp error</b>
+        <span class="text-slate-300 text-sm">Paste stacktrace/log vào Claude Code chat, mô tả context (endpoint gọi, khi nào xảy ra).</span></div></div>
+    <div class="card flex gap-4"><div class="step-num">2</div>
+      <div><b class="text-white block mb-1">Agent search</b>
+        <span class="text-slate-300 text-sm">Agent tự động gọi <code class="text-amber-300">search</code> với keywords từ error. Nếu hit KB → apply thẳng, skip debug.</span></div></div>
+    <div class="card flex gap-4"><div class="step-num">3</div>
+      <div><b class="text-white block mb-1">Load guide nếu cần</b>
+        <span class="text-slate-300 text-sm">Nếu chưa có KB, agent gọi <code class="text-amber-300">load_skill debug-guide</code> để lấy protocol 6-step: stabilize → gather → reproduce → isolate → fix → wrap-up.</span></div></div>
+    <div class="card flex gap-4"><div class="step-num">4</div>
+      <div><b class="text-white block mb-1">Fix theo protocol</b>
+        <span class="text-slate-300 text-sm">Agent hỗ trợ debug + code. Bạn confirm mỗi bước quan trọng (không apply blind).</span></div></div>
+    <div class="card flex gap-4"><div class="step-num">5</div>
+      <div><b class="text-white block mb-1">Wrap-up KB</b>
+        <span class="text-slate-300 text-sm">Trước khi close session, agent gọi <code class="text-amber-300">get_artifact_template kb</code> → điền <code>problem</code>/<code>solution</code>/<code>related</code> → <code class="text-amber-300">submit_artifact</code>.</span></div></div>
+    <div class="card flex gap-4 border-emerald-800/50"><div class="step-num" style="background:#065f46;color:#a7f3d0">✓</div>
+      <div><b class="text-emerald-300 block mb-1">Maintainer review → Published</b>
+        <span class="text-slate-300 text-sm">Trong ngày, maintainer approve. KB dept-wide visible qua <code class="text-amber-300">search</code>. Dev khác dùng ngay.</span></div></div>
+  </div>
+
+  <h3 class="text-2xl font-semibold text-white mt-16 mb-4">Template KB — ví dụ payload</h3>
+<pre class="code"><span class="k">{</span>
+  <span class="s">"type"</span>: <span class="s">"kb"</span>,
+  <span class="s">"title"</span>: <span class="s">"Fix: BullMQ worker OOM khi Redis maxmemory-policy=allkeys-lru"</span>,
+  <span class="s">"slug"</span>: <span class="s">"kb-bullmq-oom-redis-eviction"</span>,
+  <span class="s">"structured"</span>: <span class="k">{</span>
+    <span class="s">"problem"</span>: <span class="s">"Worker BullMQ crash sau 30 phút, log OOM. Redis INFO memory hiện evicted_keys tăng liên tục."</span>,
+    <span class="s">"solution"</span>: <span class="s">"Redis config maxmemory-policy phải là noeviction cho BullMQ. allkeys-lru evict job data → worker đọc key null → retry loop → OOM. Fix trong docker-compose.yml redis command."</span>,
+    <span class="s">"related"</span>: <span class="s">"BullMQ docs khuyến nghị. Check /health/redis memory metric để phát hiện sớm."</span>
+  <span class="k">}</span>,
+  <span class="s">"tags"</span>: [<span class="s">"bullmq"</span>, <span class="s">"redis"</span>, <span class="s">"infra"</span>]
+<span class="k">}</span></pre>
+
+  <h3 class="text-2xl font-semibold text-white mt-16 mb-4">Search tips</h3>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="card">
+      <h4 class="font-semibold text-emerald-300 mb-2">✅ Nên</h4>
+      <ul class="text-slate-300 text-sm space-y-1">
+        <li>• Dùng error message thật (unaccent auto)</li>
+        <li>• 3-6 từ khoá cốt lõi</li>
+        <li>• Có thể bỏ dấu (<code class="text-amber-300">huong dan</code> = <code class="text-amber-300">hướng dẫn</code>)</li>
+        <li>• Filter <code class="text-amber-300">kind=artifact</code> nếu chỉ tìm KB</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 class="font-semibold text-red-300 mb-2">❌ Tránh</h4>
+      <ul class="text-slate-300 text-sm space-y-1">
+        <li>• Câu hỏi dài dạng chat</li>
+        <li>• Từ stop-word không thông tin</li>
+        <li>• Search 1 từ generic (<code class="text-amber-300">error</code>)</li>
+        <li>• Kỳ vọng semantic (v1 keyword-based, v2 sẽ có)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RBAC ============ -->
+<section id="rbac" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">Governance</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Vai trò & Review flow</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">5 roles, mỗi role kế thừa quyền role trước. Multi-tenant enforce ở service layer — không leak cross-dept.</p>
+  <table class="tbl mb-8">
+    <thead><tr><th style="width:22%">Role</th><th>Quyền chính</th></tr></thead>
+    <tbody>
+      <tr><td><b class="text-slate-200">viewer</b></td><td>Đọc published skills/artifacts (trong dept)</td></tr>
+      <tr><td><b class="text-slate-200">contributor</b></td><td>+ submit artifact (pending), sửa artifact của mình (optimistic lock)</td></tr>
+      <tr><td><b class="text-emerald-300">maintainer</b></td><td>+ approve/reject pending, publish version</td></tr>
+      <tr><td><b class="text-amber-300">dept-admin</b></td><td>+ quản lý user role trong dept</td></tr>
+      <tr><td><b class="text-red-300">super-admin</b></td><td>+ cross-dept operations, config hệ thống, admin CIDR</td></tr>
+    </tbody>
+  </table>
+  <div class="ascii">
+   contributor: submit_artifact ──▶ status=pending, v1
+                                         │
+                                    maintainer review
+                                    ┌─────┴──────┐
+                                    ▼            ▼
+                              published       rejected
+                              (searchable)   (feedback)
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="chip mb-3">FAQ</div>
+  <h2 class="text-4xl font-bold text-white mb-8">Câu hỏi thường gặp</h2>
+  <div class="space-y-4">
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Data có leak sang phòng ban khác không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Không. Mọi query filter <code class="text-amber-300">department_id</code> theo user identity. Multi-tenant enforce ở service layer.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Nhỡ submit sai thì sao? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Artifact là append-only versioning. Edit tạo version mới, maintainer có thể publish version cũ nếu cần rollback.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">MCP dùng được với tool khác ngoài Claude Code? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Được — bất kỳ MCP client nào (Cursor, Continue, custom). JSON-RPC 2.0 chuẩn, chỉ cần config header <code class="text-amber-300">X-Onemcp-User</code>.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Search không thấy KB tôi mới submit? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">KB pending không xuất hiện với user khác. Bạn thấy KB của mình. Đợi maintainer approve để dept-wide visible.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Khi nào có semantic search? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">P4.2 roadmap — cần chọn embedding infra (Ollama local? cloud?). Feedback pilot sẽ quyết định ưu tiên.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Backup có tự động không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Có. Daily pg_dump + MinIO mirror, retention 14 ngày. Off-site mirror (NAS/S3) đang manual — sẽ auto hoá post-v1.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Nếu OneMCP down thì Claude Code còn dùng được không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Có. MCP tools chỉ là extension. Claude Code core hoạt động bình thường, chỉ không gọi được 7 tools OneMCP cho tới khi service back up.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <div class="card p-10 md:p-14 text-center" style="background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 100%);border-color:#4338ca">
+    <div class="chip mb-4">Bắt đầu</div>
+    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Sẵn sàng cook?</h2>
+    <p class="text-slate-300 max-w-2xl mx-auto mb-8">Cài MCP config, submit KB đầu tiên, thấy sức mạnh của knowledge reuse.</p>
+    <div class="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
+      <div class="card">
+        <div class="text-indigo-300 font-semibold mb-1">Portal</div>
+        <a class="text-slate-300 underline" href="https://onemcp.local">https://onemcp.local</a>
+        <div class="text-slate-500 text-xs mt-1">skills · artifacts · search · review</div>
+      </div>
+      <div class="card">
+        <div class="text-indigo-300 font-semibold mb-1">MCP endpoint</div>
+        <code class="text-amber-300 text-sm">https://onemcp.local/api/mcp</code>
+        <div class="text-slate-500 text-xs mt-1">JSON-RPC 2.0 · header X-Onemcp-User</div>
+      </div>
+      <div class="card">
+        <div class="text-indigo-300 font-semibold mb-1">Docs</div>
+        <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/system-architecture.md</code></div>
+        <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/client-session-wrapup.md</code></div>
+      </div>
+      <div class="card">
+        <div class="text-indigo-300 font-semibold mb-1">Support</div>
+        <div class="text-slate-300 text-sm">Slack: <b class="text-slate-100">@maintainer-kythuat</b></div>
+        <div class="text-slate-300 text-sm">Issue: <code class="text-amber-300">onemcp/backend</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="max-w-6xl mx-auto px-6 py-10 border-t border-slate-800 text-slate-500 text-sm flex justify-between">
+  <div>OneMCP v1 · pilot Kỹ thuật · Internal INET</div>
+  <div>Không phân phối ngoài</div>
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { background: '#0f172a', primaryColor: '#312e81', primaryTextColor: '#e2e8f0', lineColor: '#64748b', edgeLabelBackground: '#0f172a' } });
+
+  // Nav active state on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.nav-link');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => io.observe(s));
+</script>
+
+</body>
+</html>

@@ -36,6 +36,11 @@ export class Artifact {
   @Column({ type: 'text', array: true, default: () => "'{}'::text[]" })
   tags!: string[];
 
+  // Populated khi type=runbook từ template field 'service' (V1 — dedicated column + btree index).
+  @Index()
+  @Column({ type: 'text', nullable: true })
+  service!: string | null;
+
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
 

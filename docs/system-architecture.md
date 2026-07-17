@@ -64,7 +64,7 @@ backend/src/
 
 ## MCP surface
 
-7 tools qua `POST /api/mcp` (JSON-RPC 2.0):
+8 tools qua `POST /api/mcp` (JSON-RPC 2.0):
 
 | Tool | Purpose |
 |---|---|
@@ -73,8 +73,9 @@ backend/src/
 | `list_artifacts` | Enumerate artifacts (published + own pending) |
 | `get_artifact` | Fetch artifact body + metadata |
 | `submit_artifact` | Create pending artifact with structured template |
-| `get_artifact_template` | Get schema for type (report/research/kb) |
+| `get_artifact_template` | Get schema for type (report/research/kb/postmortem/runbook) |
 | `search` | FTS across skills + artifacts (unaccent-aware) |
+| `load_runbook` | Fetch runbook by ID; logs load event (P7 Alertmanager + CLI tracking) |
 
 ## Skills lifecycle
 
@@ -103,8 +104,39 @@ Contributor edit ─▶ create v(n+1) (pending, optimistic lock check MAX(versio
 
 - FTS trên `body_search` generated tsvector column (unaccent + `to_tsvector('simple')`).
 - Fuzzy trigram trên title/name via pg_trgm.
-- Rank: `ts_rank_cd × 2 + similarity()`.
+- Base rank: `ts_rank_cd × 2 + similarity(title)`.
+- **Service boost** (Phase 03): khi có service hint (explicit `?service=` hoặc auto-detect từ `ONEMCP_KNOWN_SERVICES`):
+  - +2.0 nếu `type='runbook'` AND `artifact.service = $service` (dedicated column, Phase 02 migration).
+  - +1.0 nếu artifact tag khớp service (case-insensitive: `lower(tag) = $service`).
+  - +0.5 nếu skill tag khớp service (same lower() check).
+  - Boost = 0 khi service = NULL → ranking base không đổi (backward compat).
+- Auto-detect: word-boundary regex `\bservice\b` (case-insensitive) — prevents `redis` matching `"redistribute"`. Nếu nhiều services match → không boost (log ambiguity khi `SEARCH_DEBUG=1`).
+- Explicit `?service=` validated ngược lại `ONEMCP_KNOWN_SERVICES` allowlist; unknown values silently ignored (không 400).
 - Only published artifacts visible cross-user.
+
+## Ops Incident Response (P7 Pilot)
+
+**Feature flag:** `ONEMCP_ENABLE_OPS_TYPES=1` — gates new artifact types (`postmortem`, `runbook`) + Alertmanager webhook + MCP `load_runbook` tool.
+
+### New artifact types
+- **`postmortem`**: incident post-mortem template (4 required fields: `summary`, `timeline`, `root_cause`, `action_items`). Stored as artifact, searchable, cross-dept readable.
+- **`runbook`**: operational playbook (structure: title, service, mitigation_steps, tags). Dedicated `artifacts.service` column (indexed) for Phase 03 service-boost ranking.
+
+### Alertmanager webhook flow
+- **Endpoint:** `POST /api/webhooks/alertmanager` (accepts `Authorization: Bearer {ALERTMANAGER_WEBHOOK_TOKEN}`)
+- **Response:** 202 Async — dedup check (Postgres `alertmanager_dedup` table, fingerprint + 4h TTL), search (`SearchService` with `bypassDeptFilter=true`), post Slack `SLACK_ONCALL_WEBHOOK_URL` within 5s timeout.
+- **Dedup:** server-side hash of `{alertname + labels}`, prevents duplicate KB posts within 4-hour window.
+- **Payload safety:** Slack message sanitizes alert labels (Markdown backticks, escape `@` mentions per RT-6).
+- **System actor:** `system-alertmanager` user (created at migration time) handles webhook requests. Bypass dept filter to surface cross-dept runbooks (V2 decision).
+
+### Metrics & audit
+- **Runbook load tracking:** `runbook_load_events` table (timestamp, user_id, runbook_id, source='cli'|'slack'|'portal'). TTL + access control TBD Phase 6.2.
+- **Metrics:** `onemcp_runbook_loads_total{name}`, `onemcp_alert_matches_total{alertname}`, `onemcp_cli_commands_total{cmd}`.
+
+### Database changes (P7)
+- **Migration:** add `artifacts.service` column (VARCHAR 64, nullable, indexed for Phase 03 boost).
+- **Table:** `alertmanager_dedup` (fingerprint TEXT PRIMARY KEY, created_at TIMESTAMP, TTL managed via cron DELETE WHERE created_at < NOW() - INTERVAL '4h').
+- **Table:** `runbook_load_events` (id, user_id, runbook_id, source, client_ip, created_at; index on user_id, source for auditing).
 
 ## Observability
 

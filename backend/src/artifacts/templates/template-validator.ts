@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ArtifactType } from '../artifact-type.enum';
+import { ConfigService } from '@nestjs/config';
+import { OPS_ARTIFACT_TYPES, ArtifactType } from '../artifact-type.enum';
 import { getTemplate, Template, TemplateField } from './template-registry';
 
 export interface StructuredContent {
@@ -9,9 +10,22 @@ export interface StructuredContent {
 
 @Injectable()
 export class TemplateValidator {
+  constructor(private readonly config: ConfigService) {}
+
+  // Kiểm tra feature flag ONEMCP_ENABLE_OPS_TYPES cho postmortem/runbook submit.
+  // List/get vẫn hoạt động khi flag off — chỉ gate submit.
+  private isOpsTypesEnabled(): boolean {
+    return this.config.get<string>('ONEMCP_ENABLE_OPS_TYPES', '0') === '1';
+  }
+
   // Validate structured payload theo template. Return normalized structured hoặc throw 400.
   // Trả về template được dùng để caller có thể compile body.
   validate(type: ArtifactType, structured: unknown): { data: StructuredContent; template: Template } {
+    // Gate ops artifact types sau feature flag (V8).
+    if (OPS_ARTIFACT_TYPES.includes(type) && !this.isOpsTypesEnabled()) {
+      throw new BadRequestException('Ops artifact types disabled');
+    }
+
     const template = getTemplate(type);
     if (!template) throw new BadRequestException(`Unknown artifact type "${type}"`);
 
@@ -36,6 +50,7 @@ export class TemplateValidator {
         errors.push(`${field.key}: must be string`);
         continue;
       }
+      // minLength retained for non-ops types (report/research/kb). Ops types drop minLength (V6).
       if (field.minLength && value.length < field.minLength) {
         errors.push(`${field.key}: minLength ${field.minLength}`);
       }
@@ -62,12 +77,18 @@ export class TemplateValidator {
   }
 
   // Compile structured → markdown body dùng làm search index + fallback render.
+  // type=logs compile thành ```log fence block (V7).
   compileBody(template: Template, structured: StructuredContent): string {
     const parts: string[] = [];
     for (const field of template.fields) {
       const val = structured.fields[field.key];
       if (val === undefined) continue;
-      parts.push(`## ${field.label}\n\n${val.trim()}`);
+      if (field.type === 'logs') {
+        // V7: logs field → ```log fence. Portal renders fenced blocks correctly already.
+        parts.push(`## ${field.label}\n\n\`\`\`log\n${val.trim()}\n\`\`\``);
+      } else {
+        parts.push(`## ${field.label}\n\n${val.trim()}`);
+      }
     }
     return parts.join('\n\n');
   }

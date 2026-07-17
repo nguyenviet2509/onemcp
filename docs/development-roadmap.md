@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-07-17
 **Owner:** trihd@inet.vn
-**Current phase:** v1 pilot-ready — deployed on staging VPS, all P1-P6.1 shipped, awaiting user pilot.
+**Current phase:** v1 + P7 (Ops) complete — deployed on staging VPS, all P1-P7 shipped, awaiting ops pilot.
 
 ## v1 completion summary
 
@@ -19,11 +19,13 @@ Kỹ thuật pilot v1 hoàn thành trong 1 ngày cook (12 sessions) — trước
 | P5.2 Client Hook | ✅ | 11 | Python PreCompact reminder + seed skills |
 | P6.1 Metrics + Backup | ✅ | 12 | Prometheus + deep /ready + pg_dump cron |
 | P6.2 Final polish | ✅ | 13 | Counters wire + markdown render + docs |
+| P7 Ops Incident Response | ✅ | 14 | Postmortem + runbook + CLI + Alertmanager webhook + service search |
 
 **Remaining (post-pilot)**:
 - P4.2 semantic embeddings (needs embedding infra decision)
 - Auth v2 SSO (separate plan)
 - P6.2 tail: log rotation, off-site backup automation, alerting deploy
+- P7 follow-up: CLI distribution finalization, runbook approval gate, cross-dept scoping
 
 ---
 

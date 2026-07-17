@@ -1,6 +1,10 @@
 // Loại artifact — enum-like union, không dùng TypeScript enum (compile complexity).
-export const ARTIFACT_TYPES = ['report', 'research', 'kb'] as const;
+// postmortem + runbook gated sau ONEMCP_ENABLE_OPS_TYPES=1 (submit). List/get vẫn hoạt động.
+export const ARTIFACT_TYPES = ['report', 'research', 'kb', 'postmortem', 'runbook'] as const;
 export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
+
+// Ops types gated sau feature flag.
+export const OPS_ARTIFACT_TYPES: ArtifactType[] = ['postmortem', 'runbook'];
 
 // Trạng thái artifact top-level (khác với version status).
 export const ARTIFACT_STATUSES = ['pending', 'published', 'rejected', 'archived'] as const;

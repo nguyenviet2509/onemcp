@@ -1,0 +1,27 @@
+{
+  "name": "@onemcp/cli",
+  "version": "0.1.0",
+  "description": "OneMCP CLI — search, show, submit artifacts from terminal",
+  "license": "MIT",
+  "private": true,
+  "bin": {
+    "onemcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

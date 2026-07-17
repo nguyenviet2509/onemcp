@@ -1,4 +1,6 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { createHash } from 'crypto';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
@@ -7,6 +9,7 @@ import { ArtifactType } from './artifact-type.enum';
 import { ReviewArtifactDto, SubmitArtifactDto, UpdateArtifactDto } from './dto/submit-artifact.dto';
 import { Artifact } from './entities/artifact.entity';
 import { ArtifactVersion } from './entities/artifact-version.entity';
+import { RunbookLoadEvent } from './entities/runbook-load-event.entity';
 import { TemplateValidator } from './templates/template-validator';
 
 export interface ArtifactListFilter {
@@ -16,17 +19,26 @@ export interface ArtifactListFilter {
   status?: 'pending' | 'published' | 'rejected';
 }
 
+export interface LoadRunbookOptions {
+  name?: string;    // slug hoặc title exact match
+  service?: string; // tìm theo service nếu name không chỉ định
+}
+
 const REVIEWER_ROLES = ['maintainer', 'dept-admin', 'super-admin'];
 const CONTRIBUTOR_ROLES = ['contributor', ...REVIEWER_ROLES];
 
 @Injectable()
 export class ArtifactsService {
+  private readonly log = new Logger(ArtifactsService.name);
+
   constructor(
     @InjectRepository(Artifact) private readonly artifacts: Repository<Artifact>,
     @InjectRepository(ArtifactVersion) private readonly versions: Repository<ArtifactVersion>,
+    @InjectRepository(RunbookLoadEvent) private readonly runbookEvents: Repository<RunbookLoadEvent>,
     @InjectDataSource() private readonly ds: DataSource,
     private readonly templates: TemplateValidator,
     private readonly metrics: MetricsService,
+    private readonly config: ConfigService,
   ) {}
 
   // Nếu client gửi structured → validate + compile body. Ngược lại chấp nhận body-only
@@ -44,6 +56,27 @@ export class ArtifactsService {
       throw new BadRequestException('body hoặc structured phải cung cấp');
     }
     return { body, structured: {} };
+  }
+
+  // Trích xuất giá trị service từ structured content cho type=runbook.
+  private extractService(type: ArtifactType, structured: Record<string, unknown>): string | null {
+    if (type !== 'runbook') return null;
+    // structured có thể là flat {service: ...} hoặc {fields: {service: ...}}
+    const fields = (structured as Record<string, unknown>).fields;
+    if (fields && typeof fields === 'object') {
+      const svc = (fields as Record<string, unknown>)['service'];
+      return typeof svc === 'string' && svc.trim() ? svc.trim() : null;
+    }
+    const svc = (structured as Record<string, unknown>)['service'];
+    return typeof svc === 'string' && svc.trim() ? svc.trim() : null;
+  }
+
+  // Hash IP cho audit log — dùng sha256(ip + salt). Skip nếu salt rỗng (RT-15).
+  private hashIp(ip: string | undefined): string | null {
+    if (!ip) return null;
+    const salt = this.config.get<string>('RUNBOOK_EVENTS_IP_SALT', '');
+    if (!salt) return null;
+    return createHash('sha256').update(ip + salt).digest('hex');
   }
 
   private isReviewer(user: RequestUser): boolean {
@@ -69,6 +102,9 @@ export class ArtifactsService {
 
     const content = this.prepareContent(dto.type, dto.body, dto.structured);
 
+    // Trích xuất service từ structured trước khi normalize (dto.structured chứa raw input).
+    const serviceValue = this.extractService(dto.type, dto.structured ?? {});
+
     return this.ds.transaction(async (m) => {
       const artifactRepo = m.getRepository(Artifact);
       const versionRepo = m.getRepository(ArtifactVersion);
@@ -82,6 +118,7 @@ export class ArtifactsService {
           ownerId: user.id,
           status: 'pending',
           tags: dto.tags,
+          service: serviceValue, // V1 — populate service column for runbook type
         }),
       );
 
@@ -181,6 +218,13 @@ export class ArtifactsService {
 
       const nextNo = currentNo + 1;
       const content = this.prepareContent(artifact.type, dto.body, dto.structured);
+
+      // Cập nhật service column nếu type=runbook và structured có service mới.
+      if (artifact.type === 'runbook' && dto.structured) {
+        const newService = this.extractService(artifact.type, dto.structured);
+        if (newService) artifact.service = newService;
+      }
+
       const version = await vRepo.save(
         vRepo.create({
           artifactId: artifact.id,
@@ -235,5 +279,93 @@ export class ArtifactsService {
       artifact.updatedAt = new Date();
       return aRepo.save(artifact);
     });
+  }
+
+  // Load runbook theo name (slug/title) hoặc service — gọi bởi MCP load_runbook tool.
+  // Ghi audit event + increment metrics khi tìm thấy.
+  async loadRunbook(
+    user: RequestUser,
+    opts: LoadRunbookOptions,
+    ip?: string,
+  ): Promise<
+    | { kind: 'single'; artifact: Artifact; version: ArtifactVersion; body: string }
+    | { kind: 'list'; items: Artifact[] }
+    | { kind: 'not_found' }
+  > {
+    if (opts.name) {
+      // Tìm theo slug exact match trước, fallback title ILIKE.
+      const artifact = await this.artifacts.findOne({
+        where: [
+          { departmentId: user.departmentId, type: 'runbook', slug: opts.name },
+        ],
+      }) ?? await this.artifacts
+          .createQueryBuilder('a')
+          .where('a.department_id = :dept', { dept: user.departmentId })
+          .andWhere("a.type = 'runbook'")
+          .andWhere('a.title ILIKE :title', { title: opts.name })
+          .andWhere("a.status = 'published'")
+          .getOne();
+
+      if (!artifact) return { kind: 'not_found' };
+
+      // Lấy published version (currentVersionId) hoặc latest.
+      const version = artifact.currentVersionId
+        ? await this.versions.findOne({ where: { id: artifact.currentVersionId } })
+        : await this.versions.findOne({
+            where: { artifactId: artifact.id },
+            order: { versionNo: 'DESC' },
+          });
+
+      if (!version) return { kind: 'not_found' };
+
+      // Ghi audit + metrics.
+      await this.recordRunbookLoadEvent(artifact, version, user, ip);
+      this.metrics.runbookLoads.inc({
+        name: artifact.slug,
+        service: artifact.service ?? '',
+      });
+
+      return { kind: 'single', artifact, version, body: version.body };
+    }
+
+    if (opts.service) {
+      // List top 5 runbooks theo service match.
+      // H4 fix: exact case-insensitive match to avoid ILIKE wildcard leak (agent could pass '%').
+      const items = await this.artifacts
+        .createQueryBuilder('a')
+        .where('a.department_id = :dept', { dept: user.departmentId })
+        .andWhere("a.type = 'runbook'")
+        .andWhere('LOWER(a.service) = LOWER(:svc)', { svc: opts.service })
+        .andWhere("a.status = 'published'")
+        .orderBy('a.updatedAt', 'DESC')
+        .limit(5)
+        .getMany();
+
+      return { kind: 'list', items };
+    }
+
+    return { kind: 'not_found' };
+  }
+
+  private async recordRunbookLoadEvent(
+    artifact: Artifact,
+    version: ArtifactVersion,
+    user: RequestUser,
+    ip?: string,
+  ): Promise<void> {
+    try {
+      const event = this.runbookEvents.create({
+        artifactId: artifact.id,
+        artifactVersionId: version.id,
+        userId: String(user.id),
+        ipHash: this.hashIp(ip),
+      });
+      await this.runbookEvents.save(event);
+    } catch (err) {
+      // M3 fix: audit failure không throw, nhưng phải log để phát hiện regression.
+      this.log.warn(
+        `runbook_load_events insert failed artifact=${artifact.id}: ${(err as Error).message}`,
+      );
+    }
   }
 }

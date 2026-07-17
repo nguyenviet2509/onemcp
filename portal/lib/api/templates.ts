@@ -4,7 +4,7 @@ import type { ArtifactType } from './artifacts';
 export interface TemplateField {
   key: string;
   label: string;
-  type: 'text' | 'markdown';
+  type: 'text' | 'markdown' | 'logs';
   required: boolean;
   minLength?: number;
   maxLength?: number;

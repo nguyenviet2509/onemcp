@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ARTIFACT_TYPES, ArtifactType } from '../artifacts/artifact-type.enum';
 import { ArtifactsService } from '../artifacts/artifacts.service';
 import { submitArtifactSchema } from '../artifacts/dto/submit-artifact.dto';
+import { sanitizeRunbookOutput } from '../artifacts/runbook-sanitize.util';
 import { getTemplate, listTemplates } from '../artifacts/templates/template-registry';
 import { AuthedRequest } from '../common/user-request';
 import { SearchEntityKind, SearchService } from '../search/search.service';
@@ -48,11 +49,11 @@ export class McpToolsService {
       },
       {
         name: 'list_artifacts',
-        description: 'Liệt kê artifacts (report/research/kb) trong dept. Filter type/tag/query.',
+        description: 'Liệt kê artifacts (report/research/kb/postmortem/runbook) trong dept. Filter type/tag/query.',
         inputSchema: {
           type: 'object',
           properties: {
-            type: { type: 'string', enum: ['report', 'research', 'kb'] },
+            type: { type: 'string', enum: [...ARTIFACT_TYPES] },
             tag: { type: 'string' },
             q: { type: 'string' },
           },
@@ -74,7 +75,7 @@ export class McpToolsService {
         inputSchema: {
           type: 'object',
           properties: {
-            type: { type: 'string', enum: ['report', 'research', 'kb'] },
+            type: { type: 'string', enum: [...ARTIFACT_TYPES] },
           },
           required: ['type'],
         },
@@ -82,13 +83,18 @@ export class McpToolsService {
       {
         name: 'search',
         description:
-          'Search full-text (keyword + fuzzy) qua skills + artifacts trong dept. Dùng khi cần tìm KB đã có cho vấn đề tương tự (bug trace, previous fix, existing report).',
+          'Search full-text (keyword + fuzzy) qua skills + artifacts trong dept. Dùng khi cần tìm KB đã có cho vấn đề tương tự (bug trace, previous fix, existing report). Truyền service để boost runbook + artifacts của service đó lên đầu.',
         inputSchema: {
           type: 'object',
           properties: {
             q: { type: 'string', description: 'Query text — bỏ dấu OK (unaccent auto)' },
             kind: { type: 'string', enum: ['all', 'skill', 'artifact'], description: 'Filter loại' },
             limit: { type: 'number', description: 'Max results (default 20, max 50)' },
+            service: {
+              type: 'string',
+              description:
+                'Tên service để boost ranking (postgres/redis/nginx/minio/backend/portal/gitlab). Nếu không pass, server tự detect từ query text.',
+            },
           },
           required: ['q'],
         },
@@ -96,11 +102,11 @@ export class McpToolsService {
       {
         name: 'submit_artifact',
         description:
-          'Submit artifact mới (type: report|research|kb). Trạng thái=pending chờ maintainer approve. Dùng cuối session để nộp report/KB.',
+          'Submit artifact mới (type: report|research|kb|postmortem|runbook). Trạng thái=pending chờ maintainer approve. Dùng cuối session để nộp report/KB.',
         inputSchema: {
           type: 'object',
           properties: {
-            type: { type: 'string', enum: ['report', 'research', 'kb'] },
+            type: { type: 'string', enum: [...ARTIFACT_TYPES] },
             title: { type: 'string' },
             slug: { type: 'string', description: 'URL-friendly, unique per dept' },
             body: { type: 'string', description: 'Markdown content' },
@@ -108,6 +114,18 @@ export class McpToolsService {
             tags: { type: 'array', items: { type: 'string' } },
           },
           required: ['type', 'title', 'slug', 'body'],
+        },
+      },
+      {
+        name: 'load_runbook',
+        description:
+          'Tải runbook operational theo tên hoặc service. Ưu tiên gọi khi user mô tả sự cố production.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Slug hoặc title của runbook cụ thể' },
+            service: { type: 'string', description: 'Tên service để list runbooks liên quan (khi chưa biết runbook nào)' },
+          },
         },
       },
     ];
@@ -130,6 +148,8 @@ export class McpToolsService {
         return this.doSearch(args, req);
       case 'get_artifact_template':
         return this.getTemplateTool(args);
+      case 'load_runbook':
+        return this.loadRunbookTool(args, req);
       default:
         return this.errorResult(`unknown tool: ${name}`);
     }
@@ -161,7 +181,9 @@ export class McpToolsService {
     if (!q) return this.errorResult('q is required');
     const kind = (args.kind as SearchEntityKind | 'all' | undefined) ?? 'all';
     const limit = typeof args.limit === 'number' ? args.limit : undefined;
-    const hits = await this.searchSvc.search(req.user!, { q, kind, limit });
+    // Service hint: agent có thể pass explicit. SearchService tự validate vs KNOWN_SERVICES.
+    const service = typeof args.service === 'string' && args.service.trim() ? args.service.trim() : null;
+    const hits = await this.searchSvc.search(req.user!, { q, kind, limit, service });
     if (hits.length === 0) return { content: [{ type: 'text', text: `No results for "${q}"` }] };
     const lines = hits.map((h, i) => {
       const idPart = h.kind === 'skill' ? h.name : `#${h.id}`;
@@ -251,6 +273,60 @@ export class McpToolsService {
           },
         ],
       };
+    } catch (e) {
+      return this.errorResult((e as Error).message);
+    }
+  }
+
+  // load_runbook — dedicated tool cho agent prioritize khi paged (RT-11: sanitize output).
+  private async loadRunbookTool(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+    const name = typeof args.name === 'string' ? args.name.trim() : undefined;
+    const service = typeof args.service === 'string' ? args.service.trim() : undefined;
+
+    if (!name && !service) {
+      return this.errorResult('load_runbook requires name or service');
+    }
+
+    try {
+      const result = await this.artifacts.loadRunbook(
+        req.user!,
+        { name, service },
+        req.clientIp,
+      );
+
+      if (result.kind === 'not_found') {
+        const what = name ? `name="${name}"` : `service="${service}"`;
+        return this.errorResult(`Không tìm thấy runbook với ${what}`);
+      }
+
+      if (result.kind === 'list') {
+        if (result.items.length === 0) {
+          return { content: [{ type: 'text', text: `Không có runbook nào cho service "${service}".` }] };
+        }
+        const lines = result.items.map(
+          (a) => `- ${a.slug} — ${a.title} [service: ${a.service ?? '-'}]`,
+        );
+        return {
+          content: [{
+            type: 'text',
+            text: `Runbooks cho service "${service}" (${result.items.length} kết quả):\n${lines.join('\n')}\n\nGọi load_runbook với name=<slug> để tải nội dung cụ thể.`,
+          }],
+        };
+      }
+
+      // kind === 'single' — trả về body đã sanitize (RT-11).
+      const { artifact, version } = result;
+      const sanitizedBody = sanitizeRunbookOutput(result.body);
+      const header = [
+        `# Runbook: ${artifact.title}`,
+        `Service: ${artifact.service ?? '-'} · v${version.versionNo} · status=${artifact.status}`,
+        `Tags: ${artifact.tags.join(', ') || 'none'}`,
+        '',
+        '---',
+        '',
+      ].join('\n');
+
+      return { content: [{ type: 'text', text: header + sanitizedBody }] };
     } catch (e) {
       return this.errorResult((e as Error).message);
     }

@@ -1,6 +1,6 @@
 import { apiFetch } from '../api-client';
 
-export type ArtifactType = 'report' | 'research' | 'kb';
+export type ArtifactType = 'report' | 'research' | 'kb' | 'postmortem' | 'runbook';
 export type ArtifactStatus = 'pending' | 'published' | 'rejected' | 'archived';
 export type ArtifactVersionStatus = 'pending' | 'active' | 'rejected';
 

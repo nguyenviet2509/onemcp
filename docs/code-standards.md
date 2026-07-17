@@ -74,6 +74,30 @@ src/<feature>/
 - **URL rewrite** cho deploy tokens (`oauth2:$TOKEN@` — không log).
 - Fail fast: `validateEnv()` boot.
 
+## Feature flags (P7 pattern)
+
+Gating mechanism cho experimental artifact types + integrations (postmortem, runbook, ops tools):
+
+- **Env-driven:** `ONEMCP_ENABLE_OPS_TYPES=1` (boolean, default 0).
+- **Checked at service boundary** (e.g., `ArtifactService.submit()`), not scattered in controllers.
+- **Graceful degrade:** List/get endpoints return types gated by flag; submit/create reject silently or 403 when feature disabled.
+- **Backward compat:** Flag off → new types not visible (old templates/artifacts unaffected).
+- **Rollback:** Flip flag = no code redeploy, just env restart (or SIGHUP hot-reload if future-enhanced).
+- **Metrics:** Track gated operations (`onemcp_feature_flags{feature,enabled}`).
+
+Example pattern:
+```typescript
+// In service
+async submit(type: string, data: any, user: User): Promise<Artifact> {
+  if (type === 'postmortem' || type === 'runbook') {
+    if (!this.configService.get<boolean>('ONEMCP_ENABLE_OPS_TYPES')) {
+      throw new BadRequestException(`Type ${type} not available`);
+    }
+  }
+  // ... rest of submit logic
+}
+```
+
 ## Zod schemas
 
 - Colocation: `dto/<feature>.dto.ts` — schema + inferred type.

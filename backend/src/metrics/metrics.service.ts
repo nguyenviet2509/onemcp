@@ -13,6 +13,11 @@ export class MetricsService implements OnModuleInit {
   readonly artifactSubmits: Counter<string>;
   readonly skillLoads: Counter<string>;
   readonly mcpCalls: Counter<string>;
+  readonly runbookLoads: Counter<string>;
+  // Alertmanager webhook metrics (Phase 06).
+  readonly alertsReceived: Counter<string>;
+  readonly alertMatches: Counter<string>;
+  readonly alertSlackFailures: Counter<string>;
 
   constructor() {
     collectDefaultMetrics({ register: this.registry, prefix: 'onemcp_' });
@@ -46,6 +51,31 @@ export class MetricsService implements OnModuleInit {
       name: 'onemcp_mcp_tool_calls_total',
       help: 'MCP tool call count',
       labelNames: ['tool', 'result'],
+      registers: [this.registry],
+    });
+    this.runbookLoads = new Counter({
+      name: 'onemcp_runbook_loads_total',
+      help: 'Runbook load events via MCP load_runbook tool',
+      labelNames: ['name', 'service'],
+      registers: [this.registry],
+    });
+    // Phase 06 — Alertmanager webhook.
+    this.alertsReceived = new Counter({
+      name: 'onemcp_alerts_received_total',
+      help: 'Alertmanager webhook alerts received (flag=enabled|disabled)',
+      labelNames: ['flag'],
+      registers: [this.registry],
+    });
+    this.alertMatches = new Counter({
+      name: 'onemcp_alert_matches_total',
+      help: 'Alertmanager KB/runbook search result posted to Slack (matched=true|false)',
+      labelNames: ['alertname', 'matched'],
+      registers: [this.registry],
+    });
+    this.alertSlackFailures = new Counter({
+      name: 'onemcp_alert_slack_failures_total',
+      help: 'Alertmanager Slack post failures per alertname',
+      labelNames: ['alertname'],
       registers: [this.registry],
     });
   }
