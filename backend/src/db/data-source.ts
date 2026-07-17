@@ -8,13 +8,15 @@ import { AuditEvent } from '../audit/entities/audit-event.entity';
 import { Skill } from '../skills/entities/skill.entity';
 import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillLoadEvent } from '../skills/entities/skill-load-event.entity';
+import { Artifact } from '../artifacts/entities/artifact.entity';
+import { ArtifactVersion } from '../artifacts/entities/artifact-version.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.POSTGRES_URL,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent],
+  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsRun: false,
 };

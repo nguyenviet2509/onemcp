@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ArtifactType } from '../artifacts/artifact-type.enum';
+import { ArtifactsService } from '../artifacts/artifacts.service';
+import { submitArtifactSchema } from '../artifacts/dto/submit-artifact.dto';
 import { AuthedRequest } from '../common/user-request';
 import { Skill } from '../skills/entities/skill.entity';
 import { SkillVersion } from '../skills/entities/skill-version.entity';
@@ -13,6 +16,7 @@ import { McpToolDefinition, McpToolResult } from './mcp-jsonrpc.types';
 export class McpToolsService {
   constructor(
     private readonly skills: SkillsService,
+    private readonly artifacts: ArtifactsService,
     @InjectRepository(SkillVersion) private readonly versions: Repository<SkillVersion>,
     @InjectRepository(Skill) private readonly skillsRepo: Repository<Skill>,
   ) {}
@@ -21,40 +25,78 @@ export class McpToolsService {
     return [
       {
         name: 'list_skills',
-        description:
-          'Liệt kê skills khả dụng trong department của user. Filter theo tag/query. Dùng để discover skill trước khi load.',
+        description: 'Liệt kê skills khả dụng. Filter tag/query. Gọi trước khi load_skill.',
         inputSchema: {
           type: 'object',
           properties: {
-            tag: { type: 'string', description: 'Filter theo tag (optional)' },
-            q: { type: 'string', description: 'Tìm theo name/description (optional)' },
+            tag: { type: 'string' },
+            q: { type: 'string' },
           },
         },
       },
       {
         name: 'load_skill',
-        description:
-          'Tải nội dung SKILL.md của một skill (theo current active version). Trả về markdown content — inject vào context AI agent.',
+        description: 'Tải SKILL.md content của skill (current active version). Inject vào agent context.',
+        inputSchema: {
+          type: 'object',
+          properties: { name: { type: 'string' } },
+          required: ['name'],
+        },
+      },
+      {
+        name: 'list_artifacts',
+        description: 'Liệt kê artifacts (report/research/kb) trong dept. Filter type/tag/query.',
         inputSchema: {
           type: 'object',
           properties: {
-            name: { type: 'string', description: 'Tên skill (unique per dept)' },
+            type: { type: 'string', enum: ['report', 'research', 'kb'] },
+            tag: { type: 'string' },
+            q: { type: 'string' },
           },
-          required: ['name'],
+        },
+      },
+      {
+        name: 'get_artifact',
+        description: 'Đọc artifact theo id (trả về body + metadata). Chỉ published visible cho non-owner.',
+        inputSchema: {
+          type: 'object',
+          properties: { id: { type: 'string' } },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'submit_artifact',
+        description:
+          'Submit artifact mới (type: report|research|kb). Trạng thái=pending chờ maintainer approve. Dùng cuối session để nộp report/KB.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', enum: ['report', 'research', 'kb'] },
+            title: { type: 'string' },
+            slug: { type: 'string', description: 'URL-friendly, unique per dept' },
+            body: { type: 'string', description: 'Markdown content' },
+            structured: { type: 'object' },
+            tags: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['type', 'title', 'slug', 'body'],
         },
       },
     ];
   }
 
   async call(name: string, args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
-    if (!req.user) {
-      return this.errorResult('unauthenticated — missing identity header');
-    }
+    if (!req.user) return this.errorResult('unauthenticated — missing identity header');
     switch (name) {
       case 'list_skills':
         return this.listSkills(args, req);
       case 'load_skill':
         return this.loadSkill(args, req);
+      case 'list_artifacts':
+        return this.listArtifacts(args, req);
+      case 'get_artifact':
+        return this.getArtifact(args, req);
+      case 'submit_artifact':
+        return this.submitArtifact(args, req);
       default:
         return this.errorResult(`unknown tool: ${name}`);
     }
@@ -79,14 +121,11 @@ export class McpToolsService {
       where: { departmentId: req.user!.departmentId, name },
     });
     if (!skill) return this.errorResult(`skill "${name}" not found`);
-    if (!skill.currentVersionId) {
-      return this.errorResult(`skill "${name}" has no active version — chờ maintainer approve`);
-    }
+    if (!skill.currentVersionId) return this.errorResult(`skill "${name}" chưa có active version`);
 
     const version = await this.versions.findOne({ where: { id: skill.currentVersionId } });
     if (!version) return this.errorResult(`current version ${skill.currentVersionId} missing`);
 
-    // Log load event (audit + analytics).
     await this.skills.recordLoadEvent({
       skillId: skill.id,
       skillVersionId: version.id,
@@ -97,6 +136,55 @@ export class McpToolsService {
     const body = version.body ?? '(no body content — chưa sync từ git)';
     const header = `# Skill: ${skill.name}\nVersion: ${version.version ?? 'unknown'} (commit ${version.commitSha.slice(0, 8)})\n\n---\n\n`;
     return { content: [{ type: 'text', text: header + body }] };
+  }
+
+  private async listArtifacts(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+    const items = await this.artifacts.list(req.user!, {
+      type: typeof args.type === 'string' ? (args.type as ArtifactType) : undefined,
+      tag: typeof args.tag === 'string' ? args.tag : undefined,
+      q: typeof args.q === 'string' ? args.q : undefined,
+    });
+    if (items.length === 0) return { content: [{ type: 'text', text: 'No artifacts found.' }] };
+    const lines = items.map(
+      (a) =>
+        `- #${a.id} [${a.type}] ${a.title} — status=${a.status}, slug=${a.slug}, tags=${a.tags.join(',') || '-'}`,
+    );
+    return { content: [{ type: 'text', text: `Found ${items.length} artifact(s):\n${lines.join('\n')}` }] };
+  }
+
+  private async getArtifact(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+    const id = String(args.id ?? '').trim();
+    if (!id) return this.errorResult('id is required');
+    try {
+      const { artifact, version } = await this.artifacts.findOne(req.user!, id);
+      if (!version) return this.errorResult('artifact chưa có version nào');
+      const header = `# ${artifact.title}\nType: ${artifact.type} · Status: ${artifact.status} · v${version.versionNo}\nTags: ${artifact.tags.join(', ') || 'none'}\n\n---\n\n`;
+      return { content: [{ type: 'text', text: header + version.body }] };
+    } catch (e) {
+      return this.errorResult((e as Error).message);
+    }
+  }
+
+  private async submitArtifact(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+    const parsed = submitArtifactSchema.safeParse(args);
+    if (!parsed.success) {
+      return this.errorResult(
+        `invalid payload: ${parsed.error.errors.map((e) => `${e.path.join('.')}:${e.message}`).join(', ')}`,
+      );
+    }
+    try {
+      const { artifact, version } = await this.artifacts.create(req.user!, parsed.data);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Submitted artifact #${artifact.id} "${artifact.title}" (v${version.versionNo}, status=pending). Maintainer sẽ review.`,
+          },
+        ],
+      };
+    } catch (e) {
+      return this.errorResult((e as Error).message);
+    }
   }
 
   private errorResult(msg: string): McpToolResult {

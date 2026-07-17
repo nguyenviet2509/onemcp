@@ -7,6 +7,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AccessModule } from './access/access.module';
+import { ArtifactsModule } from './artifacts/artifacts.module';
 import { AuditModule } from './audit/audit.module';
 import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
@@ -53,6 +54,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AccessModule,
     AuditModule,
     SkillsModule,
+    ArtifactsModule,
     WebhooksModule,
     McpModule,
   ],

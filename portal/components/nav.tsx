@@ -13,6 +13,9 @@ export function Nav() {
             <Link href="/skills" className="hover:text-slate-900 dark:hover:text-slate-100">
               Skills
             </Link>
+            <Link href="/artifacts" className="hover:text-slate-900 dark:hover:text-slate-100">
+              Artifacts
+            </Link>
             <Link href="/profile" className="hover:text-slate-900 dark:hover:text-slate-100">
               Profile
             </Link>

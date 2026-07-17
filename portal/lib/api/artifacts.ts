@@ -1,0 +1,84 @@
+import { apiFetch } from '../api-client';
+
+export type ArtifactType = 'report' | 'research' | 'kb';
+export type ArtifactStatus = 'pending' | 'published' | 'rejected' | 'archived';
+export type ArtifactVersionStatus = 'pending' | 'active' | 'rejected';
+
+export interface Artifact {
+  id: string;
+  type: ArtifactType;
+  title: string;
+  slug: string;
+  departmentId: number;
+  ownerId: number;
+  currentVersionId: string | null;
+  status: ArtifactStatus;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtifactVersion {
+  id: string;
+  artifactId: string;
+  versionNo: number;
+  authorId: number;
+  body: string;
+  structured: Record<string, unknown>;
+  status: ArtifactVersionStatus;
+  submittedAt: string;
+  reviewedBy: number | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+}
+
+export interface ArtifactDetail {
+  artifact: Artifact;
+  version: ArtifactVersion | null;
+}
+
+export interface SubmitArtifactPayload {
+  type: ArtifactType;
+  title: string;
+  slug: string;
+  body: string;
+  structured?: Record<string, unknown>;
+  tags?: string[];
+}
+
+export function listArtifacts(params: {
+  type?: ArtifactType;
+  tag?: string;
+  q?: string;
+  status?: ArtifactStatus;
+} = {}) {
+  const qs = new URLSearchParams();
+  if (params.type) qs.set('type', params.type);
+  if (params.tag) qs.set('tag', params.tag);
+  if (params.q) qs.set('q', params.q);
+  if (params.status) qs.set('status', params.status);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch<Artifact[]>(`/artifacts${suffix}`);
+}
+
+export function getArtifact(id: string) {
+  return apiFetch<ArtifactDetail>(`/artifacts/${encodeURIComponent(id)}`);
+}
+
+export function listArtifactVersions(id: string) {
+  return apiFetch<ArtifactVersion[]>(`/artifacts/${encodeURIComponent(id)}/versions`);
+}
+
+export function submitArtifact(payload: SubmitArtifactPayload) {
+  return apiFetch<ArtifactDetail>(`/artifacts`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function reviewArtifact(id: string, action: 'approve' | 'reject', note?: string) {
+  return apiFetch<Artifact>(`/artifacts/${encodeURIComponent(id)}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ action, note }),
+  });
+}
