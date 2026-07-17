@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
+import { dataSourceOptions } from './db/data-source';
+import { AccessModule } from './access/access.module';
+import { AuditModule } from './audit/audit.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
 
-// Root Nest module — v1 P1 scaffold.
-// Feature modules (access, audit, users, departments) added in subsequent P1 steps.
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -15,11 +19,15 @@ import { HealthModule } from './health/health.module';
           process.env.NODE_ENV === 'production'
             ? undefined
             : { target: 'pino-pretty', options: { singleLine: true } },
-        // Redact common secret-like keys defensively
-        redact: ['req.headers.authorization', 'req.headers.cookie'],
+        redact: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-onemcp-user"]'],
       },
     }),
+    TypeOrmModule.forRoot({ ...dataSourceOptions, autoLoadEntities: false }),
     HealthModule,
+    DepartmentsModule,
+    UsersModule,
+    AccessModule,
+    AuditModule,
   ],
 })
 export class AppModule {}
