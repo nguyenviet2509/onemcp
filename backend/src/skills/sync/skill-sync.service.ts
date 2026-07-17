@@ -92,6 +92,11 @@ export class SkillSyncService {
     const commitSha = await this.mirror.lastCommitForPath(`skills/${skillDir}`);
     if (!commitSha) throw new Error('no commit found for path');
 
+    // Đọc SKILL.md để nạp `body` — MCP load_skill trả trực tiếp.
+    const bodyPath = `skills/${skillDir}/${manifest.entrypoint || 'SKILL.md'}`;
+    const body = await this.mirror.showFile(bodyPath, commitSha);
+    if (!body) throw new Error(`missing ${bodyPath}`);
+
     let skill = await this.skills.findOne({ where: { departmentId: dept.id, name: manifest.name } });
     let upserted = false;
     if (!skill) {
@@ -124,6 +129,7 @@ export class SkillSyncService {
         commitSha,
         version: manifest.version,
         manifest: manifest as unknown as Record<string, unknown>,
+        body,
         status: 'pending',
       }),
     );

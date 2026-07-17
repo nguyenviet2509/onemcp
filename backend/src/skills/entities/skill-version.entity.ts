@@ -35,6 +35,10 @@ export class SkillVersion {
   @Column({ type: 'jsonb' })
   manifest!: Record<string, unknown>;
 
+  // SKILL.md content — populated bởi skill-sync worker. NULL nếu chưa sync.
+  @Column({ type: 'text', nullable: true })
+  body!: string | null;
+
   @Column({ type: 'int', nullable: true })
   approvedBy!: number | null;
 

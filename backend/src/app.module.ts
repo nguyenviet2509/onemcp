@@ -11,6 +11,7 @@ import { AuditModule } from './audit/audit.module';
 import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
 import { HealthModule } from './health/health.module';
+import { McpModule } from './mcp/mcp.module';
 import { SkillsModule } from './skills/skills.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -53,6 +54,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AuditModule,
     SkillsModule,
     WebhooksModule,
+    McpModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
