@@ -288,9 +288,9 @@ ADMIN_USERNAMES=admin,youruser
 GITLAB_WEBHOOK_SECRET=<random-secret>
 ```
 
-Sinh strong passwords:
+Sinh strong passwords — **PHẢI dùng hex** (không ký tự đặc biệt) vì password đi vào `POSTGRES_URL` connection string, ký tự như `/`, `+`, `@`, `:` sẽ phá URL parser:
 ```bash
-openssl rand -base64 32   # cho POSTGRES_PASSWORD
+openssl rand -hex 24      # cho POSTGRES_PASSWORD (avoid base64 — có / và +)
 openssl rand -hex 16      # cho MINIO_ROOT_PASSWORD
 openssl rand -hex 32      # cho GITLAB_WEBHOOK_SECRET
 ```
