@@ -29,6 +29,7 @@
     "bullmq": "^5.12.0",
     "cidr-matcher": "^2.1.1",
     "cron": "^3.1.7",
+    "express": "^4.19.2",
     "ioredis": "^5.4.1",
     "nestjs-pino": "^4.1.0",
     "pg": "^8.13.0",
