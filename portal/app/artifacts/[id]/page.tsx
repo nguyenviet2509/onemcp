@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 import { AttachmentUploader } from '../../../components/attachment-uploader';
+import { MarkdownView } from '../../../components/markdown-view';
 import { ApiError } from '../../../lib/api-client';
 import { ArtifactDetail, getArtifact, reviewArtifact } from '../../../lib/api/artifacts';
 
@@ -113,9 +114,7 @@ export default function ArtifactDetailPage({ params }: Props) {
 
           {detail.version && (
             <article className="mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <pre className="whitespace-pre-wrap font-mono text-sm text-slate-800 dark:text-slate-200">
-                {detail.version.body}
-              </pre>
+              <MarkdownView source={detail.version.body} />
             </article>
           )}
 

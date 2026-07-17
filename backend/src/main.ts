@@ -45,6 +45,10 @@ async function bootstrap() {
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', true);
 
+  // Enable graceful shutdown: on SIGTERM/SIGINT, Nest sẽ chờ requests drain,
+  // đóng BullMQ workers, close DB pool. Timeout 15s trước khi hard-kill.
+  app.enableShutdownHooks();
+
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port, '0.0.0.0');
 

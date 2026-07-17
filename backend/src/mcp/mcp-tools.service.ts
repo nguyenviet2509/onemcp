@@ -195,6 +195,7 @@ export class McpToolsService {
     if (!version) return this.errorResult(`current version ${skill.currentVersionId} missing`);
 
     await this.skills.recordLoadEvent({
+      skillName: skill.name,
       skillId: skill.id,
       skillVersionId: version.id,
       user: req.user!,

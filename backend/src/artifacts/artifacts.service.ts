@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
+import { MetricsService } from '../metrics/metrics.service';
 import { ArtifactType } from './artifact-type.enum';
 import { ReviewArtifactDto, SubmitArtifactDto, UpdateArtifactDto } from './dto/submit-artifact.dto';
 import { Artifact } from './entities/artifact.entity';
@@ -25,6 +26,7 @@ export class ArtifactsService {
     @InjectRepository(ArtifactVersion) private readonly versions: Repository<ArtifactVersion>,
     @InjectDataSource() private readonly ds: DataSource,
     private readonly templates: TemplateValidator,
+    private readonly metrics: MetricsService,
   ) {}
 
   // Nếu client gửi structured → validate + compile body. Ngược lại chấp nhận body-only
@@ -52,12 +54,18 @@ export class ArtifactsService {
   }
 
   async create(user: RequestUser, dto: SubmitArtifactDto): Promise<{ artifact: Artifact; version: ArtifactVersion }> {
-    if (!this.canContribute(user)) throw new ForbiddenException('Không có quyền submit artifact');
+    if (!this.canContribute(user)) {
+      this.metrics.artifactSubmits.inc({ type: dto.type, result: 'forbidden' });
+      throw new ForbiddenException('Không có quyền submit artifact');
+    }
 
     const dup = await this.artifacts.findOne({
       where: { departmentId: user.departmentId, slug: dto.slug },
     });
-    if (dup) throw new BadRequestException(`slug "${dto.slug}" đã tồn tại trong dept`);
+    if (dup) {
+      this.metrics.artifactSubmits.inc({ type: dto.type, result: 'duplicate' });
+      throw new BadRequestException(`slug "${dto.slug}" đã tồn tại trong dept`);
+    }
 
     const content = this.prepareContent(dto.type, dto.body, dto.structured);
 
@@ -87,6 +95,7 @@ export class ArtifactsService {
           status: 'pending',
         }),
       );
+      this.metrics.artifactSubmits.inc({ type: dto.type, result: 'ok' });
       return { artifact, version };
     });
   }

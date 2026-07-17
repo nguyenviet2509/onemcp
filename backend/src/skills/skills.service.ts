@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RequestUser } from '../common/user-request';
+import { MetricsService } from '../metrics/metrics.service';
 import { Skill } from './entities/skill.entity';
 import { SkillVersion } from './entities/skill-version.entity';
 import { SkillLoadEvent } from './entities/skill-load-event.entity';
-import { RequestUser } from '../common/user-request';
 
 export interface SkillListFilter {
   tag?: string;
@@ -17,6 +18,7 @@ export class SkillsService {
     @InjectRepository(Skill) private readonly skills: Repository<Skill>,
     @InjectRepository(SkillVersion) private readonly versions: Repository<SkillVersion>,
     @InjectRepository(SkillLoadEvent) private readonly loadEvents: Repository<SkillLoadEvent>,
+    private readonly metrics: MetricsService,
   ) {}
 
   // List skills user có thể xem — scope theo dept của user (multi-tenant ready).
@@ -63,11 +65,13 @@ export class SkillsService {
 
   // Ghi load event — gọi bởi MCP `load_skill` tool (P2 part 3).
   recordLoadEvent(params: {
+    skillName: string;
     skillId: number;
     skillVersionId: number;
     user: RequestUser;
     ip?: string;
   }) {
+    this.metrics.skillLoads.inc({ skill: params.skillName });
     const row = this.loadEvents.create({
       skillId: params.skillId,
       skillVersionId: params.skillVersionId,

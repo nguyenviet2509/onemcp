@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Logger, Post, Req } from '@nestjs/common';
 import { AuthedRequest } from '../common/user-request';
+import { MetricsService } from '../metrics/metrics.service';
 import {
   JsonRpcRequest,
   JsonRpcResponse,
@@ -19,7 +20,10 @@ import { McpToolsService } from './mcp-tools.service';
 export class McpController {
   private readonly log = new Logger(McpController.name);
 
-  constructor(private readonly tools: McpToolsService) {}
+  constructor(
+    private readonly tools: McpToolsService,
+    private readonly metrics: MetricsService,
+  ) {}
 
   @Post()
   @HttpCode(200)
@@ -53,6 +57,7 @@ export class McpController {
             return this.error(rid, RPC_INVALID_PARAMS, 'params.name required');
           }
           const result = await this.tools.call(name, args, req);
+          this.metrics.mcpCalls.inc({ tool: name, result: result.isError ? 'error' : 'ok' });
           return this.ok(rid, result);
         }
 

@@ -1,8 +1,29 @@
 # OneMCP — Development Roadmap
 
-**Last updated:** 2026-07-16
+**Last updated:** 2026-07-17
 **Owner:** trihd@inet.vn
-**Current phase:** v1 planning (see [plan](../plans/260716-1112-onemcp-department-mcp-server/plan.md))
+**Current phase:** v1 pilot-ready — deployed on staging VPS, all P1-P6.1 shipped, awaiting user pilot.
+
+## v1 completion summary
+
+Kỹ thuật pilot v1 hoàn thành trong 1 ngày cook (12 sessions) — trước timeline dự kiến 10 tuần vì reuse pattern + scope tight.
+
+| Phase | Status | Session | Key deliverable |
+|---|---|---|---|
+| P1 Access & RBAC | ✅ | 1-2 | IP CIDR + trust header + RBAC + audit |
+| P2 Skills Registry | ✅ | 3-5 | Git-sync + manifest schema + MCP load_skill |
+| P3 Artifacts Core | ✅ | 6 | CRUD + review workflow + versioning |
+| P3.2 Attachments + Update | ✅ | 8 | MinIO proxy + optimistic lock |
+| P4.1 Search FTS | ✅ | 9 | unaccent + trigram + ts_rank_cd |
+| P5 Templates | ✅ | 10 | Zod schemas + body compile + MCP tool |
+| P5.2 Client Hook | ✅ | 11 | Python PreCompact reminder + seed skills |
+| P6.1 Metrics + Backup | ✅ | 12 | Prometheus + deep /ready + pg_dump cron |
+| P6.2 Final polish | ✅ | 13 | Counters wire + markdown render + docs |
+
+**Remaining (post-pilot)**:
+- P4.2 semantic embeddings (needs embedding infra decision)
+- Auth v2 SSO (separate plan)
+- P6.2 tail: log rotation, off-site backup automation, alerting deploy
 
 ---
 
