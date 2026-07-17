@@ -5,6 +5,7 @@ import { AuthedRequest } from '../common/user-request';
 import { UsersService } from '../users/users.service';
 import { RoleAssignerService } from './role-assigner.service';
 import { AdminCidrGuard } from './admin-cidr.guard';
+import { normalizeIp } from './cidr-parser';
 
 // V1 identity: đọc X-Onemcp-User header → upsert user → attach req.user.
 // Validate:
@@ -55,8 +56,12 @@ export class TrustUserMiddleware implements NestMiddleware {
     const isPrivileged = assigned.some((r) => r === 'super-admin' || r === 'maintainer' || r === 'dept-admin');
 
     // C1/C3 mitigation: role privileged phải từ ADMIN_ALLOW_CIDR.
-    if (isPrivileged && !this.adminGuard.isAdminIp(req.clientIp)) {
-      this.log.warn(`impersonation_attempt username=${username} ip=${req.clientIp}`);
+    // Middleware chạy TRƯỚC IpCidrGuard nên req.clientIp có thể chưa set —
+    // dùng req.ip (đã trust proxy). Set luôn req.clientIp để guard reuse.
+    const clientIp = normalizeIp(req.ip ?? req.socket.remoteAddress ?? '');
+    req.clientIp = clientIp;
+    if (isPrivileged && !this.adminGuard.isAdminIp(clientIp)) {
+      this.log.warn(`impersonation_attempt username=${username} ip=${clientIp}`);
       throw new ForbiddenException('Privileged role claim from non-admin IP');
     }
 
