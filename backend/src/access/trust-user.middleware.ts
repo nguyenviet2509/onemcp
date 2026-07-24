@@ -41,6 +41,12 @@ export class TrustUserMiddleware implements NestMiddleware {
       return;
     }
 
+    // If ApiKeyMiddleware already authenticated this request, skip trust-header processing.
+    if (req.user) {
+      next();
+      return;
+    }
+
     const raw = req.headers[this.headerName];
     const claim = Array.isArray(raw) ? raw[0] : raw;
     if (!claim) {

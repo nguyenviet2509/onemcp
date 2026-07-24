@@ -32,4 +32,33 @@ export class UsersService {
   findById(id: number) {
     return this.repo.findOne({ where: { id } });
   }
+
+  // Idempotent upsert by email — used by bridge auto-provision endpoint.
+  // Derives username from email local-part: lowercase, strip non-[a-z0-9._-].
+  // Validates @inet.vn domain at service boundary (caller also validates, defence in depth).
+  async ensureByEmail(email: string): Promise<{ username: string; role: string; created: boolean }> {
+    const lower = email.trim().toLowerCase();
+    if (!lower.endsWith('@inet.vn')) {
+      throw new Error('ensureByEmail: only @inet.vn emails accepted');
+    }
+    const localPart = lower.split('@')[0];
+    const username = localPart.replace(/[^a-z0-9._-]/g, '');
+    if (!username) {
+      throw new Error(`ensureByEmail: derived username empty for email=${email}`);
+    }
+
+    const existing = await this.repo.findOne({ where: { username } });
+    if (existing) {
+      return { username: existing.username, role: 'contributor', created: false };
+    }
+
+    const created = this.repo.create({
+      username,
+      email: lower,
+      departmentId: this.depts.getDefaultId(),
+      status: 'active',
+    });
+    await this.repo.save(created);
+    return { username, role: 'contributor', created: true };
+  }
 }

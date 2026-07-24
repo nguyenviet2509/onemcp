@@ -7,6 +7,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AccessModule } from './access/access.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ArtifactsModule } from './artifacts/artifacts.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { AuditModule } from './audit/audit.module';
@@ -17,7 +18,9 @@ import { McpModule } from './mcp/mcp.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { SearchModule } from './search/search.module';
 import { SkillsModule } from './skills/skills.module';
+import { SpacesModule } from './spaces/spaces.module';
 import { StorageModule } from './storage/storage.module';
+import { TemplatesModule } from './templates/templates.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
@@ -60,6 +63,9 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     MetricsModule,
     StorageModule,
     SkillsModule,
+    SpacesModule,
+    TemplatesModule,
+    ApiKeysModule,
     ArtifactsModule,
     AttachmentsModule,
     SearchModule,
