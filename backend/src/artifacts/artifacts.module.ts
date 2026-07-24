@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EmbeddingsModule } from '../embeddings/embeddings.module';
 import { ArtifactsController } from './artifacts.controller';
 import { ArtifactsService } from './artifacts.service';
 import { Artifact } from './entities/artifact.entity';
@@ -10,7 +11,7 @@ import { TemplateValidator } from './templates/template-validator';
 import { TemplatesController } from './templates/templates.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Artifact, ArtifactVersion, RunbookLoadEvent])],
+  imports: [TypeOrmModule.forFeature([Artifact, ArtifactVersion, RunbookLoadEvent]), EmbeddingsModule],
   providers: [ArtifactsService, TemplateValidator, RunbookEventsRetentionService],
   controllers: [ArtifactsController, TemplatesController],
   exports: [ArtifactsService, TemplateValidator],

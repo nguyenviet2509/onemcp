@@ -15,7 +15,8 @@
     "typeorm": "typeorm-ts-node-commonjs -d src/db/data-source.ts",
     "migration:run": "pnpm typeorm migration:run",
     "migration:revert": "pnpm typeorm migration:revert",
-    "migration:generate": "pnpm typeorm migration:generate"
+    "migration:generate": "pnpm typeorm migration:generate",
+    "backfill:embeddings": "ts-node -r tsconfig-paths/register src/embeddings/backfill-embeddings.ts"
   },
   "dependencies": {
     "@nestjs/bullmq": "^10.2.0",

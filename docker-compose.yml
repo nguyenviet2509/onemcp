@@ -84,6 +84,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      tei:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       POSTGRES_URL: postgres://${POSTGRES_USER:-onemcp}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-onemcp}
@@ -119,6 +121,8 @@ services:
       ALERTMANAGER_DEDUP_TTL_MIN: ${ALERTMANAGER_DEDUP_TTL_MIN:-240}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-true}
+      # Phase 2B: TEI embedding service — internal docker network, not exposed to host.
+      EMBEDDING_URL: ${EMBEDDING_URL:-http://tei:80}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:

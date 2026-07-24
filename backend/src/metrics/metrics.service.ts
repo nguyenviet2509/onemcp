@@ -14,6 +14,11 @@ export class MetricsService implements OnModuleInit {
   readonly skillLoads: Counter<string>;
   readonly mcpCalls: Counter<string>;
   readonly runbookLoads: Counter<string>;
+  // Phase 2B — Embedding pipeline counters.
+  readonly embedEnqueued: Counter<string>;
+  readonly embedCompleted: Counter<string>;
+  readonly embedFailed: Counter<string>;
+
   // Alertmanager webhook metrics (Phase 06).
   readonly alertsReceived: Counter<string>;
   readonly alertMatches: Counter<string>;
@@ -60,6 +65,24 @@ export class MetricsService implements OnModuleInit {
       registers: [this.registry],
     });
     // Phase 06 — Alertmanager webhook.
+    // Phase 2B — embedding pipeline.
+    this.embedEnqueued = new Counter({
+      name: 'onemcp_embed_enqueued_total',
+      help: 'Embed jobs enqueued on artifact publish',
+      registers: [this.registry],
+    });
+    this.embedCompleted = new Counter({
+      name: 'onemcp_embed_completed_total',
+      help: 'Embed jobs completed successfully',
+      registers: [this.registry],
+    });
+    this.embedFailed = new Counter({
+      name: 'onemcp_embed_failed_total',
+      help: 'Embed jobs failed after all retries',
+      labelNames: ['reason'],
+      registers: [this.registry],
+    });
+
     this.alertsReceived = new Counter({
       name: 'onemcp_alerts_received_total',
       help: 'Alertmanager webhook alerts received (flag=enabled|disabled)',

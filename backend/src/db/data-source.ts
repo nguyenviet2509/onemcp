@@ -13,13 +13,14 @@ import { ArtifactVersion } from '../artifacts/entities/artifact-version.entity';
 import { RunbookLoadEvent } from '../artifacts/entities/runbook-load-event.entity';
 import { Attachment } from '../attachments/entities/attachment.entity';
 import { AlertmanagerDedup } from '../webhooks/entities/alertmanager-dedup.entity';
+import { Embedding } from '../embeddings/embedding.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.POSTGRES_URL,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup],
+  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsRun: false,
 };

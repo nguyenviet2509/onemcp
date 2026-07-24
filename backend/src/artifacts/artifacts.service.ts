@@ -5,6 +5,8 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
 import { MetricsService } from '../metrics/metrics.service';
+import { buildArtifactEmbedText } from '../embeddings/artifact-embed-text.util';
+import { EmbedArtifactQueue } from '../embeddings/embed-artifact.queue';
 import { ArtifactType } from './artifact-type.enum';
 import { ReviewArtifactDto, SubmitArtifactDto, UpdateArtifactDto } from './dto/submit-artifact.dto';
 import { Artifact } from './entities/artifact.entity';
@@ -53,6 +55,7 @@ export class ArtifactsService {
     private readonly templates: TemplateValidator,
     private readonly metrics: MetricsService,
     private readonly config: ConfigService,
+    private readonly embedQueue: EmbedArtifactQueue,
   ) {}
 
   // Nếu client gửi structured → validate + compile body. Ngược lại chấp nhận body-only
@@ -297,6 +300,14 @@ export class ArtifactsService {
         await vRepo.save(pending);
         artifact.currentVersionId = pending.id;
         artifact.status = 'published';
+        // Phase 2B: enqueue embedding asynchronously — fire-and-forget, non-blocking.
+        // If queue is unavailable, log and continue (don't fail the review).
+        const embedText = buildArtifactEmbedText(artifact, pending);
+        this.embedQueue.enqueue({ artifactVersionId: pending.id, text: embedText }).then(() => {
+          this.metrics.embedEnqueued.inc();
+        }).catch((err: Error) => {
+          this.log.warn(`embed enqueue failed versionId=${pending.id}: ${err.message}`);
+        });
       } else {
         pending.status = 'rejected';
         await vRepo.save(pending);
