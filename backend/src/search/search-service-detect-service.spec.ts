@@ -13,7 +13,10 @@ describe('SearchService.detectService', () => {
   beforeEach(() => {
     // Reset env để test không bị ảnh hưởng lẫn nhau.
     delete process.env.ONEMCP_KNOWN_SERVICES;
-    service = new SearchService(mockDs);
+    // Phase 2C: SearchService constructor now takes (ds, embeddingProvider?, metricsService?).
+    // detectService() doesn't use either optional dep; pass nulls for unit test.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    service = new SearchService(mockDs, null as any, null as any);
   });
 
   describe('single service match', () => {

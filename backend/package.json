@@ -31,6 +31,8 @@
     "bcrypt": "^6.0.0",
     "bullmq": "^5.12.0",
     "cidr-matcher": "^2.1.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "cron": "^3.1.7",
     "express": "^4.19.2",
     "ioredis": "^5.4.1",

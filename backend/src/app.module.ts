@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AccessModule } from './access/access.module';
 import { EmbeddingsModule } from './embeddings/embeddings.module';
+import { SavedSearchesModule } from './saved-searches/saved-searches.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ArtifactsModule } from './artifacts/artifacts.module';
 import { AttachmentsModule } from './attachments/attachments.module';
@@ -71,6 +72,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AttachmentsModule,
     EmbeddingsModule,
     SearchModule,
+    SavedSearchesModule,
     WebhooksModule,
     McpModule,
   ],

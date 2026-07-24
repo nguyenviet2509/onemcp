@@ -1,60 +1,90 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { EmbeddingProvider } from '../embeddings/providers/embedding-provider.interface';
+import { EMBEDDING_PROVIDER } from '../embeddings/providers/embedding-provider.token';
+import { MetricsService } from '../metrics/metrics.service';
 import { RequestUser } from '../common/user-request';
+import { FtsResult, MergedResult, VectorResult, rrfMerge } from './rrf-merge';
 
 export type SearchEntityKind = 'skill' | 'artifact';
+export type SearchMode = 'hybrid' | 'fts' | 'semantic';
 
 export interface SearchHit {
   kind: SearchEntityKind;
   id: string;
-  name: string; // skill.name hoặc artifact.title
+  name: string;
   slug: string | null;
   snippet: string;
   tags: string[];
   rank: number;
-  meta: Record<string, unknown>; // type, status, versionNo, ...
+  meta: Record<string, unknown>;
 }
 
 export interface SearchParams {
   q: string;
   kind?: SearchEntityKind | 'all';
   limit?: number;
-  // Optional: service hint cho boost ranking. Nếu không pass, server auto-detect từ KNOWN_SERVICES.
   service?: string | null;
-  // V2/RT-2: bypass department filter for cross-dept search.
-  // ONLY honoured when caller's user.roles contains 'system'.
-  // Non-system callers passing this param have it silently ignored (not 403 — guard is caller-side).
   bypassDeptFilter?: boolean;
 }
 
-// Default known services khi env không set.
+// Phase 2C: extended input for hybrid artifact search.
+export interface HybridSearchInput {
+  query: string;
+  mode?: SearchMode; // default 'hybrid'; overridden to 'fts' when SEARCH_MODE=fts-only
+  spaceId?: string;
+  templateKey?: string;
+  tags?: string[];
+  departmentId?: number; // caller-supplied; defaults to req.user.departmentId
+  limit?: number;
+}
+
+// Result shape for hybrid search (artifact-only, richer than SearchHit).
+export interface HybridSearchHit {
+  artifactId: string;
+  versionId: string;
+  title: string;
+  slug: string;
+  templateKey: string | null;
+  spaceId: string | null;
+  tags: string[];
+  snippet: string;
+  source: 'hybrid' | 'fts' | 'semantic';
+  ftsRank?: number;
+  vectorRank?: number;
+  rrfScore: number;
+}
+
 const DEFAULT_KNOWN_SERVICES = ['postgres', 'redis', 'nginx', 'minio', 'backend', 'portal', 'gitlab'];
 
-// Hybrid keyword search: FTS trên body (tsvector) + trigram fuzzy trên title/name.
-// Sort by ts_rank_cd desc, tie-break by trigram similarity.
-// Service boost: runbook.service match +2.0, tag match +1.0, skill tag match +0.5.
-// Semantic (pgvector) defer P4 Part 2.
 @Injectable()
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
   private readonly knownServices: string[];
+  // Kill-switch: if SEARCH_MODE=fts-only, vector branch is never used.
+  private readonly forceFtsOnly: boolean;
 
-  constructor(@InjectDataSource() private readonly ds: DataSource) {
-    // Load ONEMCP_KNOWN_SERVICES từ env (Wave A đã thêm). Lowercase + trim.
+  constructor(
+    @InjectDataSource() private readonly ds: DataSource,
+    @Optional() @Inject(EMBEDDING_PROVIDER) private readonly embeddingProvider: EmbeddingProvider | null,
+    @Optional() private readonly metrics: MetricsService | null,
+  ) {
     const raw = process.env.ONEMCP_KNOWN_SERVICES ?? '';
     this.knownServices = raw.trim()
       ? raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
       : DEFAULT_KNOWN_SERVICES;
+
+    this.forceFtsOnly = (process.env.SEARCH_MODE ?? '').toLowerCase() === 'fts-only';
+    if (this.forceFtsOnly) {
+      this.logger.warn('SEARCH_MODE=fts-only — vector branch disabled (kill-switch active)');
+    }
   }
 
-  // Expose danh sách known services để controller validate explicit param (RT-3).
   getKnownServices(): readonly string[] {
     return this.knownServices;
   }
 
-  // Auto-detect service từ query text dùng word-boundary regex (RT-10).
-  // Trả về null nếu: không match, hoặc match nhiều hơn 1 (ambiguous).
   detectService(q: string, knownServices?: string[]): string | null {
     const services = knownServices ?? this.knownServices;
     const matches = services.filter((s) => new RegExp(`\\b${s}\\b`, 'i').test(q));
@@ -62,22 +92,19 @@ export class SearchService {
     if (matches.length > 1 && process.env.SEARCH_DEBUG === '1') {
       this.logger.debug(`Service ambiguous: ${matches.join(',')} in query "${q}"`);
     }
-    return null; // ambiguous hoặc không match — không boost
+    return null;
   }
 
+  // Original FTS-based search (skills + artifacts). Preserved for backward compat.
   async search(user: RequestUser, params: SearchParams): Promise<SearchHit[]> {
     const q = params.q.trim();
     if (q.length < 2) return [];
     const kind = params.kind ?? 'all';
     const limit = Math.min(params.limit ?? 20, 50);
 
-    // V2/RT-2: bypassDeptFilter only honoured when caller has 'system' role.
-    // Checking roles array — RoleCode union doesn't include 'system' but we extend via const.
     const isSystemCaller = (user.roles as readonly string[]).includes('system');
     const bypassDept = isSystemCaller && params.bypassDeptFilter === true;
 
-    // Resolve service hint: explicit param → auto-detect → null.
-    // RT-3: explicit service đã được validate ở controller layer trước khi vào đây.
     let service: string | null = null;
     if (params.service != null && params.service !== '') {
       service = params.service.toLowerCase();
@@ -99,12 +126,252 @@ export class SearchService {
     return results.sort((a, b) => b.rank - a.rank).slice(0, limit);
   }
 
-  // Artifact: chỉ search published cho non-reviewer + non-owner (giữ ACL đơn giản).
-  // Search trên latest active version.body. Fallback fuzzy title match.
-  // Service boost (RT-10, V1):
-  //   +2.0 nếu type='runbook' AND a.service = $service (column tạo ở Phase 02 migration).
-  //   +1.0 nếu tag (case-insensitive) khớp service — dùng EXISTS + lower() thay @> (RT-10).
-  // Khi $service IS NULL, tất cả CASE bonus = 0 → ranking base không đổi.
+  // Phase 2C: hybrid search — FTS + vector + RRF merge.
+  // Artifacts only (semantic search on artifact body vectors).
+  async hybrid(user: RequestUser, input: HybridSearchInput): Promise<HybridSearchHit[]> {
+    const query = input.query.trim();
+    if (query.length < 2) return [];
+
+    const limit = Math.min(input.limit ?? 20, 100);
+    const deptId = input.departmentId ?? user.departmentId;
+
+    // Kill-switch or caller requests fts-only
+    const effectiveMode: SearchMode =
+      this.forceFtsOnly ? 'fts' : (input.mode ?? 'hybrid');
+
+    this.metrics?.searchModeUsed?.inc({ mode: effectiveMode });
+
+    // FTS branch — always runs (unless mode='semantic' which still needs FTS for snippet)
+    const ftsResults: FtsResult[] =
+      effectiveMode !== 'semantic'
+        ? await this.runFtsQuery(query, deptId, input, limit)
+        : [];
+
+    // Vector branch — only if mode != 'fts' and kill-switch off
+    let vectorResults: VectorResult[] = [];
+    if (effectiveMode !== 'fts' && !this.forceFtsOnly) {
+      vectorResults = await this.runVectorQuery(query, deptId, input, limit);
+    }
+
+    // If semantic-only, treat vector results as primary
+    if (effectiveMode === 'semantic') {
+      return this.buildHitsFromVector(vectorResults, query, limit);
+    }
+
+    // RRF merge — works for 'hybrid' (both lists) and 'fts' (vector list empty)
+    const merged = rrfMerge(ftsResults, vectorResults, limit);
+    return this.hydrateHits(merged, effectiveMode);
+  }
+
+  // Run FTS query on artifact_versions.body_search. Returns ordered by ts_rank desc.
+  private async runFtsQuery(
+    query: string,
+    deptId: number,
+    input: HybridSearchInput,
+    limit: number,
+  ): Promise<FtsResult[]> {
+    const params: unknown[] = [deptId, query, limit];
+    const filterClauses = this.buildArtifactFilterClauses(input, params);
+
+    const rows = await this.ds.query<
+      Array<{ artifact_id: string; version_id: string; fts_rank: number; snippet: string }>
+    >(
+      `SELECT a.id AS artifact_id, av.id AS version_id,
+              ts_rank_cd(av.body_search, plainto_tsquery('simple', immutable_unaccent($2))) AS fts_rank,
+              ts_headline(
+                'simple',
+                immutable_unaccent(COALESCE(av.body, '')),
+                plainto_tsquery('simple', immutable_unaccent($2)),
+                'MaxWords=25, MinWords=10, ShortWord=3'
+              ) AS snippet
+       FROM artifacts a
+       JOIN artifact_versions av ON av.id = a.current_version_id
+       WHERE a.department_id = $1
+         AND a.status = 'published'
+         AND av.body_search @@ plainto_tsquery('simple', immutable_unaccent($2))
+         ${filterClauses}
+       ORDER BY fts_rank DESC
+       LIMIT $3`,
+      params,
+    );
+
+    return rows.map((r) => ({
+      artifactId: r.artifact_id,
+      versionId: r.version_id,
+      ftsRank: Number(r.fts_rank),
+      snippet: r.snippet ?? '',
+    }));
+  }
+
+  // Run vector query using cosine distance. Returns ordered by distance asc.
+  // Falls back to empty array on provider error (TEI down, etc.)
+  private async runVectorQuery(
+    query: string,
+    deptId: number,
+    input: HybridSearchInput,
+    limit: number,
+  ): Promise<VectorResult[]> {
+    if (!this.embeddingProvider) {
+      this.logger.warn('No embedding provider injected — skipping vector branch');
+      return [];
+    }
+
+    let queryVec: number[];
+    try {
+      queryVec = await this.embeddingProvider.embed(query);
+    } catch (err) {
+      this.logger.warn(`Embedding provider error — falling back to FTS only: ${(err as Error).message}`);
+      return [];
+    }
+
+    const vecLiteral = `[${queryVec.join(',')}]`;
+    const params: unknown[] = [deptId, vecLiteral, limit];
+    const filterClauses = this.buildArtifactFilterClauses(input, params);
+
+    try {
+      const rows = await this.ds.query<
+        Array<{ artifact_id: string; version_id: string; distance: number }>
+      >(
+        `SELECT a.id AS artifact_id, av.id AS version_id,
+                (e.vector::vector <=> $2::vector) AS distance
+         FROM embeddings e
+         JOIN artifact_versions av ON av.id = e.artifact_version_id
+         JOIN artifacts a ON a.id = av.artifact_id
+         WHERE a.department_id = $1
+           AND a.status = 'published'
+           AND a.current_version_id = av.id
+           ${filterClauses}
+         ORDER BY distance ASC
+         LIMIT $3`,
+        params,
+      );
+
+      return rows.map((r, idx) => ({
+        artifactId: r.artifact_id,
+        versionId: r.version_id,
+        distance: Number(r.distance),
+        vectorRank: idx + 1,
+      }));
+    } catch (err) {
+      this.logger.warn(`Vector query failed — falling back to FTS only: ${(err as Error).message}`);
+      return [];
+    }
+  }
+
+  // Build filter WHERE clauses from optional input fields.
+  // Appends bound params to the params array (mutates in place) and returns clause string.
+  private buildArtifactFilterClauses(input: HybridSearchInput, params: unknown[]): string {
+    const clauses: string[] = [];
+
+    if (input.spaceId) {
+      params.push(input.spaceId);
+      clauses.push(`AND a.space_id = $${params.length}`);
+    }
+    if (input.templateKey) {
+      params.push(input.templateKey);
+      clauses.push(`AND a.template_key = $${params.length}`);
+    }
+    if (input.tags && input.tags.length > 0) {
+      params.push(input.tags);
+      clauses.push(`AND a.tags && $${params.length}::text[]`);
+    }
+
+    return clauses.join(' ');
+  }
+
+  // Build hits from vector-only results (semantic mode).
+  // No FTS snippet available — use substring of body as fallback snippet.
+  private async buildHitsFromVector(
+    vectorResults: VectorResult[],
+    _query: string,
+    limit: number,
+  ): Promise<HybridSearchHit[]> {
+    if (vectorResults.length === 0) return [];
+
+    const versionIds = vectorResults.slice(0, limit).map((r) => r.versionId);
+    const rows = await this.ds.query<
+      Array<{ artifact_id: string; version_id: string; title: string; slug: string; template_key: string | null; space_id: string | null; tags: string[]; body: string }>
+    >(
+      `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
+              a.template_key, a.space_id, a.tags, LEFT(av.body, 300) AS body
+       FROM artifact_versions av
+       JOIN artifacts a ON a.id = av.artifact_id
+       WHERE av.id = ANY($1::bigint[])`,
+      [versionIds],
+    );
+
+    const rowMap = new Map(rows.map((r) => [r.version_id, r]));
+
+    return vectorResults
+      .slice(0, limit)
+      .flatMap((v, idx) => {
+        const r = rowMap.get(v.versionId);
+        if (!r) return [];
+        const hit: HybridSearchHit = {
+          artifactId: v.artifactId,
+          versionId: v.versionId,
+          title: r.title,
+          slug: r.slug,
+          templateKey: r.template_key,
+          spaceId: r.space_id,
+          tags: r.tags,
+          snippet: r.body?.slice(0, 200) ?? '',
+          source: 'semantic',
+          vectorRank: idx + 1,
+          rrfScore: 1 / (60 + idx + 1),
+        };
+        return [hit];
+      });
+  }
+
+  // Hydrate merged RRF results with artifact metadata.
+  private async hydrateHits(merged: MergedResult[], mode: SearchMode): Promise<HybridSearchHit[]> {
+    if (merged.length === 0) return [];
+
+    const versionIds = merged.map((m) => m.versionId);
+    const rows = await this.ds.query<
+      Array<{ artifact_id: string; version_id: string; title: string; slug: string; template_key: string | null; space_id: string | null; tags: string[] }>
+    >(
+      `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
+              a.template_key, a.space_id, a.tags
+       FROM artifact_versions av
+       JOIN artifacts a ON a.id = av.artifact_id
+       WHERE av.id = ANY($1::bigint[])`,
+      [versionIds],
+    );
+
+    const rowMap = new Map(rows.map((r) => [r.version_id, r]));
+
+    return merged
+      .map((m) => {
+        const r = rowMap.get(m.versionId);
+        if (!r) return null;
+
+        const source: HybridSearchHit['source'] =
+          m.ftsRank !== undefined && m.vectorRank !== undefined
+            ? 'hybrid'
+            : m.vectorRank !== undefined
+              ? 'semantic'
+              : 'fts';
+
+        return {
+          artifactId: m.artifactId,
+          versionId: m.versionId,
+          title: r.title,
+          slug: r.slug,
+          templateKey: r.template_key,
+          spaceId: r.space_id,
+          tags: r.tags,
+          snippet: m.snippet,
+          source: mode === 'fts' ? 'fts' : source,
+          ftsRank: m.ftsRank,
+          vectorRank: m.vectorRank,
+          rrfScore: m.rrfScore,
+        } as HybridSearchHit;
+      })
+      .filter((h): h is HybridSearchHit => h !== null);
+  }
+
   private async searchArtifacts(
     user: RequestUser,
     q: string,
@@ -112,8 +379,6 @@ export class SearchService {
     service: string | null,
     bypassDept = false,
   ): Promise<SearchHit[]> {
-    // V2/RT-2: system callers with bypassDeptFilter skip the department_id WHERE clause.
-    // This allows cross-dept runbook discovery for Alertmanager alerts.
     const deptClause = bypassDept ? 'TRUE' : 'a.department_id = $1';
 
     const rows = await this.ds.query<
@@ -172,8 +437,6 @@ export class SearchService {
     }));
   }
 
-  // Skill: name + description + body của current version.
-  // Service boost +0.5 nếu skill tag (case-insensitive) khớp service (RT-10).
   private async searchSkills(
     user: RequestUser,
     q: string,

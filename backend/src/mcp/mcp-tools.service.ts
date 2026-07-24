@@ -89,17 +89,39 @@ export class McpToolsService {
       {
         name: 'search',
         description:
-          'Search full-text (keyword + fuzzy) qua skills + artifacts trong dept. Dùng khi cần tìm KB đã có cho vấn đề tương tự (bug trace, previous fix, existing report). Truyền service để boost runbook + artifacts của service đó lên đầu.',
+          'Search full-text + semantic (hybrid) qua skills + artifacts trong dept. Dùng khi cần tìm KB đã có cho vấn đề tương tự (bug trace, previous fix, existing report). Truyền service để boost runbook + artifacts. Truyền mode=semantic để tìm theo nghĩa dù khác từ khoá.',
         inputSchema: {
           type: 'object',
           properties: {
             q: { type: 'string', description: 'Query text — bỏ dấu OK (unaccent auto)' },
-            kind: { type: 'string', enum: ['all', 'skill', 'artifact'], description: 'Filter loại' },
-            limit: { type: 'number', description: 'Max results (default 20, max 50)' },
+            kind: { type: 'string', enum: ['all', 'skill', 'artifact'], description: 'Filter loại (chỉ áp dụng khi không dùng mode)' },
+            limit: { type: 'number', description: 'Max results (default 20, max 100)' },
             service: {
               type: 'string',
-              description:
-                'Tên service để boost ranking (postgres/redis/nginx/minio/backend/portal/gitlab). Nếu không pass, server tự detect từ query text.',
+              description: 'Tên service để boost ranking. Nếu không pass, server tự detect từ query text.',
+            },
+            // Phase 2C: hybrid search optional params — backward compat (old callers omit these).
+            mode: {
+              type: 'string',
+              enum: ['hybrid', 'fts', 'semantic'],
+              description: 'Search mode: hybrid (default, FTS+vector+RRF), fts (keyword only), semantic (vector only).',
+            },
+            space: {
+              type: 'string',
+              description: 'Space slug để filter kết quả trong một space cụ thể.',
+            },
+            template_key: {
+              type: 'string',
+              description: 'Template key để filter theo loại artifact (kb, report, sop, ...).',
+            },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Filter artifacts có ít nhất một trong các tag này.',
+            },
+            dept: {
+              type: 'string',
+              description: 'Department slug (reserved — hiện tại search trong dept của caller).',
             },
           },
           required: ['q'],
@@ -190,9 +212,45 @@ export class McpToolsService {
   private async doSearch(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
     const q = String(args.q ?? '').trim();
     if (!q) return this.errorResult('q is required');
+
+    const modeRaw = typeof args.mode === 'string' ? args.mode.trim() : undefined;
+    const spaceSlug = typeof args.space === 'string' ? args.space.trim() : undefined;
+    const templateKey = typeof args.template_key === 'string' ? args.template_key.trim() : undefined;
+    const tagsArg = Array.isArray(args.tags)
+      ? (args.tags as unknown[]).filter((t) => typeof t === 'string').map((t) => String(t))
+      : undefined;
+
+    // Phase 2C: if any hybrid params present, route through hybrid(). Backward compat: old
+    // callers passing only q/kind/limit/service get the original FTS path.
+    const hasHybridParams = modeRaw || spaceSlug || templateKey || (tagsArg && tagsArg.length > 0);
+
+    if (hasHybridParams) {
+      const validModes = new Set(['hybrid', 'fts', 'semantic']);
+      const mode = modeRaw && validModes.has(modeRaw) ? (modeRaw as 'hybrid' | 'fts' | 'semantic') : 'hybrid';
+      const limit = typeof args.limit === 'number' ? Math.min(args.limit, 100) : undefined;
+
+      // Resolve space slug → id via SpacesService
+      let spaceId: string | undefined;
+      if (spaceSlug) {
+        try {
+          const space = await this.spacesService.findBySlug(spaceSlug);
+          spaceId = space.id;
+        } catch {
+          return this.errorResult(`space "${spaceSlug}" not found`);
+        }
+      }
+
+      const hits = await this.searchSvc.hybrid(req.user!, { query: q, mode, spaceId, templateKey, tags: tagsArg, limit });
+      if (hits.length === 0) return { content: [{ type: 'text', text: `No results for "${q}"` }] };
+      const lines = hits.map((h, i) =>
+        `${i + 1}. #${h.artifactId} — ${h.title}\n   snippet: ${h.snippet.slice(0, 200)}\n   tags: ${h.tags.join(', ') || '-'} · source=${h.source} · rrf=${h.rrfScore.toFixed(4)}`,
+      );
+      return { content: [{ type: 'text', text: `Found ${hits.length} result(s) for "${q}" [${mode}]:\n\n${lines.join('\n\n')}` }] };
+    }
+
+    // Legacy FTS path — unchanged for old callers (kind, service, limit params).
     const kind = (args.kind as SearchEntityKind | 'all' | undefined) ?? 'all';
     const limit = typeof args.limit === 'number' ? args.limit : undefined;
-    // Service hint: agent có thể pass explicit. SearchService tự validate vs KNOWN_SERVICES.
     const service = typeof args.service === 'string' && args.service.trim() ? args.service.trim() : null;
     const hits = await this.searchSvc.search(req.user!, { q, kind, limit, service });
     if (hits.length === 0) return { content: [{ type: 'text', text: `No results for "${q}"` }] };

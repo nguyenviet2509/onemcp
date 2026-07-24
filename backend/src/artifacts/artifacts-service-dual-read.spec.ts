@@ -21,6 +21,7 @@ import { ArtifactVersion } from './entities/artifact-version.entity';
 import { RunbookLoadEvent } from './entities/runbook-load-event.entity';
 import { TemplateValidator } from './templates/template-validator';
 import { MetricsService } from '../metrics/metrics.service';
+import { EmbedArtifactQueue } from '../embeddings/embed-artifact.queue';
 import { RequestUser } from '../common/user-request';
 
 // ---- mock helpers ----
@@ -131,6 +132,11 @@ describe('ArtifactsService — dual-read', () => {
         {
           provide: ConfigService,
           useValue: { get: jest.fn((key: string, def = '') => def) },
+        },
+        // Phase 2B: EmbedArtifactQueue injected into ArtifactsService — mock to avoid BullMQ dep.
+        {
+          provide: EmbedArtifactQueue,
+          useValue: { enqueue: jest.fn().mockResolvedValue('mock-job-id') },
         },
       ],
     }).compile();

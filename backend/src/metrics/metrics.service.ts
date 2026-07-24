@@ -18,6 +18,8 @@ export class MetricsService implements OnModuleInit {
   readonly embedEnqueued: Counter<string>;
   readonly embedCompleted: Counter<string>;
   readonly embedFailed: Counter<string>;
+  // Phase 2C — Hybrid search mode counter.
+  readonly searchModeUsed: Counter<string>;
 
   // Alertmanager webhook metrics (Phase 06).
   readonly alertsReceived: Counter<string>;
@@ -80,6 +82,12 @@ export class MetricsService implements OnModuleInit {
       name: 'onemcp_embed_failed_total',
       help: 'Embed jobs failed after all retries',
       labelNames: ['reason'],
+      registers: [this.registry],
+    });
+    this.searchModeUsed = new Counter({
+      name: 'onemcp_search_mode_used_total',
+      help: 'Hybrid search calls by effective mode (hybrid|fts|semantic)',
+      labelNames: ['mode'],
       registers: [this.registry],
     });
 
