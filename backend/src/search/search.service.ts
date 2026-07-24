@@ -6,6 +6,8 @@ import { EMBEDDING_PROVIDER } from '../embeddings/providers/embedding-provider.t
 import { MetricsService } from '../metrics/metrics.service';
 import { RequestUser } from '../common/user-request';
 import { FtsResult, MergedResult, VectorResult, rrfMerge } from './rrf-merge';
+import { buildArtifactFilterClauses } from './search-artifact-filter-builder';
+import { buildHitsFromVector, hydrateHits } from './search-artifact-hydrate';
 
 export type SearchEntityKind = 'skill' | 'artifact';
 export type SearchMode = 'hybrid' | 'fts' | 'semantic';
@@ -141,7 +143,7 @@ export class SearchService {
 
     this.metrics?.searchModeUsed?.inc({ mode: effectiveMode });
 
-    // FTS branch — always runs (unless mode='semantic' which still needs FTS for snippet)
+    // FTS branch — always runs (unless mode='semantic')
     const ftsResults: FtsResult[] =
       effectiveMode !== 'semantic'
         ? await this.runFtsQuery(query, deptId, input, limit)
@@ -153,14 +155,14 @@ export class SearchService {
       vectorResults = await this.runVectorQuery(query, deptId, input, limit);
     }
 
-    // If semantic-only, treat vector results as primary
+    // Semantic-only: treat vector results as primary, hydrate without RRF
     if (effectiveMode === 'semantic') {
-      return this.buildHitsFromVector(vectorResults, query, limit);
+      return buildHitsFromVector(this.ds, vectorResults, limit);
     }
 
     // RRF merge — works for 'hybrid' (both lists) and 'fts' (vector list empty)
     const merged = rrfMerge(ftsResults, vectorResults, limit);
-    return this.hydrateHits(merged, effectiveMode);
+    return hydrateHits(this.ds, merged, effectiveMode);
   }
 
   // Run FTS query on artifact_versions.body_search. Returns ordered by ts_rank desc.
@@ -171,7 +173,7 @@ export class SearchService {
     limit: number,
   ): Promise<FtsResult[]> {
     const params: unknown[] = [deptId, query, limit];
-    const filterClauses = this.buildArtifactFilterClauses(input, params);
+    const filterClauses = buildArtifactFilterClauses(input, params);
 
     const rows = await this.ds.query<
       Array<{ artifact_id: string; version_id: string; fts_rank: number; snippet: string }>
@@ -226,7 +228,7 @@ export class SearchService {
 
     const vecLiteral = `[${queryVec.join(',')}]`;
     const params: unknown[] = [deptId, vecLiteral, limit];
-    const filterClauses = this.buildArtifactFilterClauses(input, params);
+    const filterClauses = buildArtifactFilterClauses(input, params);
 
     try {
       const rows = await this.ds.query<
@@ -256,120 +258,6 @@ export class SearchService {
       this.logger.warn(`Vector query failed — falling back to FTS only: ${(err as Error).message}`);
       return [];
     }
-  }
-
-  // Build filter WHERE clauses from optional input fields.
-  // Appends bound params to the params array (mutates in place) and returns clause string.
-  private buildArtifactFilterClauses(input: HybridSearchInput, params: unknown[]): string {
-    const clauses: string[] = [];
-
-    if (input.spaceId) {
-      params.push(input.spaceId);
-      clauses.push(`AND a.space_id = $${params.length}`);
-    }
-    if (input.templateKey) {
-      params.push(input.templateKey);
-      clauses.push(`AND a.template_key = $${params.length}`);
-    }
-    if (input.tags && input.tags.length > 0) {
-      params.push(input.tags);
-      clauses.push(`AND a.tags && $${params.length}::text[]`);
-    }
-
-    return clauses.join(' ');
-  }
-
-  // Build hits from vector-only results (semantic mode).
-  // No FTS snippet available — use substring of body as fallback snippet.
-  private async buildHitsFromVector(
-    vectorResults: VectorResult[],
-    _query: string,
-    limit: number,
-  ): Promise<HybridSearchHit[]> {
-    if (vectorResults.length === 0) return [];
-
-    const versionIds = vectorResults.slice(0, limit).map((r) => r.versionId);
-    const rows = await this.ds.query<
-      Array<{ artifact_id: string; version_id: string; title: string; slug: string; template_key: string | null; space_id: string | null; tags: string[]; body: string }>
-    >(
-      `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
-              a.template_key, a.space_id, a.tags, LEFT(av.body, 300) AS body
-       FROM artifact_versions av
-       JOIN artifacts a ON a.id = av.artifact_id
-       WHERE av.id = ANY($1::bigint[])`,
-      [versionIds],
-    );
-
-    const rowMap = new Map(rows.map((r) => [r.version_id, r]));
-
-    return vectorResults
-      .slice(0, limit)
-      .flatMap((v, idx) => {
-        const r = rowMap.get(v.versionId);
-        if (!r) return [];
-        const hit: HybridSearchHit = {
-          artifactId: v.artifactId,
-          versionId: v.versionId,
-          title: r.title,
-          slug: r.slug,
-          templateKey: r.template_key,
-          spaceId: r.space_id,
-          tags: r.tags,
-          snippet: r.body?.slice(0, 200) ?? '',
-          source: 'semantic',
-          vectorRank: idx + 1,
-          rrfScore: 1 / (60 + idx + 1),
-        };
-        return [hit];
-      });
-  }
-
-  // Hydrate merged RRF results with artifact metadata.
-  private async hydrateHits(merged: MergedResult[], mode: SearchMode): Promise<HybridSearchHit[]> {
-    if (merged.length === 0) return [];
-
-    const versionIds = merged.map((m) => m.versionId);
-    const rows = await this.ds.query<
-      Array<{ artifact_id: string; version_id: string; title: string; slug: string; template_key: string | null; space_id: string | null; tags: string[] }>
-    >(
-      `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
-              a.template_key, a.space_id, a.tags
-       FROM artifact_versions av
-       JOIN artifacts a ON a.id = av.artifact_id
-       WHERE av.id = ANY($1::bigint[])`,
-      [versionIds],
-    );
-
-    const rowMap = new Map(rows.map((r) => [r.version_id, r]));
-
-    return merged
-      .map((m) => {
-        const r = rowMap.get(m.versionId);
-        if (!r) return null;
-
-        const source: HybridSearchHit['source'] =
-          m.ftsRank !== undefined && m.vectorRank !== undefined
-            ? 'hybrid'
-            : m.vectorRank !== undefined
-              ? 'semantic'
-              : 'fts';
-
-        return {
-          artifactId: m.artifactId,
-          versionId: m.versionId,
-          title: r.title,
-          slug: r.slug,
-          templateKey: r.template_key,
-          spaceId: r.space_id,
-          tags: r.tags,
-          snippet: m.snippet,
-          source: mode === 'fts' ? 'fts' : source,
-          ftsRank: m.ftsRank,
-          vectorRank: m.vectorRank,
-          rrfScore: m.rrfScore,
-        } as HybridSearchHit;
-      })
-      .filter((h): h is HybridSearchHit => h !== null);
   }
 
   private async searchArtifacts(

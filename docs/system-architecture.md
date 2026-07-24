@@ -114,6 +114,31 @@ Contributor edit ─▶ create v(n+1) (pending, optimistic lock check MAX(versio
 - Explicit `?service=` validated ngược lại `ONEMCP_KNOWN_SERVICES` allowlist; unknown values silently ignored (không 400).
 - Only published artifacts visible cross-user.
 
+### Phase 2 — Hybrid search (2026-07-24)
+
+Full details: [docs/search-hybrid.md](search-hybrid.md).
+
+- **Embedding pipeline:** TEI (`intfloat/multilingual-e5-small`, dim=384) → `embeddings` table (one row per `artifact_version_id`). Provider: `E5SmallLocalProvider`. Input cap 2000 chars.
+- **Hybrid endpoint:** `POST /api/search/hybrid` — FTS + vector + RRF merge (k=60). Modes: `hybrid` (default), `fts`, `semantic`.
+- **Kill switch:** `SEARCH_MODE=fts-only` disables vector branch globally; TEI errors fall back to FTS silently.
+- **Saved searches:** `saved_searches` table — persist query+filter combos, re-run via `POST /api/search/saved/:id/run`.
+- **MCP `search` tool** updated: passes `mode`/`space`/`template_key`/`tags` → hybrid path; old callers (q/kind/service only) unchanged.
+- **Vector index:** ivfflat lists=100 on `embeddings.vector`. Recall improves after `ANALYZE`.
+- **Source map additions:**
+
+```
+backend/src/
+├── search/
+│   ├── search-artifact-filter-builder.ts  # WHERE clause builder (FTS + vector shared)
+│   ├── search-artifact-hydrate.ts         # buildHitsFromVector + hydrateHits helpers
+│   └── rrf-merge.ts                       # RRF formula (pure, no DB)
+├── embeddings/                            # TEI client + EMBEDDING_PROVIDER token
+├── saved-searches/                        # SavedSearch entity + CRUD + run endpoint
+└── mcp/tools/
+    ├── search-tool-handler.ts             # MCP search tool (hybrid + legacy FTS routing)
+    └── submit-artifact-tool-handler.ts    # MCP submit_artifact tool
+```
+
 ## Ops Incident Response (P7 Pilot)
 
 **Feature flag:** `ONEMCP_ENABLE_OPS_TYPES=1` — gates new artifact types (`postmortem`, `runbook`) + Alertmanager webhook + MCP `load_runbook` tool.

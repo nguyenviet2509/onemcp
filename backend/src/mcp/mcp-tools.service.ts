@@ -3,17 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ARTIFACT_TYPES, ArtifactType } from '../artifacts/artifact-type.enum';
 import { ArtifactsService } from '../artifacts/artifacts.service';
-import { submitArtifactSchema } from '../artifacts/dto/submit-artifact.dto';
 import { sanitizeRunbookOutput } from '../artifacts/runbook-sanitize.util';
-import { getTemplate, listTemplates } from '../artifacts/templates/template-registry';
+import { getTemplate } from '../artifacts/templates/template-registry';
 import { AuthedRequest } from '../common/user-request';
-import { SearchEntityKind, SearchService } from '../search/search.service';
+import { SearchService } from '../search/search.service';
 import { Skill } from '../skills/entities/skill.entity';
 import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillsService } from '../skills/skills.service';
 import { SpacesService } from '../spaces/spaces.service';
 import { TemplatesService } from '../templates/templates.service';
 import { McpToolDefinition, McpToolResult } from './mcp-jsonrpc.types';
+import { handleSearchTool } from './tools/search-tool-handler';
+import { handleSubmitArtifactTool } from './tools/submit-artifact-tool-handler';
 
 // MCP tools exposed to AI agents. Dept-scoped (từ req.user).
 // Tool naming theo MCP convention: snake_case.
@@ -134,11 +135,8 @@ export class McpToolsService {
         inputSchema: {
           type: 'object',
           properties: {
-            // Deprecated: dùng template_key nếu có. Backward compat: vẫn hoạt động nếu chỉ pass type.
             type: { type: 'string', enum: [...ARTIFACT_TYPES], description: 'Deprecated — dùng template_key thay thế' },
-            // Phase 1C: preferred replacement for type.
             template_key: { type: 'string', description: 'Template key từ registry DB (vd: kb, report, sop)' },
-            // Phase 1C: space slug để group artifact.
             space: { type: 'string', description: 'Space slug artifact thuộc về (optional)' },
             title: { type: 'string' },
             slug: { type: 'string', description: 'URL-friendly, unique per dept' },
@@ -167,24 +165,15 @@ export class McpToolsService {
   async call(name: string, args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
     if (!req.user) return this.errorResult('unauthenticated — missing identity header');
     switch (name) {
-      case 'list_skills':
-        return this.listSkills(args, req);
-      case 'load_skill':
-        return this.loadSkill(args, req);
-      case 'list_artifacts':
-        return this.listArtifacts(args, req);
-      case 'get_artifact':
-        return this.getArtifact(args, req);
-      case 'submit_artifact':
-        return this.submitArtifact(args, req);
-      case 'search':
-        return this.doSearch(args, req);
-      case 'get_artifact_template':
-        return this.getTemplateTool(args);
-      case 'load_runbook':
-        return this.loadRunbookTool(args, req);
-      default:
-        return this.errorResult(`unknown tool: ${name}`);
+      case 'list_skills':         return this.listSkills(args, req);
+      case 'load_skill':          return this.loadSkill(args, req);
+      case 'list_artifacts':      return this.listArtifacts(args, req);
+      case 'get_artifact':        return this.getArtifact(args, req);
+      case 'get_artifact_template': return this.getTemplateTool(args);
+      case 'search':              return handleSearchTool(args, req, this.searchSvc, this.spacesService);
+      case 'submit_artifact':     return handleSubmitArtifactTool(args, req, this.artifacts, this.spacesService, this.templatesService);
+      case 'load_runbook':        return this.loadRunbookTool(args, req);
+      default:                    return this.errorResult(`unknown tool: ${name}`);
     }
   }
 
@@ -207,58 +196,6 @@ export class McpToolsService {
       'Usage: submit_artifact với structured = { "field_key": "markdown text", ... }',
     ];
     return { content: [{ type: 'text', text: lines.join('\n') }] };
-  }
-
-  private async doSearch(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
-    const q = String(args.q ?? '').trim();
-    if (!q) return this.errorResult('q is required');
-
-    const modeRaw = typeof args.mode === 'string' ? args.mode.trim() : undefined;
-    const spaceSlug = typeof args.space === 'string' ? args.space.trim() : undefined;
-    const templateKey = typeof args.template_key === 'string' ? args.template_key.trim() : undefined;
-    const tagsArg = Array.isArray(args.tags)
-      ? (args.tags as unknown[]).filter((t) => typeof t === 'string').map((t) => String(t))
-      : undefined;
-
-    // Phase 2C: if any hybrid params present, route through hybrid(). Backward compat: old
-    // callers passing only q/kind/limit/service get the original FTS path.
-    const hasHybridParams = modeRaw || spaceSlug || templateKey || (tagsArg && tagsArg.length > 0);
-
-    if (hasHybridParams) {
-      const validModes = new Set(['hybrid', 'fts', 'semantic']);
-      const mode = modeRaw && validModes.has(modeRaw) ? (modeRaw as 'hybrid' | 'fts' | 'semantic') : 'hybrid';
-      const limit = typeof args.limit === 'number' ? Math.min(args.limit, 100) : undefined;
-
-      // Resolve space slug → id via SpacesService
-      let spaceId: string | undefined;
-      if (spaceSlug) {
-        try {
-          const space = await this.spacesService.findBySlug(spaceSlug);
-          spaceId = space.id;
-        } catch {
-          return this.errorResult(`space "${spaceSlug}" not found`);
-        }
-      }
-
-      const hits = await this.searchSvc.hybrid(req.user!, { query: q, mode, spaceId, templateKey, tags: tagsArg, limit });
-      if (hits.length === 0) return { content: [{ type: 'text', text: `No results for "${q}"` }] };
-      const lines = hits.map((h, i) =>
-        `${i + 1}. #${h.artifactId} — ${h.title}\n   snippet: ${h.snippet.slice(0, 200)}\n   tags: ${h.tags.join(', ') || '-'} · source=${h.source} · rrf=${h.rrfScore.toFixed(4)}`,
-      );
-      return { content: [{ type: 'text', text: `Found ${hits.length} result(s) for "${q}" [${mode}]:\n\n${lines.join('\n\n')}` }] };
-    }
-
-    // Legacy FTS path — unchanged for old callers (kind, service, limit params).
-    const kind = (args.kind as SearchEntityKind | 'all' | undefined) ?? 'all';
-    const limit = typeof args.limit === 'number' ? args.limit : undefined;
-    const service = typeof args.service === 'string' && args.service.trim() ? args.service.trim() : null;
-    const hits = await this.searchSvc.search(req.user!, { q, kind, limit, service });
-    if (hits.length === 0) return { content: [{ type: 'text', text: `No results for "${q}"` }] };
-    const lines = hits.map((h, i) => {
-      const idPart = h.kind === 'skill' ? h.name : `#${h.id}`;
-      return `${i + 1}. [${h.kind}] ${idPart} — ${h.name}\n   snippet: ${h.snippet.slice(0, 200)}\n   tags: ${h.tags.join(', ') || '-'} · rank=${h.rank.toFixed(3)}`;
-    });
-    return { content: [{ type: 'text', text: `Found ${hits.length} result(s) for "${q}":\n\n${lines.join('\n\n')}` }] };
   }
 
   private async listSkills(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
@@ -325,71 +262,6 @@ export class McpToolsService {
     }
   }
 
-  private async submitArtifact(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
-    const parsed = submitArtifactSchema.safeParse(args);
-    if (!parsed.success) {
-      return this.errorResult(
-        `invalid payload: ${parsed.error.errors.map((e) => `${e.path.join('.')}:${e.message}`).join(', ')}`,
-      );
-    }
-
-    const dto = parsed.data;
-
-    // Phase 1C: validate template_key exists + active if provided.
-    if (dto.template_key) {
-      try {
-        const tpl = await this.templatesService.getByKey(dto.template_key);
-        if (!tpl.active) {
-          return this.errorResult(`template_key "${dto.template_key}" không còn active`);
-        }
-      } catch {
-        return this.errorResult(`template_key "${dto.template_key}" không tồn tại`);
-      }
-    }
-
-    // Phase 1C: validate space slug + resolve space_id if provided.
-    let resolvedSpaceId: string | undefined;
-    if (dto.space) {
-      try {
-        const space = await this.spacesService.findBySlug(dto.space);
-        // Access check: user dept must match space.department_id OR space is cross_dept/global.
-        const userDeptId = String(req.user!.departmentId);
-        const spaceDeptId = space.departmentId ? String(space.departmentId) : null;
-        const hasAccess =
-          spaceDeptId === null ||           // global space
-          space.visibility === 'cross_dept' || // open to all depts
-          spaceDeptId === userDeptId;        // user's own dept
-        if (!hasAccess) {
-          return this.errorResult(`Không có quyền submit vào space "${dto.space}" — dept mismatch`);
-        }
-        resolvedSpaceId = space.id;
-      } catch {
-        return this.errorResult(`space "${dto.space}" không tồn tại`);
-      }
-    }
-
-    try {
-      // Merge resolved space_id into dto before passing to service.
-      const { artifact, version } = await this.artifacts.create(req.user!, {
-        ...dto,
-        space_id: resolvedSpaceId,
-      });
-      this.log.log(
-        `submit_artifact: artifact #${artifact.id} template_key=${dto.template_key ?? '-'} space=${dto.space ?? '-'} user=${req.user!.username}`,
-      );
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Submitted artifact #${artifact.id} "${artifact.title}" (v${version.versionNo}, status=pending). Maintainer sẽ review.`,
-          },
-        ],
-      };
-    } catch (e) {
-      return this.errorResult((e as Error).message);
-    }
-  }
-
   // load_runbook — dedicated tool cho agent prioritize khi paged (RT-11: sanitize output).
   private async loadRunbookTool(args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
     const name = typeof args.name === 'string' ? args.name.trim() : undefined;
@@ -400,11 +272,7 @@ export class McpToolsService {
     }
 
     try {
-      const result = await this.artifacts.loadRunbook(
-        req.user!,
-        { name, service },
-        req.clientIp,
-      );
+      const result = await this.artifacts.loadRunbook(req.user!, { name, service }, req.clientIp);
 
       if (result.kind === 'not_found') {
         const what = name ? `name="${name}"` : `service="${service}"`;

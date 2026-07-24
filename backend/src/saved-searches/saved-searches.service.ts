@@ -6,6 +6,12 @@ import { HybridSearchHit, SearchService } from '../search/search.service';
 import { SaveSearchDto } from './dto/save-search.dto';
 import { SavedSearch } from './saved-search.entity';
 
+// TypeORM maps PG bigint columns to JS string at runtime despite TypeScript typing them as number.
+// Normalize both sides to string before comparing to avoid false mismatches on large IDs.
+function isSameUserId(a: number | string, b: number | string): boolean {
+  return String(a) === String(b);
+}
+
 @Injectable()
 export class SavedSearchesService {
   constructor(
@@ -34,7 +40,8 @@ export class SavedSearchesService {
   async delete(user: RequestUser, id: string): Promise<void> {
     const saved = await this.repo.findOne({ where: { id } });
     if (!saved) throw new NotFoundException(`Saved search #${id} not found`);
-    if (saved.userId !== user.id) throw new ForbiddenException('Not your saved search');
+    // Compare as strings: TypeORM maps PG bigint → JS string; user.id may be number or string.
+    if (!isSameUserId(saved.userId, user.id)) throw new ForbiddenException('Not your saved search');
     await this.repo.remove(saved);
   }
 
@@ -42,7 +49,7 @@ export class SavedSearchesService {
   async run(user: RequestUser, id: string): Promise<HybridSearchHit[]> {
     const saved = await this.repo.findOne({ where: { id } });
     if (!saved) throw new NotFoundException(`Saved search #${id} not found`);
-    if (saved.userId !== user.id) throw new ForbiddenException('Not your saved search');
+    if (!isSameUserId(saved.userId, user.id)) throw new ForbiddenException('Not your saved search');
 
     const filters = saved.filters ?? {};
     return this.searchService.hybrid(user, {
