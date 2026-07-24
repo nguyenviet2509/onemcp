@@ -41,7 +41,7 @@ export interface SubmitArtifactPayload {
   type: ArtifactType;
   title: string;
   slug: string;
-  body: string;
+  body?: string;
   structured?: Record<string, unknown>;
   tags?: string[];
 }
