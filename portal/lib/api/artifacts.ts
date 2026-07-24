@@ -16,6 +16,9 @@ export interface Artifact {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  // Phase 1C: view tracking fields (populated server-side)
+  viewCount?: number;
+  lastViewedAt?: string | null;
 }
 
 export interface ArtifactVersion {
@@ -54,7 +57,8 @@ export interface ListArtifactsParams {
   // Phase 3 extended filter params
   space?: string;
   templateKey?: string;
-  author?: number;
+  // 'me' resolves to the current user server-side; numeric string = specific user id
+  author?: number | 'me';
   dateFrom?: string;  // ISO date string
   dateTo?: string;    // ISO date string
 }
@@ -67,7 +71,7 @@ export function listArtifacts(params: ListArtifactsParams = {}) {
   if (params.status) qs.set('status', params.status);
   if (params.space) qs.set('space', params.space);
   if (params.templateKey) qs.set('template_key', params.templateKey);
-  if (params.author != null) qs.set('author', String(params.author));
+  if (params.author != null) qs.set('author', params.author === 'me' ? 'me' : String(params.author));
   if (params.dateFrom) qs.set('date_from', params.dateFrom);
   if (params.dateTo) qs.set('date_to', params.dateTo);
   const suffix = qs.toString() ? `?${qs.toString()}` : '';

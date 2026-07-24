@@ -4,21 +4,16 @@ import { Suspense } from 'react';
 import { PageShell } from '../components/page-shell';
 import { WidgetSkeleton, RecentActivityWidget, MyDraftsWidget, PendingReviewWidget } from '../components/dashboard-widgets';
 import { TopViewedWidget, TopTagsWidget } from '../components/dashboard-widgets-extra';
+import { buttonVariants } from '@/components/ui/button';
 
 // CTA row — primary actions at top of dashboard
 function CtaRow() {
   return (
     <div className="mb-6 flex flex-wrap gap-3">
-      <a
-        href="/artifacts/new"
-        className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600"
-      >
+      <a href="/artifacts/new" className={buttonVariants({ variant: 'default' })}>
         New artifact
       </a>
-      <a
-        href="/search"
-        className="rounded-md border border-secondary-300 bg-white px-4 py-2 text-sm font-medium text-secondary-700 hover:bg-secondary-50 dark:border-secondary-700 dark:bg-secondary-900 dark:text-secondary-300 dark:hover:bg-secondary-800"
-      >
+      <a href="/search" className={buttonVariants({ variant: 'outline' })}>
         Search
       </a>
     </div>

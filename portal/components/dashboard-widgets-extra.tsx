@@ -3,39 +3,36 @@
 import { useEffect, useState } from 'react';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
 import { EmptyState } from './empty-state';
-import { Card, CardHeader, CardContent, WidgetSkeleton } from './dashboard-widgets';
+import { WidgetSkeleton } from './dashboard-widgets';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // ── Widget 4: Top Viewed ──────────────────────────────────────────────────────
-// Uses view_count field from Phase 1. Falls back to empty state if all zero.
-// NOTE: view_count not in Artifact type yet — we cast as unknown to read it
-// defensively. TODO(backend): add view_count to Artifact type when Phase 1 field confirmed.
-
-interface ArtifactWithViews extends Artifact {
-  view_count?: number;
-}
+// Uses viewCount field from Artifact type (Phase 1C field confirmed).
 
 export function TopViewedWidget() {
-  const [items, setItems] = useState<ArtifactWithViews[] | null>(null);
+  const [items, setItems] = useState<Artifact[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     listArtifacts({ status: 'published' })
       .then((all) => {
-        const withViews = (all as ArtifactWithViews[]).sort(
-          (a, b) => (b.view_count ?? 0) - (a.view_count ?? 0),
+        const sorted = [...all].sort(
+          (a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0),
         );
-        setItems(withViews.slice(0, 10));
+        setItems(sorted.slice(0, 10));
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
   }, []);
 
   if (items === null && !error) return <WidgetSkeleton />;
 
-  const allZero = items?.every((a) => !a.view_count);
+  const allZero = items?.every((a) => !a.viewCount);
 
   return (
     <Card>
-      <CardHeader title="Top viewed" />
+      <CardHeader>
+        <CardTitle className="text-sm font-semibold">Top viewed</CardTitle>
+      </CardHeader>
       <CardContent>
         {error ? (
           <p className="text-sm text-destructive">{error}</p>
@@ -48,14 +45,14 @@ export function TopViewedWidget() {
           <ol className="space-y-1">
             {items?.map((a, idx) => (
               <li key={a.id} className="flex items-center gap-2 text-sm">
-                <span className="w-5 shrink-0 text-right text-xs text-secondary-400">{idx + 1}</span>
+                <span className="w-5 shrink-0 text-right text-xs text-muted-foreground">{idx + 1}</span>
                 <a
                   href={`/artifacts/${a.id}`}
-                  className="flex-1 truncate text-secondary-900 hover:text-primary-600 dark:text-secondary-100 dark:hover:text-primary-400"
+                  className="flex-1 truncate text-foreground hover:text-primary"
                 >
                   {a.title}
                 </a>
-                <span className="shrink-0 text-xs text-secondary-400">{a.view_count ?? 0}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{a.viewCount ?? 0}</span>
               </li>
             ))}
           </ol>
@@ -100,7 +97,9 @@ export function TopTagsWidget() {
 
   return (
     <Card>
-      <CardHeader title="Top tags" />
+      <CardHeader>
+        <CardTitle className="text-sm font-semibold">Top tags</CardTitle>
+      </CardHeader>
       <CardContent>
         {error ? (
           <p className="text-sm text-destructive">{error}</p>
@@ -112,10 +111,10 @@ export function TopTagsWidget() {
               <a
                 key={tag}
                 href={`/artifacts?tag=${encodeURIComponent(tag)}`}
-                className="inline-flex items-center gap-1 rounded-full border border-secondary-200 bg-secondary-50 px-2.5 py-0.5 text-xs font-medium text-secondary-700 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-300 dark:hover:border-primary-700 dark:hover:bg-primary-900 dark:hover:text-primary-300"
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
               >
                 {tag}
-                <span className="text-secondary-400 dark:text-secondary-500">{count}</span>
+                <span className="text-muted-foreground/60">{count}</span>
               </a>
             ))}
           </div>

@@ -21,6 +21,8 @@ export interface ArtifactListFilter {
   tag?: string;
   q?: string;
   status?: 'pending' | 'published' | 'rejected';
+  // Phase 3B: filter by owner. Resolved before passing: 'me' → current user.id (number).
+  ownerId?: number;
 }
 
 // Phase 1C: resolve effective type for backward-compat from template_key or explicit type.
@@ -181,6 +183,8 @@ export class ArtifactsService {
     if (filter.status) qb.andWhere('a.status = :status', { status: filter.status });
     if (filter.tag) qb.andWhere(':tag = ANY(a.tags)', { tag: filter.tag });
     if (filter.q) qb.andWhere('(a.title ILIKE :q OR a.slug ILIKE :q)', { q: `%${filter.q}%` });
+    // Phase 3B: author=me filter — restrict to specific owner.
+    if (filter.ownerId != null) qb.andWhere('a.owner_id = :ownerId', { ownerId: filter.ownerId });
 
     return qb.orderBy('a.updatedAt', 'DESC').limit(100).getMany();
   }

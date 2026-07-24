@@ -27,13 +27,24 @@ export class ArtifactsController {
     @Query('tag') tag?: string,
     @Query('q') q?: string,
     @Query('status') status?: string,
+    // Phase 3B: ?author=me → current user; ?author=<id> → specific user id
+    @Query('author') author?: string,
   ) {
     if (!user) throw new UnauthorizedException();
+
+    let ownerId: number | undefined;
+    if (author === 'me' || author === 'self') {
+      ownerId = user.id;
+    } else if (author != null && /^\d+$/.test(author)) {
+      ownerId = parseInt(author, 10);
+    }
+
     return this.artifacts.list(user, {
       type: type as ArtifactType | undefined,
       tag,
       q,
       status: status as 'pending' | 'published' | 'rejected' | undefined,
+      ownerId,
     });
   }
 
