@@ -78,7 +78,7 @@ export function submitArtifact(payload: SubmitArtifactPayload) {
 
 export interface UpdateArtifactPayload {
   expected_version_no: number;
-  body: string;
+  body?: string;
   structured?: Record<string, unknown>;
   tags?: string[];
 }
