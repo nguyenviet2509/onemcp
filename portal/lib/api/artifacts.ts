@@ -46,17 +46,30 @@ export interface SubmitArtifactPayload {
   tags?: string[];
 }
 
-export function listArtifacts(params: {
+export interface ListArtifactsParams {
   type?: ArtifactType;
   tag?: string;
   q?: string;
   status?: ArtifactStatus;
-} = {}) {
+  // Phase 3 extended filter params
+  space?: string;
+  templateKey?: string;
+  author?: number;
+  dateFrom?: string;  // ISO date string
+  dateTo?: string;    // ISO date string
+}
+
+export function listArtifacts(params: ListArtifactsParams = {}) {
   const qs = new URLSearchParams();
   if (params.type) qs.set('type', params.type);
   if (params.tag) qs.set('tag', params.tag);
   if (params.q) qs.set('q', params.q);
   if (params.status) qs.set('status', params.status);
+  if (params.space) qs.set('space', params.space);
+  if (params.templateKey) qs.set('template_key', params.templateKey);
+  if (params.author != null) qs.set('author', String(params.author));
+  if (params.dateFrom) qs.set('date_from', params.dateFrom);
+  if (params.dateTo) qs.set('date_to', params.dateTo);
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
   return apiFetch<Artifact[]>(`/artifacts${suffix}`);
 }

@@ -14,7 +14,7 @@ export function StructuredEditor({ template, values, onChange }: Props) {
   return (
     <div className="space-y-4">
       <p className="rounded bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:bg-blue-950 dark:text-blue-100">
-        Template <b>{template.type}</b> v{template.version}: {template.description}
+        Template <b>{template.label}</b> v{template.version}: {template.description}
       </p>
       {template.fields.map((f) => (
         <FieldEditor key={f.key} field={f} value={values[f.key] ?? ''} onChange={(v) => onChange(f.key, v)} />
