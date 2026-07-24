@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ARTIFACT_TYPES, ArtifactType } from '../artifacts/artifact-type.enum';
@@ -11,16 +11,22 @@ import { SearchEntityKind, SearchService } from '../search/search.service';
 import { Skill } from '../skills/entities/skill.entity';
 import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillsService } from '../skills/skills.service';
+import { SpacesService } from '../spaces/spaces.service';
+import { TemplatesService } from '../templates/templates.service';
 import { McpToolDefinition, McpToolResult } from './mcp-jsonrpc.types';
 
 // MCP tools exposed to AI agents. Dept-scoped (từ req.user).
 // Tool naming theo MCP convention: snake_case.
 @Injectable()
 export class McpToolsService {
+  private readonly log = new Logger(McpToolsService.name);
+
   constructor(
     private readonly skills: SkillsService,
     private readonly artifacts: ArtifactsService,
     private readonly searchSvc: SearchService,
+    private readonly spacesService: SpacesService,
+    private readonly templatesService: TemplatesService,
     @InjectRepository(SkillVersion) private readonly versions: Repository<SkillVersion>,
     @InjectRepository(Skill) private readonly skillsRepo: Repository<Skill>,
   ) {}
@@ -102,18 +108,23 @@ export class McpToolsService {
       {
         name: 'submit_artifact',
         description:
-          'Submit artifact mới (type: report|research|kb|postmortem|runbook). Trạng thái=pending chờ maintainer approve. Dùng cuối session để nộp report/KB.',
+          'Submit artifact mới (type: report|research|kb|postmortem|runbook). Trạng thái=pending chờ maintainer approve. Dùng cuối session để nộp report/KB. Phase 1C: hỗ trợ template_key + space slug.',
         inputSchema: {
           type: 'object',
           properties: {
-            type: { type: 'string', enum: [...ARTIFACT_TYPES] },
+            // Deprecated: dùng template_key nếu có. Backward compat: vẫn hoạt động nếu chỉ pass type.
+            type: { type: 'string', enum: [...ARTIFACT_TYPES], description: 'Deprecated — dùng template_key thay thế' },
+            // Phase 1C: preferred replacement for type.
+            template_key: { type: 'string', description: 'Template key từ registry DB (vd: kb, report, sop)' },
+            // Phase 1C: space slug để group artifact.
+            space: { type: 'string', description: 'Space slug artifact thuộc về (optional)' },
             title: { type: 'string' },
             slug: { type: 'string', description: 'URL-friendly, unique per dept' },
             body: { type: 'string', description: 'Markdown content' },
             structured: { type: 'object' },
             tags: { type: 'array', items: { type: 'string' } },
           },
-          required: ['type', 'title', 'slug', 'body'],
+          required: ['title', 'slug', 'body'],
         },
       },
       {
@@ -263,8 +274,51 @@ export class McpToolsService {
         `invalid payload: ${parsed.error.errors.map((e) => `${e.path.join('.')}:${e.message}`).join(', ')}`,
       );
     }
+
+    const dto = parsed.data;
+
+    // Phase 1C: validate template_key exists + active if provided.
+    if (dto.template_key) {
+      try {
+        const tpl = await this.templatesService.getByKey(dto.template_key);
+        if (!tpl.active) {
+          return this.errorResult(`template_key "${dto.template_key}" không còn active`);
+        }
+      } catch {
+        return this.errorResult(`template_key "${dto.template_key}" không tồn tại`);
+      }
+    }
+
+    // Phase 1C: validate space slug + resolve space_id if provided.
+    let resolvedSpaceId: string | undefined;
+    if (dto.space) {
+      try {
+        const space = await this.spacesService.findBySlug(dto.space);
+        // Access check: user dept must match space.department_id OR space is cross_dept/global.
+        const userDeptId = String(req.user!.departmentId);
+        const spaceDeptId = space.departmentId ? String(space.departmentId) : null;
+        const hasAccess =
+          spaceDeptId === null ||           // global space
+          space.visibility === 'cross_dept' || // open to all depts
+          spaceDeptId === userDeptId;        // user's own dept
+        if (!hasAccess) {
+          return this.errorResult(`Không có quyền submit vào space "${dto.space}" — dept mismatch`);
+        }
+        resolvedSpaceId = space.id;
+      } catch {
+        return this.errorResult(`space "${dto.space}" không tồn tại`);
+      }
+    }
+
     try {
-      const { artifact, version } = await this.artifacts.create(req.user!, parsed.data);
+      // Merge resolved space_id into dto before passing to service.
+      const { artifact, version } = await this.artifacts.create(req.user!, {
+        ...dto,
+        space_id: resolvedSpaceId,
+      });
+      this.log.log(
+        `submit_artifact: artifact #${artifact.id} template_key=${dto.template_key ?? '-'} space=${dto.space ?? '-'} user=${req.user!.username}`,
+      );
       return {
         content: [
           {

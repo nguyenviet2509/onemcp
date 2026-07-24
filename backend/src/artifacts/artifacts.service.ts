@@ -14,9 +14,23 @@ import { TemplateValidator } from './templates/template-validator';
 
 export interface ArtifactListFilter {
   type?: ArtifactType;
+  // Phase 1C: prefer template_key filter; type still accepted for backward compat.
+  templateKey?: string;
   tag?: string;
   q?: string;
   status?: 'pending' | 'published' | 'rejected';
+}
+
+// Phase 1C: resolve effective type for backward-compat from template_key or explicit type.
+// template_key may carry values like 'kb', 'report', etc. which map 1:1 to ArtifactType.
+// For new template keys like 'sop', 'faq' that don't map to ArtifactType: fallback to 'report'.
+const KNOWN_ARTIFACT_TYPE_SET = new Set(['report', 'research', 'kb', 'postmortem', 'runbook']);
+
+function resolveEffectiveType(templateKey: string | null | undefined, fallbackType: ArtifactType | null): ArtifactType {
+  if (templateKey && KNOWN_ARTIFACT_TYPE_SET.has(templateKey)) {
+    return templateKey as ArtifactType;
+  }
+  return (fallbackType ?? 'report') as ArtifactType;
 }
 
 export interface LoadRunbookOptions {
@@ -87,8 +101,13 @@ export class ArtifactsService {
   }
 
   async create(user: RequestUser, dto: SubmitArtifactDto): Promise<{ artifact: Artifact; version: ArtifactVersion }> {
+    // Phase 1C: template_key and type are both optional individually (schema refine ensures at least one present).
+    const templateKey: string | null = dto.template_key ?? null;
+    const spaceId: string | null = dto.space_id ?? null;
+    const effectiveType = resolveEffectiveType(templateKey, dto.type ?? null);
+
     if (!this.canContribute(user)) {
-      this.metrics.artifactSubmits.inc({ type: dto.type, result: 'forbidden' });
+      this.metrics.artifactSubmits.inc({ type: effectiveType, result: 'forbidden' });
       throw new ForbiddenException('Không có quyền submit artifact');
     }
 
@@ -96,14 +115,14 @@ export class ArtifactsService {
       where: { departmentId: user.departmentId, slug: dto.slug },
     });
     if (dup) {
-      this.metrics.artifactSubmits.inc({ type: dto.type, result: 'duplicate' });
+      this.metrics.artifactSubmits.inc({ type: effectiveType, result: 'duplicate' });
       throw new BadRequestException(`slug "${dto.slug}" đã tồn tại trong dept`);
     }
 
-    const content = this.prepareContent(dto.type, dto.body, dto.structured);
+    const content = this.prepareContent(effectiveType, dto.body, dto.structured);
 
     // Trích xuất service từ structured trước khi normalize (dto.structured chứa raw input).
-    const serviceValue = this.extractService(dto.type, dto.structured ?? {});
+    const serviceValue = this.extractService(effectiveType, dto.structured ?? {});
 
     return this.ds.transaction(async (m) => {
       const artifactRepo = m.getRepository(Artifact);
@@ -111,7 +130,9 @@ export class ArtifactsService {
 
       const artifact = await artifactRepo.save(
         artifactRepo.create({
-          type: dto.type,
+          type: effectiveType,         // backward-compat column
+          templateKey: templateKey ?? effectiveType, // Phase 1C: mirror template_key
+          spaceId,                     // Phase 1C: nullable until backfill
           title: dto.title,
           slug: dto.slug,
           departmentId: user.departmentId,
@@ -148,7 +169,12 @@ export class ArtifactsService {
       qb.andWhere("(a.status = 'published' OR a.owner_id = :uid)", { uid: user.id });
     }
 
-    if (filter.type) qb.andWhere('a.type = :type', { type: filter.type });
+    // Phase 1C: prefer template_key filter; fallback to type for backward compat.
+    if (filter.templateKey) {
+      qb.andWhere('(a.template_key = :tk OR a.type = :tk)', { tk: filter.templateKey });
+    } else if (filter.type) {
+      qb.andWhere('(a.template_key = :type OR a.type = :type)', { type: filter.type });
+    }
     if (filter.status) qb.andWhere('a.status = :status', { status: filter.status });
     if (filter.tag) qb.andWhere(':tag = ANY(a.tags)', { tag: filter.tag });
     if (filter.q) qb.andWhere('(a.title ILIKE :q OR a.slug ILIKE :q)', { q: `%${filter.q}%` });

@@ -5,8 +5,16 @@ import { ARTIFACT_TYPES } from '../artifact-type.enum';
 // Body 2MB cap enforce ở đây (~2M chars — chấp nhận rough approx).
 // body optional nếu structured cung cấp — service.prepareContent() sẽ compile body từ template.
 // Nếu cả hai empty → service throw.
+// Phase 1C: template_key + space slug are optional; backward compat with type-only callers preserved.
 export const submitArtifactSchema = z.object({
-  type: z.enum(ARTIFACT_TYPES),
+  // Deprecated: use template_key. Kept for 1-release backward compat. Optional if template_key provided.
+  type: z.enum(ARTIFACT_TYPES).optional(),
+  // Phase 1C: preferred over type. Must reference active template in DB.
+  template_key: z.string().min(1).max(64).optional(),
+  // Phase 1C: space slug. Must exist in spaces table. Resolved to space_id before DB write.
+  space: z.string().min(1).max(64).optional(),
+  // Internal: resolved space_id (set by MCP tool after slug lookup, not from client directly).
+  space_id: z.string().optional(),
   title: z.string().min(3).max(255),
   slug: z
     .string()
@@ -16,7 +24,10 @@ export const submitArtifactSchema = z.object({
   body: z.string().max(2_000_000).optional(),
   structured: z.record(z.unknown()).optional(),
   tags: z.array(z.string().min(1).max(32)).max(20).optional().default([]),
-});
+}).refine(
+  (d) => d.type != null || d.template_key != null,
+  { message: 'type hoặc template_key phải được cung cấp', path: ['type'] },
+);
 
 export type SubmitArtifactDto = z.infer<typeof submitArtifactSchema>;
 
