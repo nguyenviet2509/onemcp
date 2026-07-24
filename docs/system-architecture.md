@@ -163,11 +163,65 @@ Contributor edit ─▶ create v(n+1) (pending, optimistic lock check MAX(versio
 - **Optimistic locking** artifact updates (409 on conflict).
 - **Emergency lockdown** env flag → 503 mọi routes trừ `/health`.
 
+## Phase 1 — Multi-dept layer (2026-07-24)
+
+New schema + modules added in Phase 1 multi-dept plan (`260724-0821-onemcp-multidept-v1-5`).
+
+### New tables
+
+| Table | Purpose |
+|---|---|
+| `spaces` | Workspace per department; `slug` unique; `visibility` enum (`space`/`dept`/`cross_dept`) |
+| `templates` | DB-driven template registry replacing hardcoded `template-registry.ts`; `key` PK; `department_scope TEXT[]` |
+| `api_keys` | Per-user API keys; bcrypt hash; `key_prefix` indexed for O(1) lookup. See [api-keys.md](api-keys.md) |
+| `embeddings` | One row per `artifact_version_id` (PK+FK); `vector(384)` for Phase 2 hybrid search; no HNSW index yet |
+
+### Artifacts table extensions
+
+Columns added (dual-read window — `type` column kept 1 release):
+
+| Column | Type | Notes |
+|---|---|---|
+| `space_id` | BIGINT FK nullable | Backfilled to dept default space post-migration |
+| `template_key` | VARCHAR(64) nullable | Backfilled from `type`; preferred over `type` going forward |
+| `visibility` | VARCHAR(16) DEFAULT `'space'` | Scope level |
+| `view_count` | INT DEFAULT 0 | Incremented on load/get |
+| `last_viewed_at` | TIMESTAMPTZ nullable | Last access timestamp |
+
+### Dual-read contract
+
+`artifacts.type` (legacy enum) and `artifacts.template_key` (new string) are written together for 1 release. List/filter queries use `(template_key = :v OR type = :v)` to serve both old and new clients. Drop of `type` deferred to Phase 2.
+
+New template keys (`sop`, `faq`, `ticket_playbook`) that don't map to the legacy `ArtifactType` enum resolve to `type='report'` as fallback — backward-compat reads still work.
+
+### API key middleware chain
+
+```
+IP CIDR guard → API key middleware → Trust header middleware → Auth guard
+```
+
+Key middleware short-circuits trust-header: if `X-Onemcp-Key` is valid, `X-Onemcp-User` is ignored.
+
+### Bridge attribution
+
+`onemcp-submit-kb.py` (OneLog bridge action) reads `__user__.email` from OpenWebUI context, calls `POST /api/users/ensure` to auto-provision `@inet.vn` users, and sends `X-Onemcp-User: <derived-username>`. Bot fallback only when email is null/empty.
+
+### Backend src additions
+
+```
+backend/src/
+├── spaces/          # Space CRUD + list-by-dept
+├── templates/       # Template registry (DB-driven) + active filter
+├── api-keys/        # Key create/list/revoke + verify middleware
+```
+
+Migrations: `1720700000000` – `1720700300000` (spaces/templates/api-keys, artifacts columns, embeddings, seed+backfill).
+
 ## Extension points (v2)
 
 - **Auth**: swap `TrustUserMiddleware` → JWT/OIDC middleware. Downstream code không thay đổi (dùng `req.user`).
-- **Semantic search**: pgvector column + embedding worker + hybrid rank.
-- **Multi-dept**: schema đã multi-tenant, chỉ cần dept select dropdown UI + role scoping.
+- **Semantic search**: pgvector column + embedding worker + hybrid rank (Phase 2 — `embeddings` table ready).
+- **Multi-dept**: spaces + template scoping live; Phase 2 adds dept-select UI + cross-dept visibility enforcement.
 
 ## Deployment topology (pilot)
 
