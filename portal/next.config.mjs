@@ -1,9 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Standalone output cuts image size to ~100MB (H6 mitigation).
-  // Disabled locally on Windows — pnpm symlink EPERM prevents standalone copy.
-  // Re-enable for Docker builds (Linux CI/CD has no EPERM issue).
-  // output: 'standalone',
+  // Windows local: pnpm symlink EPERM may fail — safe to ignore (Docker Linux build unaffected).
+  output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
