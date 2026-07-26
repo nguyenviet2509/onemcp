@@ -2,47 +2,221 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { StructuredEditor } from '../../../components/structured-editor';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { TemplatePicker } from '../../../components/template-picker';
+import { MarkdownEditor, MarkdownEditorDark } from '../../../components/markdown-editor';
+import { PageShell } from '../../../components/page-shell';
+import { Button, buttonVariants } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Alert, AlertDescription } from '../../../components/ui/alert';
+import { Separator } from '../../../components/ui/separator';
 import { ApiError } from '../../../lib/api-client';
-import { ArtifactType, submitArtifact } from '../../../lib/api/artifacts';
-import { getTemplate, Template } from '../../../lib/api/templates';
+import { submitArtifact, ArtifactType } from '../../../lib/api/artifacts';
+import { getTemplate, Template, TemplateField } from '../../../lib/api/templates';
 
-const TYPES: ArtifactType[] = ['report', 'research', 'kb'];
+// Draft persisted to localStorage so the user doesn't lose work on refresh.
+const DRAFT_KEY = 'onemcp:new-artifact:draft';
+
+interface DraftState {
+  templateKey: string | null;
+  title: string;
+  slug: string;
+  tags: string;
+  fields: Record<string, string>;
+  body: string;
+}
+
+const EMPTY_DRAFT: DraftState = {
+  templateKey: null,
+  title: '',
+  slug: '',
+  tags: '',
+  fields: {},
+  body: '',
+};
+
+function loadDraft(): DraftState {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? { ...EMPTY_DRAFT, ...JSON.parse(raw) } : EMPTY_DRAFT;
+  } catch {
+    return EMPTY_DRAFT;
+  }
+}
+
+function saveDraft(d: DraftState) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+  } catch {
+    // Storage quota exceeded — ignore silently.
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {}
+}
+
+// Auto-generates a slug from a title string.
+function toSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 120);
+}
+
+// Renders a single template field as an appropriate input element.
+function TemplateFieldInput({
+  field,
+  value,
+  onChange,
+}: {
+  field: TemplateField;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  if (field.type === 'select' && field.options) {
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={field.required}
+        className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
+      >
+        <option value="">Select…</option>
+        {field.options.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+    );
+  }
+  if (field.type === 'textarea' || field.type === 'logs') {
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={field.required}
+        placeholder={field.placeholder}
+        rows={4}
+        maxLength={field.maxLength}
+        minLength={field.minLength}
+        className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
+      />
+    );
+  }
+  // Default: text / markdown field treated as single-line text input at form step.
+  // Markdown fields that need rich editing belong in Step 3 body editor.
+  return (
+    <Input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      required={field.required}
+      placeholder={field.placeholder}
+      maxLength={field.maxLength}
+      minLength={field.minLength}
+    />
+  );
+}
+
+// Step indicator row.
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+  const steps = ['Template', 'Details', 'Body'];
+  return (
+    <div className="mb-6 flex items-center gap-2 text-sm">
+      {steps.map((label, i) => {
+        const num = i + 1;
+        const active = num === step;
+        const done = num < step;
+        return (
+          <span key={label} className="flex items-center gap-2">
+            {i > 0 && <Separator orientation="horizontal" className="w-6" />}
+            <span
+              className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
+                active
+                  ? 'bg-primary text-primary-foreground'
+                  : done
+                  ? 'bg-primary/20 text-primary'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {num}
+            </span>
+            <span
+              className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}
+            >
+              {label}
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function NewArtifactPage() {
   const router = useRouter();
-  const [type, setType] = useState<ArtifactType>('kb');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
   const [template, setTemplate] = useState<Template | null>(null);
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [tags, setTags] = useState('');
-  const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Hydrate draft from localStorage on client mount only.
+  const hydrated = useRef(false);
   useEffect(() => {
-    getTemplate(type)
-      .then((t) => {
-        setTemplate(t);
-        // Reset fields khi đổi type — tránh drift key giữa templates.
-        setFields({});
-      })
-      .catch((e) => setError(String(e)));
-  }, [type]);
+    if (hydrated.current) return;
+    hydrated.current = true;
+    const saved = loadDraft();
+    setDraft(saved);
+  }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+  // Persist draft whenever it changes.
+  useEffect(() => {
+    if (!hydrated.current) return;
+    saveDraft(draft);
+  }, [draft]);
+
+  // Fetch template details when templateKey changes.
+  useEffect(() => {
+    if (!draft.templateKey) {
+      setTemplate(null);
+      return;
+    }
+    getTemplate(draft.templateKey)
+      .then(setTemplate)
+      .catch(() => setTemplate(null));
+  }, [draft.templateKey]);
+
+  function updateDraft(partial: Partial<DraftState>) {
+    setDraft((prev) => ({ ...prev, ...partial }));
+  }
+
+  function handleTitleChange(title: string) {
+    updateDraft({ title, slug: toSlug(title) });
+  }
+
+  function handleFieldChange(key: string, value: string) {
+    updateDraft({ fields: { ...draft.fields, [key]: value } });
+  }
+
+  async function handleSubmit() {
+    if (!template) return;
     setBusy(true);
+    setError(null);
     try {
       const result = await submitArtifact({
-        type,
-        title: title.trim(),
-        slug: slug.trim().toLowerCase(),
-        structured: fields,
-        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+        type: (template.key.split('-')[0] as ArtifactType) ?? 'kb',
+        title: draft.title.trim(),
+        slug: draft.slug.trim().toLowerCase(),
+        body: draft.body,
+        structured: draft.fields,
+        tags: draft.tags.split(',').map((t) => t.trim()).filter(Boolean),
       });
+      clearDraft();
+      toast.success('Artifact submitted for review');
       router.push(`/artifacts/${result.artifact.id}`);
     } catch (e) {
       setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
@@ -50,99 +224,156 @@ export default function NewArtifactPage() {
     }
   }
 
+  const canGoToStep2 = !!draft.templateKey;
+  const canGoToStep3 = draft.title.trim().length > 0 && draft.slug.trim().length > 0;
+
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <div className="text-sm">
-        <Link href="/artifacts" className="text-blue-600 hover:underline">
-          ← All artifacts
-        </Link>
-      </div>
-      <h1 className="mt-4 text-2xl font-bold">Submit new artifact</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Chọn type → điền các sections theo template. Submit sẽ tạo <code>pending</code> version chờ maintainer approve.
-      </p>
+    <PageShell
+      title="New artifact"
+      breadcrumb={[
+        { label: 'Artifacts', href: '/artifacts' },
+        { label: 'New' },
+      ]}
+    >
+      <StepIndicator step={step} />
 
       {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
-          {error}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* ── Step 1: Template picker ── */}
+      {step === 1 && (
+        <div className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            Choose a template to structure your artifact.
+          </p>
+          <TemplatePicker
+            selected={draft.templateKey}
+            onSelect={(key) => updateDraft({ templateKey: key, fields: {} })}
+          />
+          <div className="flex items-center justify-between pt-2">
+            <Link href="/artifacts" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+              Cancel
+            </Link>
+            <Button
+              size="sm"
+              disabled={!canGoToStep2}
+              onClick={() => setStep(2)}
+            >
+              Continue
+            </Button>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium">Type</label>
-          <div className="flex gap-2">
-            {TYPES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={`rounded px-3 py-1 text-sm ${
-                  t === type
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+      {/* ── Step 2: Metadata form ── */}
+      {step === 2 && (
+        <div className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            Fill in the required fields for this artifact.
+          </p>
+
+          <div className="space-y-4 rounded-lg border border-border bg-card p-5">
+            {/* Title */}
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Title <span className="text-destructive">*</span></span>
+              <Input
+                required
+                value={draft.title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="e.g. Payment service postmortem 2026-Q3"
+                maxLength={255}
+              />
+            </label>
+
+            {/* Slug — auto-generated but editable */}
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Slug <span className="text-destructive">*</span></span>
+              <Input
+                required
+                value={draft.slug}
+                onChange={(e) => updateDraft({ slug: e.target.value })}
+                className="font-mono"
+                placeholder="e.g. payment-postmortem-2026-q3"
+                pattern="[a-z0-9][a-z0-9-]*"
+                maxLength={160}
+              />
+              <span className="text-xs text-muted-foreground">Lowercase letters, numbers and hyphens only.</span>
+            </label>
+
+            {/* Tags */}
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Tags</span>
+              <Input
+                value={draft.tags}
+                onChange={(e) => updateDraft({ tags: e.target.value })}
+                placeholder="ops, k8s, payment (comma-separated)"
+              />
+            </label>
+
+            {/* Template-specific fields */}
+            {template && template.fields.filter((f) => f.type !== 'markdown').length > 0 && (
+              <>
+                <Separator />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {template.label} fields
+                </p>
+                {template.fields
+                  .filter((f) => f.type !== 'markdown')
+                  .map((f) => (
+                    <div key={f.key} className="flex flex-col gap-1">
+                      <label className="text-sm font-medium">
+                        {f.label}
+                        {f.required && <span className="ml-1 text-destructive">*</span>}
+                      </label>
+                      {f.description && (
+                        <p className="text-xs text-muted-foreground">{f.description}</p>
+                      )}
+                      <TemplateFieldInput
+                        field={f}
+                        value={draft.fields[f.key] ?? ''}
+                        onChange={(v) => handleFieldChange(f.key, v)}
+                      />
+                    </div>
+                  ))}
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <Button variant="outline" size="sm" onClick={() => setStep(1)}>
+              Back
+            </Button>
+            <Button size="sm" disabled={!canGoToStep3} onClick={() => setStep(3)}>
+              Continue
+            </Button>
           </div>
         </div>
+      )}
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">Title</label>
-          <input
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-            maxLength={255}
-          />
+      {/* ── Step 3: Markdown body editor ── */}
+      {step === 3 && (
+        <div className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            Write the artifact body. Live preview updates as you type.
+          </p>
+
+          {/* Render both light + dark editors; CSS hides the inactive one */}
+          <MarkdownEditor value={draft.body} onChange={(v) => updateDraft({ body: v })} minHeight={380} />
+          <MarkdownEditorDark value={draft.body} onChange={(v) => updateDraft({ body: v })} minHeight={380} />
+
+          <div className="flex items-center justify-between pt-2">
+            <Button variant="outline" size="sm" onClick={() => setStep(2)}>
+              Back
+            </Button>
+            <Button size="sm" disabled={busy} onClick={handleSubmit}>
+              {busy ? 'Submitting…' : 'Submit for review'}
+            </Button>
+          </div>
         </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Slug</label>
-          <input
-            required
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            className="w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm dark:border-slate-700 dark:bg-slate-900"
-            placeholder="e.g. postmortem-payment-2026-q3"
-            pattern="[a-z0-9][a-z0-9-]*"
-            maxLength={160}
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Tags (comma-separated)</label>
-          <input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-          />
-        </div>
-
-        {template && (
-          <StructuredEditor
-            template={template}
-            values={fields}
-            onChange={(k, v) => setFields((prev) => ({ ...prev, [k]: v }))}
-          />
-        )}
-
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={busy || !title.trim() || !slug.trim() || !template}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {busy ? 'Submitting...' : 'Submit for review'}
-          </button>
-          <Link href="/artifacts" className="text-sm text-slate-500 hover:underline">
-            Cancel
-          </Link>
-        </div>
-      </form>
-    </main>
+      )}
+    </PageShell>
   );
 }

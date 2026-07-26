@@ -1,132 +1,224 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { ApiError } from '../../lib/api-client';
-import { Artifact, ArtifactType, listArtifacts } from '../../lib/api/artifacts';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { buttonVariants } from '../../components/ui/button';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Badge } from '../../components/ui/badge';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Separator } from '../../components/ui/separator';
+import { PageShell } from '../../components/page-shell';
+import { EmptyState } from '../../components/empty-state';
+import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filter-panel';
+import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
+import { Artifact, ArtifactStatus, listArtifacts } from '../../lib/api/artifacts';
+import { FileTextIcon } from 'lucide-react';
 
-const TYPES: (ArtifactType | 'all')[] = ['all', 'report', 'research', 'kb'];
+// Status badge color map — text-only labels, no extra icons.
+const STATUS_CLASSES: Record<ArtifactStatus, string> = {
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-100',
+  published: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-100',
+  rejected: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-100',
+  archived: 'bg-secondary text-secondary-foreground',
+};
 
-export default function ArtifactsListPage() {
+// Builds ListArtifactsParams from FilterState (adapter layer).
+function filterToParams(f: FilterState) {
+  return {
+    space: f.space || undefined,
+    templateKey: f.templateKey || undefined,
+    tag: f.tags.split(',').map((t) => t.trim()).find(Boolean),
+    status: (f.status as ArtifactStatus) || undefined,
+    author: f.author === 'me' ? ('me' as const) : f.author ? Number(f.author) : undefined,
+    dateFrom: f.dateFrom || undefined,
+    dateTo: f.dateTo || undefined,
+  };
+}
+
+function ArtifactRow({
+  artifact,
+  checked,
+  onToggle,
+}: {
+  artifact: Artifact;
+  checked: boolean;
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <li className="flex items-start gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/40">
+      <Checkbox
+        checked={checked}
+        onCheckedChange={() => onToggle(artifact.id)}
+        aria-label={`Select "${artifact.title}"`}
+        className="mt-0.5 shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+            {artifact.type}
+          </span>
+          <Link
+            href={`/artifacts/${artifact.id}`}
+            className="truncate text-sm font-semibold text-primary hover:underline"
+          >
+            {artifact.title}
+          </Link>
+          <span
+            className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[artifact.status]}`}
+          >
+            {artifact.status}
+          </span>
+        </div>
+        <p className="mt-0.5 font-mono text-xs text-muted-foreground">{artifact.slug}</p>
+        {artifact.tags.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {artifact.tags.map((t) => (
+              <Badge key={t} variant="outline" className="text-xs">
+                {t}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function LoadingRows() {
+  return (
+    <ul className="space-y-2">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <li key={i} className="rounded-lg border border-border bg-card px-4 py-3">
+          <Skeleton className="mb-2 h-4 w-1/3" />
+          <Skeleton className="h-3 w-2/3" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Inner component that requires useSearchParams — wrapped in Suspense below.
+function ArtifactsContent() {
   const [items, setItems] = useState<Artifact[]>([]);
-  const [type, setType] = useState<ArtifactType | 'all'>('all');
-  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastFilter, setLastFilter] = useState<FilterState | null>(null);
 
-  useEffect(() => {
+  const fetchList = useCallback((f: FilterState) => {
+    setLastFilter(f);
     setLoading(true);
-    listArtifacts({ type: type === 'all' ? undefined : type })
-      .then(setItems)
-      .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
+    setError(null);
+    listArtifacts(filterToParams(f))
+      .then((data) => {
+        setItems(data);
+        setSelectedIds(new Set()); // reset selection on filter change
+      })
+      .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
-  }, [type]);
+  }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((a) => a.title.toLowerCase().includes(q) || a.slug.includes(q));
-  }, [items, query]);
+  // Checkbox toggle helpers.
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((a) => a.id)));
+    }
+  }
+
+  const allChecked = items.length > 0 && selectedIds.size === items.length;
+  const someChecked = selectedIds.size > 0 && !allChecked;
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Artifacts</h1>
-        <Link
-          href="/artifacts/new"
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
-        >
-          + Submit
-        </Link>
-      </div>
+    <>
+      {/* Filter panel — syncs to URL + calls fetchList on change */}
+      <ArtifactFilterPanel onChange={fetchList} />
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search title / slug..."
-          className="flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-        />
-        <div className="flex flex-wrap gap-1">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              onClick={() => setType(t)}
-              className={`rounded px-2 py-1 text-xs ${
-                t === type
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        <Link href="/artifacts/review" className="text-xs text-slate-500 hover:underline">
-          → Review queue
-        </Link>
-      </div>
+      <div className="mt-4">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {loading && <p className="mt-6 text-slate-500">Loading...</p>}
-      {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
-          {error}
-        </div>
-      )}
-      {!loading && !error && filtered.length === 0 && (
-        <div className="mt-8 rounded border border-slate-200 p-8 text-center text-slate-500 dark:border-slate-800">
-          Chưa có artifact. <Link href="/artifacts/new" className="text-blue-600 hover:underline">Submit đầu tiên</Link>.
-        </div>
-      )}
-
-      <ul className="mt-6 space-y-3">
-        {filtered.map((a) => (
-          <li
-            key={a.id}
-            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:border-blue-500 dark:border-slate-800 dark:bg-slate-900"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    {a.type}
-                  </span>
-                  <Link
-                    href={`/artifacts/${a.id}`}
-                    className="text-lg font-semibold text-blue-600 hover:underline"
-                  >
-                    {a.title}
-                  </Link>
-                </div>
-                <p className="mt-1 font-mono text-xs text-slate-500">{a.slug}</p>
-              </div>
-              <span
-                className={`rounded px-2 py-0.5 text-xs ${
-                  a.status === 'published'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-100'
-                    : a.status === 'rejected'
-                      ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-100'
-                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-100'
-                }`}
-              >
-                {a.status}
+        {loading ? (
+          <LoadingRows />
+        ) : items.length === 0 ? (
+          <EmptyState
+            icon={<FileTextIcon className="size-8" />}
+            title="No artifacts found"
+            description="Try adjusting your filters or submit a new artifact."
+            cta={
+              <Link href="/artifacts/new" className={buttonVariants({ size: 'sm' })}>
+                Submit artifact
+              </Link>
+            }
+          />
+        ) : (
+          <>
+            {/* Select-all header row */}
+            <div className="mb-2 flex items-center gap-3 px-1">
+              <Checkbox
+                checked={allChecked}
+                indeterminate={someChecked}
+                onCheckedChange={toggleAll}
+                aria-label="Select all artifacts"
+              />
+              <span className="text-xs text-muted-foreground">
+                {items.length} artifact{items.length !== 1 ? 's' : ''}
               </span>
             </div>
-            {a.tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {a.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    </main>
+            <Separator className="mb-3" />
+
+            <ul className="space-y-2">
+              {items.map((a) => (
+                <ArtifactRow
+                  key={a.id}
+                  artifact={a}
+                  checked={selectedIds.has(a.id)}
+                  onToggle={toggleOne}
+                />
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+
+      {/* Sticky bulk actions bar — only visible when items selected */}
+      <ArtifactBulkActions
+        selectedIds={selectedIds}
+        allArtifacts={items}
+        onComplete={() => lastFilter && fetchList(lastFilter)}
+      />
+    </>
+  );
+}
+
+export default function ArtifactsListPage() {
+  return (
+    <PageShell
+      title="Artifacts"
+      breadcrumb={[{ label: 'Artifacts' }]}
+      actions={
+        <Link href="/artifacts/new" className={buttonVariants({ size: 'sm' })}>
+          Submit new
+        </Link>
+      }
+    >
+      {/* Suspense boundary required because ArtifactFilterPanel uses useSearchParams */}
+      <Suspense fallback={<LoadingRows />}>
+        <ArtifactsContent />
+      </Suspense>
+    </PageShell>
   );
 }
