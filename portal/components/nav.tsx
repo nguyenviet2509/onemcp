@@ -31,6 +31,12 @@ export function Nav() {
             <Link href="/artifacts" className="hover:text-secondary-900 dark:hover:text-secondary-100">
               Artifacts
             </Link>
+            <Link href="/spaces" className="hover:text-secondary-900 dark:hover:text-secondary-100">
+              Spaces
+            </Link>
+            <Link href="/onboarding" className="hover:text-secondary-900 dark:hover:text-secondary-100">
+              Onboarding
+            </Link>
             <Link href="/profile" className="hover:text-secondary-900 dark:hover:text-secondary-100">
               Profile
             </Link>
@@ -46,11 +52,11 @@ export function Nav() {
         </div>
       </div>
 
-      {/* Saved searches sidebar slot — rendered inline below nav on small screens,
-          hidden on md+ (reserved for a future collapsible sidebar in 3D) */}
-      {/* TODO(3D): move SavedSearchesList into a proper sidebar panel */}
-      <div className="hidden">
-        <SavedSearchesList />
+      {/* Saved searches strip — shown below the main nav bar */}
+      <div className="border-t border-secondary-100 dark:border-secondary-800">
+        <div className="mx-auto max-w-6xl">
+          <SavedSearchesList />
+        </div>
       </div>
     </header>
   );

@@ -1,137 +1,282 @@
 'use client';
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { ApiError } from '../../lib/api-client';
-import { SearchHit, search } from '../../lib/api/search';
+import { Suspense, useCallback, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { SearchIcon, BookmarkIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { PageShell } from '@/components/page-shell';
+import { EmptyState } from '@/components/empty-state';
+import { ArtifactFilterPanel, FilterState } from '@/components/artifact-filter-panel';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { search, SearchHit } from '@/lib/api/search';
+import { createSaved } from '@/lib/api/saved-searches';
+import { ApiError } from '@/lib/api-client';
 
-type Kind = 'all' | 'skill' | 'artifact';
+// Matches SearchParams.mode in lib/api/search.ts
+type SearchMode = 'hybrid' | 'fts' | 'vector';
 
-export default function SearchPage() {
-  const [q, setQ] = useState('');
-  const [kind, setKind] = useState<Kind>('all');
+// Strip non-<b>/<mark> tags for safe snippet rendering.
+function sanitizeSnippet(s: string): string {
+  return s.replace(/<(?!\/?(?:b|i|mark)\b)[^>]*>/gi, '');
+}
+
+// Highlight query terms in plain text with <mark>.
+function highlightTerms(text: string, q: string): string {
+  if (!q.trim()) return text;
+  const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+}
+
+function SearchPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [q, setQ] = useState(searchParams.get('q') ?? '');
+  const rawMode = searchParams.get('mode');
+  const [mode, setMode] = useState<SearchMode>(
+    (rawMode === 'fts' || rawMode === 'vector') ? rawMode : 'hybrid'
+  );
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [filters, setFilters] = useState<FilterState | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const query = q.trim();
-    if (query.length < 2) return;
+  // Save-search dialog
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const runSearch = useCallback(async (query: string, currentMode: SearchMode, currentFilters: FilterState | null) => {
+    if (query.trim().length < 2) return;
     setBusy(true);
     setError(null);
     setSubmitted(true);
     try {
-      const r = await search({ q: query, kind });
+      const tags = currentFilters?.tags
+        ? currentFilters.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : undefined;
+      const r = await search({
+        q: query.trim(),
+        mode: currentMode,
+        space: currentFilters?.space || undefined,
+        templateKey: currentFilters?.templateKey || undefined,
+        tags,
+        dept: currentFilters?.['dept' as keyof FilterState] || undefined,
+      });
       setHits(r);
     } catch (e) {
       setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
     } finally {
       setBusy(false);
     }
+  }, []);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('q', q);
+    params.set('mode', mode);
+    router.replace(`?${params.toString()}`, { scroll: false });
+    runSearch(q, mode, filters);
   }
 
-  function hitLink(h: SearchHit): string {
-    return h.kind === 'skill' ? `/skills/${encodeURIComponent(h.name)}` : `/artifacts/${h.id}`;
+  function handleModeChange(newMode: string) {
+    const m = newMode as SearchMode;
+    setMode(m);
+    if (submitted && q.trim().length >= 2) {
+      runSearch(q, m, filters);
+    }
   }
 
-  // ts_headline emits <b>...</b> around matches. Render safe với dangerouslySetInnerHTML
-  // vì server-controlled (backend gen từ tsvector). Chỉ chấp nhận <b>/<i> — v1 pilot ok.
-  function renderSnippet(s: string): { __html: string } {
-    // Strip non-<b>/<i> tags để safe (paranoid).
-    const cleaned = s.replace(/<(?!\/?(?:b|i)\b)[^>]*>/gi, '');
-    return { __html: cleaned };
+  function handleFilterChange(f: FilterState) {
+    setFilters(f);
   }
+
+  async function handleSave() {
+    if (!saveName.trim() || !q.trim()) return;
+    setSaving(true);
+    try {
+      await createSaved({
+        name: saveName.trim(),
+        query: q.trim(),
+        filters: {
+          mode,
+          space: filters?.space || undefined,
+          templateKey: filters?.templateKey || undefined,
+          tags: filters?.tags
+            ? filters.tags.split(',').map((t) => t.trim()).filter(Boolean)
+            : undefined,
+        },
+      });
+      toast.success('Search saved');
+      setSaveOpen(false);
+      setSaveName('');
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Failed to save search');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const saveAction = (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!submitted || hits.length === 0}
+        onClick={() => setSaveOpen(true)}
+      >
+        <BookmarkIcon className="size-4" aria-hidden />
+        Save search
+      </Button>
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Save this search</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3 py-2">
+          <Label htmlFor="save-name">Name</Label>
+          <Input
+            id="save-name"
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+            placeholder="e.g. Payment webhook issues"
+            autoFocus
+          />
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
+  );
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
-      <h1 className="text-2xl font-bold">Search</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Full-text search qua skills + artifacts đã published trong dept. Bỏ dấu OK.
-      </p>
+    <PageShell title="Search" actions={saveAction}>
+      {/* Mode tabs + search bar */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Tabs value={mode} onValueChange={handleModeChange} className="w-auto">
+          <TabsList>
+            <TabsTrigger value="hybrid">Hybrid</TabsTrigger>
+            <TabsTrigger value="fts">Full-text</TabsTrigger>
+            <TabsTrigger value="vector">Vector (semantic)</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-wrap items-center gap-3">
-        <input
+      <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
+        <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Vd: payment webhook timeout, kibana correlate..."
-          className="flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          placeholder="Search artifacts, skills…"
+          className="flex-1"
           autoFocus
         />
-        <div className="flex gap-1">
-          {(['all', 'skill', 'artifact'] as Kind[]).map((k) => (
-            <button
-              type="button"
-              key={k}
-              onClick={() => setKind(k)}
-              className={`rounded px-2 py-1 text-xs ${
-                k === kind
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-              }`}
-            >
-              {k}
-            </button>
-          ))}
-        </div>
-        <button
-          type="submit"
-          disabled={busy || q.trim().length < 2}
-          className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {busy ? 'Searching...' : 'Search'}
-        </button>
+        <Button type="submit" disabled={busy || q.trim().length < 2}>
+          <SearchIcon className="size-4" aria-hidden />
+          {busy ? 'Searching…' : 'Search'}
+        </Button>
       </form>
 
+      {/* Filter panel */}
+      <div className="mb-6">
+        <ArtifactFilterPanel onChange={handleFilterChange} />
+      </div>
+
+      {/* Error */}
       {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
-          {error}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Loading skeletons */}
+      {busy && (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          ))}
         </div>
       )}
 
+      {/* Empty state */}
       {submitted && !busy && hits.length === 0 && !error && (
-        <p className="mt-8 rounded border border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-800">
-          No results.
-        </p>
+        <EmptyState
+          title="No results found"
+          description="Try different search terms, switch modes, or adjust filters."
+        />
       )}
 
-      {hits.length > 0 && (
-        <ul className="mt-8 space-y-4">
-          {hits.map((h, i) => (
-            <li
-              key={`${h.kind}-${h.id}`}
-              className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-            >
-              <div className="flex items-baseline gap-2">
-                <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  {h.kind}
-                </span>
-                <Link href={hitLink(h)} className="text-lg font-semibold text-blue-600 hover:underline">
-                  {h.name}
-                </Link>
-                <span className="ml-auto font-mono text-xs text-slate-400">rank {h.rank.toFixed(2)}</span>
-              </div>
-              <p
-                className="mt-2 text-sm text-slate-700 dark:text-slate-300 [&_b]:bg-yellow-100 [&_b]:font-semibold dark:[&_b]:bg-yellow-900/50"
-                dangerouslySetInnerHTML={renderSnippet(h.snippet)}
-              />
-              {h.tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {h.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                    >
-                      {t}
+      {/* Results */}
+      {!busy && hits.length > 0 && (
+        <ul className="space-y-3">
+          {hits.map((h) => {
+            const snippetHtml = h.snippet.includes('<b>') || h.snippet.includes('<mark>')
+              ? sanitizeSnippet(h.snippet)
+              : highlightTerms(h.snippet, q);
+            const itemLink = h.kind === 'skill'
+              ? `/skills/${encodeURIComponent(h.name)}`
+              : `/artifacts/${h.id}`;
+            const sourceMeta = h.meta?.source as string | undefined;
+            const rrfScore = h.meta?.rrfScore as number | undefined;
+
+            return (
+              <li
+                key={`${h.kind}-${h.id}`}
+                className="rounded-lg border border-border bg-card p-4 dark:bg-card"
+              >
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <Badge variant="secondary" className="font-mono text-xs">{h.kind}</Badge>
+                  {sourceMeta && (
+                    <Badge variant="outline" className="font-mono text-xs">{sourceMeta}</Badge>
+                  )}
+                  <a href={itemLink} className="text-base font-semibold text-primary hover:underline">
+                    {h.name}
+                  </a>
+                  {rrfScore !== undefined && (
+                    <span className="ml-auto font-mono text-xs text-muted-foreground">
+                      rrf {rrfScore.toFixed(4)}
                     </span>
-                  ))}
+                  )}
                 </div>
-              )}
-            </li>
-          ))}
+                <p
+                  className="mt-2 text-sm text-secondary-700 dark:text-secondary-300 [&_b]:bg-yellow-100 [&_b]:font-semibold [&_mark]:bg-yellow-100 dark:[&_b]:bg-yellow-900/50 dark:[&_mark]:bg-yellow-900/50"
+                  dangerouslySetInnerHTML={{ __html: snippetHtml }}
+                />
+                {h.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {h.tags.map((t) => (
+                      <Badge key={t} variant="secondary" className="font-mono text-xs">{t}</Badge>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
-    </main>
+    </PageShell>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-6xl px-6 py-8"><Skeleton className="h-48 w-full" /></div>}>
+      <SearchPageInner />
+    </Suspense>
   );
 }

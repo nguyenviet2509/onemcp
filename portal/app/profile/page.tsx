@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiFetch, ApiError } from '../../lib/api-client';
 import { getIdentity } from '../../lib/identity';
 
@@ -49,7 +50,18 @@ export default function ProfilePage() {
       )}
 
       {me && (
-        <dl className="mt-6 grid grid-cols-3 gap-3 rounded-lg border border-slate-200 p-6 text-sm dark:border-slate-800">
+        <div className="mt-6 flex gap-3">
+          <Link
+            href="/profile/api-keys"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+          >
+            API Keys →
+          </Link>
+        </div>
+      )}
+
+      {me && (
+        <dl className="mt-4 grid grid-cols-3 gap-3 rounded-lg border border-slate-200 p-6 text-sm dark:border-slate-800">
           <dt className="text-slate-500">User ID</dt>
           <dd className="col-span-2 font-mono">{me.id}</dd>
 
