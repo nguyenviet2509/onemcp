@@ -16,7 +16,8 @@
     "migration:run": "pnpm typeorm migration:run",
     "migration:revert": "pnpm typeorm migration:revert",
     "migration:generate": "pnpm typeorm migration:generate",
-    "backfill:embeddings": "ts-node -r tsconfig-paths/register src/embeddings/backfill-embeddings.ts"
+    "backfill:embeddings": "ts-node -r tsconfig-paths/register src/embeddings/backfill-embeddings.ts",
+    "seed:sample-ops": "ts-node -r tsconfig-paths/register src/scripts/seed-sample-artifacts-ops.ts"
   },
   "dependencies": {
     "@nestjs/bullmq": "^10.2.0",
