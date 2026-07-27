@@ -9,8 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { ApiError, apiFetch } from '@/lib/api-client';
 import { clearIdentity, getIdentity, setIdentity } from '@/lib/identity';
@@ -151,11 +149,13 @@ export function SidebarUserCard() {
           <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Theme
           </DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={currentTheme} onValueChange={(v) => setTheme(v)}>
-            <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
+          {/* Plain items avoid RadioGroup runtime crash with next-themes SSR */}
+          {(['light', 'dark', 'system'] as const).map((t) => (
+            <DropdownMenuItem key={t} onClick={() => setTheme(t)}>
+              {mounted && currentTheme === t ? '✓ ' : ''}
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

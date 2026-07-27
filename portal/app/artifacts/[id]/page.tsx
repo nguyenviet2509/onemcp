@@ -246,7 +246,8 @@ export default function ArtifactDetailPage({ params }: Props) {
           </div>
 
           {artifact.tags.length > 0 && (
-            <div className="mb-4 flex flex-wrap gap-1">
+            <div className="mb-4 flex flex-wrap items-center gap-1">
+              <span className="mr-1 text-xs uppercase tracking-wider text-muted-foreground">Tags</span>
               {artifact.tags.map((t) => (
                 <Badge key={t} variant="outline" className="text-xs">
                   {t}
@@ -255,11 +256,10 @@ export default function ArtifactDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* Tabs: View | Edit | History | Attachments */}
+          {/* Tabs: View | History | Attachments — Edit removed, single Edit btn in header */}
           <Tabs defaultValue="view">
-            <TabsList variant="line">
+            <TabsList variant="default">
               <TabsTrigger value="view">View</TabsTrigger>
-              <TabsTrigger value="edit">Edit</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
               <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
@@ -286,21 +286,6 @@ export default function ArtifactDetailPage({ params }: Props) {
                   {version.reviewNote && ` · ${version.reviewNote}`}
                 </p>
               )}
-            </TabsContent>
-
-            {/* Edit tab — navigate to dedicated edit page (preserves existing edit flow) */}
-            <TabsContent value="edit" className="mt-4">
-              <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-                <p className="mb-3">
-                  Editing creates a new pending version for review.
-                </p>
-                <Link
-                  href={`/artifacts/${id}/edit`}
-                  className={buttonVariants({ size: 'sm' })}
-                >
-                  Open editor
-                </Link>
-              </div>
             </TabsContent>
 
             {/* History tab — version list + diff */}
