@@ -210,11 +210,11 @@ function SearchPageInner() {
             autoFocus
             className="w-full rounded-lg border border-border bg-card py-3 pl-11 pr-16 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground transition-colors"
           />
-          {/* Search glyph — text only, no icon import */}
-          <span className="pointer-events-none absolute left-4 top-3.5 text-lg text-muted-foreground select-none">
+          {/* Search glyph — vertically centered via -translate-y-1/2 */}
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg leading-none text-muted-foreground select-none">
             ⌕
           </span>
-          <kbd className="pointer-events-none absolute right-3 top-3.5 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs leading-none text-muted-foreground">
             Enter
           </kbd>
         </div>

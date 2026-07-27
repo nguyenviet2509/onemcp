@@ -211,6 +211,18 @@ export class ArtifactsService {
     } else if (artifact.currentVersionId) {
       version = await this.versions.findOne({ where: { id: artifact.currentVersionId } });
     }
+
+    // Fire-and-forget view increment — only for published artifacts (skip
+    // draft/rejected noise). Await not needed; drives Top Viewed widget.
+    if (artifact.status === 'published') {
+      this.artifacts
+        .increment({ id: artifact.id }, 'viewCount', 1)
+        .then(() =>
+          this.artifacts.update({ id: artifact.id }, { lastViewedAt: new Date() }),
+        )
+        .catch(() => { /* view-count best-effort */ });
+      artifact.viewCount = (artifact.viewCount ?? 0) + 1;
+    }
     return { artifact, version };
   }
 
