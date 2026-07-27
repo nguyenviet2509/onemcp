@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
 import { EmptyState } from './empty-state';
+import { WidgetError } from './widget-error';
 import { WidgetSkeleton } from './dashboard-widgets';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -11,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function TopViewedWidget() {
   const [items, setItems] = useState<Artifact[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     listArtifacts({ status: 'published' })
@@ -21,7 +22,7 @@ export function TopViewedWidget() {
         );
         setItems(sorted.slice(0, 10));
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
+      .catch((e) => setError(e));
   }, []);
 
   if (items === null && !error) return <WidgetSkeleton />;
@@ -35,7 +36,7 @@ export function TopViewedWidget() {
       </CardHeader>
       <CardContent>
         {error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <WidgetError err={error} />
         ) : items?.length === 0 || allZero ? (
           <EmptyState
             title="No views yet"
@@ -73,7 +74,7 @@ interface TagCount {
 
 export function TopTagsWidget() {
   const [tags, setTags] = useState<TagCount[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     listArtifacts({ status: 'published' })
@@ -90,7 +91,7 @@ export function TopTagsWidget() {
           .slice(0, 10);
         setTags(sorted);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
+      .catch((e) => setError(e));
   }, []);
 
   if (tags === null && !error) return <WidgetSkeleton />;
@@ -102,7 +103,7 @@ export function TopTagsWidget() {
       </CardHeader>
       <CardContent>
         {error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <WidgetError err={error} />
         ) : tags?.length === 0 ? (
           <EmptyState title="No tags yet" description="Tag your artifacts to see them here." />
         ) : (

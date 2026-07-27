@@ -6,7 +6,7 @@ import { Clock } from 'lucide-react';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
 import { useCurrentSpace } from '../lib/space-context';
 import { EmptyState } from './empty-state';
-import { getIdentity } from '../lib/identity';
+import { WidgetError } from './widget-error';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -44,10 +44,11 @@ function relativeTime(iso: string): string {
 export function RecentActivityWidget() {
   const { space } = useCurrentSpace();
   const [items, setItems] = useState<Artifact[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     setItems(null);
+    setError(null);
     listArtifacts({ ...(space.slug ? { space: space.slug } : {}) })
       .then((all) => {
         const sorted = [...all].sort(
@@ -55,7 +56,7 @@ export function RecentActivityWidget() {
         );
         setItems(sorted.slice(0, 10));
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
+      .catch((e) => setError(e));
   }, [space.slug]);
 
   if (items === null && !error) return <WidgetSkeleton />;
@@ -70,7 +71,7 @@ export function RecentActivityWidget() {
       </CardHeader>
       <CardContent>
         {error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <WidgetError err={error} />
         ) : items?.length === 0 ? (
           <EmptyState title="No recent activity" description="Artifacts will appear here once created." />
         ) : (
@@ -104,7 +105,7 @@ export function RecentActivityWidget() {
 
 export function MyDraftsWidget() {
   const [items, setItems] = useState<Artifact[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     // Backend now supports ?author=me — filter server-side to avoid over-fetching.
@@ -112,7 +113,7 @@ export function MyDraftsWidget() {
       .then((all) => {
         setItems(all.slice(0, 5));
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
+      .catch((e) => setError(e));
   }, []);
 
   if (items === null && !error) return <WidgetSkeleton />;
@@ -124,7 +125,7 @@ export function MyDraftsWidget() {
       </CardHeader>
       <CardContent>
         {error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <WidgetError err={error} />
         ) : items?.length === 0 ? (
           <EmptyState title="No drafts" description="Artifacts you submit will appear here." />
         ) : (
@@ -151,12 +152,12 @@ export function MyDraftsWidget() {
 
 export function PendingReviewWidget() {
   const [count, setCount] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     listArtifacts({ status: 'pending' })
       .then((all) => setCount(all.length))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
+      .catch((e) => setError(e));
   }, []);
 
   return (
@@ -166,7 +167,7 @@ export function PendingReviewWidget() {
       </CardHeader>
       <CardContent>
         {error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <WidgetError err={error} />
         ) : count === null ? (
           <Skeleton className="h-8 w-full" />
         ) : count === 0 ? (
