@@ -14,13 +14,15 @@ import { RunbookLoadEvent } from '../artifacts/entities/runbook-load-event.entit
 import { Attachment } from '../attachments/entities/attachment.entity';
 import { AlertmanagerDedup } from '../webhooks/entities/alertmanager-dedup.entity';
 import { Embedding } from '../embeddings/embedding.entity';
+import { Space } from '../spaces/space.entity';
+import { Template } from '../templates/template.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.POSTGRES_URL,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding],
+  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding, Space, Template],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsRun: false,
 };

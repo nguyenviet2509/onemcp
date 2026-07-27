@@ -6,6 +6,7 @@ import { ApiError } from '../../../lib/api-client';
 import { Artifact, listArtifacts } from '../../../lib/api/artifacts';
 import { Badge } from '../../../components/ui/badge';
 import { statusVariant } from '../../../lib/status-pill-variants';
+import { Pagination, paginateItems } from '../../../components/pagination';
 
 // Queue cho maintainer — chỉ show pending artifacts.
 // Non-maintainer sẽ chỉ thấy own pending (backend RBAC).
@@ -13,6 +14,8 @@ export default function ArtifactReviewQueuePage() {
   const [items, setItems] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
 
   useEffect(() => {
     setLoading(true);
@@ -21,6 +24,8 @@ export default function ArtifactReviewQueuePage() {
       .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
       .finally(() => setLoading(false));
   }, []);
+
+  const pagedItems = paginateItems(items, page, pageSize);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-6">
@@ -47,7 +52,7 @@ export default function ArtifactReviewQueuePage() {
       )}
 
       <ul className="mt-6 space-y-3">
-        {items.map((a) => (
+        {pagedItems.map((a) => (
           <li
             key={a.id}
             className="rounded-lg border border-border bg-card p-4"
@@ -78,6 +83,16 @@ export default function ArtifactReviewQueuePage() {
           </li>
         ))}
       </ul>
+
+      {!loading && !error && items.length > 0 && (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={items.length}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
+      )}
     </main>
   );
 }

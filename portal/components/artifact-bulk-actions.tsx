@@ -88,7 +88,8 @@ export function ArtifactBulkActions({ selectedIds, allArtifacts, onComplete }: P
   }
 
   return (
-    <div className="sticky bottom-4 z-20 mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+    // fixed centering is more reliable than sticky inside flex-overflow contexts
+    <div className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2 flex max-w-2xl items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
       <span className="text-sm font-medium text-foreground">
         {selectedIds.size} selected
       </span>

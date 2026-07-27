@@ -18,6 +18,7 @@ import {
 } from '@/lib/api/spaces';
 import { ApiError } from '@/lib/api-client';
 import Link from 'next/link';
+import { Pagination, paginateItems } from '@/components/pagination';
 
 interface SpaceFormState {
   name: string;
@@ -36,6 +37,8 @@ export default function SpacesPage() {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<SpaceFormState>(EMPTY_FORM);
@@ -143,7 +146,7 @@ export default function SpacesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {spaces.map((s) => (
+              {paginateItems(spaces, page, pageSize).map((s) => (
                 <tr key={s.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3 font-medium">{s.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.slug}</td>
@@ -171,6 +174,16 @@ export default function SpacesPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!loading && spaces.length > 0 && (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={spaces.length}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
       )}
 
       {/* Create dialog */}

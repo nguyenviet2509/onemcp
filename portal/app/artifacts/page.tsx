@@ -13,6 +13,7 @@ import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filt
 import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
 import { Artifact, ArtifactStatus, listArtifacts } from '../../lib/api/artifacts';
 import { statusVariant } from '../../lib/status-pill-variants';
+import { Pagination, paginateItems } from '../../components/pagination';
 
 function filterToParams(f: FilterState) {
   return {
@@ -89,11 +90,14 @@ function ArtifactsContent() {
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastFilter, setLastFilter] = useState<FilterState | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
 
   const fetchList = useCallback((f: FilterState) => {
     setLastFilter(f);
     setLoading(true);
     setError(null);
+    setPage(1); // reset to first page on new filter
     listArtifacts(filterToParams(f))
       .then((data) => {
         setItems(data);
@@ -119,6 +123,7 @@ function ArtifactsContent() {
     }
   }
 
+  const pagedItems = paginateItems(items, page, pageSize);
   const allChecked = items.length > 0 && selectedIds.size === items.length;
   const someChecked = selectedIds.size > 0 && !allChecked;
 
@@ -162,7 +167,7 @@ function ArtifactsContent() {
 
             {/* Artifact list — Option A: divide-y, no per-row card */}
             <ul className="divide-y divide-border rounded-lg border border-border">
-              {items.map((a) => (
+              {pagedItems.map((a) => (
                 <ArtifactRow
                   key={a.id}
                   artifact={a}
@@ -171,6 +176,14 @@ function ArtifactsContent() {
                 />
               ))}
             </ul>
+
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={items.length}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+            />
           </>
         )}
       </div>

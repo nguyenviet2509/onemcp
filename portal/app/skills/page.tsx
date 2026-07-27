@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../lib/api-client';
 import { listSkills, Skill } from '../../lib/api/skills';
+import { Pagination, paginateItems } from '../../components/pagination';
 
 // Option A skills list: px-8 py-6, divide-y row layout, chip tags, no bespoke colors.
 export default function SkillsListPage() {
@@ -12,6 +13,8 @@ export default function SkillsListPage() {
   const [tag, setTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
 
   useEffect(() => {
     setLoading(true);
@@ -29,6 +32,11 @@ export default function SkillsListPage() {
       return s.name.includes(q) || (s.description ?? '').toLowerCase().includes(q);
     });
   }, [items, query, tag]);
+
+  // Reset to page 1 when filter changes
+  const pagedFiltered = useMemo(() => {
+    return paginateItems(filtered, page, pageSize);
+  }, [filtered, page, pageSize]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -48,7 +56,7 @@ export default function SkillsListPage() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setPage(1); }}
           placeholder="Search name or description..."
           className="h-8 flex-1 rounded-md border border-border bg-transparent px-2.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/15 focus:border-foreground"
         />
@@ -102,7 +110,7 @@ export default function SkillsListPage() {
       {/* Skill list — Option A: divide-y, no per-card shadow */}
       {!loading && filtered.length > 0 && (
         <ul className="divide-y divide-border rounded-lg border border-border">
-          {filtered.map((s) => (
+          {pagedFiltered.map((s) => (
             <li key={s.id} className="flex items-start justify-between gap-4 px-4 py-3 hover:bg-muted/50 transition-colors">
               <div className="min-w-0 flex-1">
                 <Link
@@ -140,6 +148,16 @@ export default function SkillsListPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={filtered.length}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
       )}
     </main>
   );
