@@ -2,52 +2,41 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface EmptyStateProps {
-  /** Single lucide-react icon component (ReactNode) or omit for no icon. Budget: counts toward page icon limit. */
+  /** Single lucide-react icon component (ReactNode) or omit for no icon. */
   icon?: ReactNode;
   title: string;
   description?: string;
-  /** CTA button/link rendered below description. */
   cta?: ReactNode;
   /**
    * Size variant:
-   * - 'default' — full padding + icon, for page-level empty states
-   * - 'compact' — reduced padding, no icon slot, small text; for sidebar widgets
+   * - 'default' — full padding, for page-level empty states
+   * - 'compact' — reduced padding, small text; for sidebar widgets
    */
   size?: 'default' | 'compact';
 }
 
-// Shared empty state — use for every empty list/zero-result/first-run scenario.
-// Centered layout, muted colors, dark mode via Tailwind dark: variants.
-// Guardrail: pass at most 1 icon (icon budget per design rules).
+// Option A empty state: no bg fill, just border-dashed border-border.
+// Muted text, clean centered layout. No emoji.
 export function EmptyState({ icon, title, description, cta, size = 'default' }: EmptyStateProps) {
   const isCompact = size === 'compact';
 
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center',
-        'border-secondary-200 bg-secondary-50 dark:border-secondary-700 dark:bg-secondary-900/30',
-        isCompact ? 'px-3 py-4' : 'px-6 py-16 gap-3',
+        'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-center',
+        isCompact ? 'px-3 py-4' : 'px-6 py-12 gap-3',
       )}
     >
-      {/* Icon shown only in default size */}
       {!isCompact && icon && (
-        <span className="text-secondary-400 dark:text-secondary-500" aria-hidden>
+        <span className="text-muted-foreground" aria-hidden>
           {icon}
         </span>
       )}
-      <p
-        className={cn(
-          'font-medium text-secondary-900 dark:text-secondary-100',
-          isCompact ? 'text-xs text-muted-foreground' : 'text-base',
-        )}
-      >
+      <p className={cn('font-medium', isCompact ? 'text-xs text-muted-foreground' : 'text-sm text-foreground')}>
         {title}
       </p>
       {description && !isCompact && (
-        <p className="max-w-sm text-sm text-secondary-500 dark:text-secondary-400">
-          {description}
-        </p>
+        <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
       )}
       {cta && !isCompact && <div className="mt-1">{cta}</div>}
     </div>

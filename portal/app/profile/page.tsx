@@ -14,6 +14,7 @@ interface Me {
   identityMode: string;
 }
 
+// Option A profile page: PageShell-style layout, tokens only — no hardcoded colors.
 export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,69 +30,76 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-2xl font-bold">Profile</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        V1 identity mode (trust header). Full auth deferred post-v1.
-      </p>
+    <main className="mx-auto max-w-3xl px-8 py-6">
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Profile</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          V1 identity mode (trust header). Full auth deferred post-v1.
+        </p>
+      </div>
 
+      {/* Identity warning */}
       {!identity && (
-        <div className="mt-6 rounded border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950">
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
           Chưa identify. Nhập username ở navbar để bắt đầu.
         </div>
       )}
 
-      {loading && <div className="mt-6 text-muted-foreground">Loading...</div>}
+      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
 
       {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {me && (
-        <div className="mt-6 flex gap-3">
+        <div className="mb-4">
           <Link
             href="/profile/api-keys"
-            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             API Keys →
           </Link>
         </div>
       )}
 
+      {/* Profile detail — Option A: clean dl table, border-border, no card shadow */}
       {me && (
-        <dl className="mt-4 grid grid-cols-3 gap-3 rounded-lg border border-border p-6 text-sm">
-          <dt className="text-muted-foreground">User ID</dt>
-          <dd className="col-span-2 font-mono">{me.id}</dd>
-
-          <dt className="text-muted-foreground">Username</dt>
-          <dd className="col-span-2 font-mono">{me.username}</dd>
-
-          <dt className="text-muted-foreground">Roles</dt>
-          <dd className="col-span-2">
-            {me.roles.map((r) => (
-              <span
-                key={r}
-                className="mr-2 rounded bg-blue-100 px-2 py-0.5 font-mono text-xs text-blue-900 dark:bg-blue-950 dark:text-blue-100"
-              >
-                {r}
-              </span>
-            ))}
-          </dd>
-
-          <dt className="text-muted-foreground">Department</dt>
-          <dd className="col-span-2 font-mono">#{me.departmentId}</dd>
-
-          <dt className="text-muted-foreground">Status</dt>
-          <dd className="col-span-2 font-mono">{me.status}</dd>
-
-          <dt className="text-muted-foreground">Mode</dt>
-          <dd className="col-span-2 font-mono text-amber-600 dark:text-amber-400">
-            {me.identityMode}
-          </dd>
-        </dl>
+        <div className="rounded-lg border border-border">
+          <dl className="divide-y divide-border text-sm">
+            <ProfileRow label="User ID"   value={<span className="font-mono">{me.id}</span>} />
+            <ProfileRow label="Username"  value={<span className="font-mono">{me.username}</span>} />
+            <ProfileRow label="Roles"     value={
+              <div className="flex flex-wrap gap-1">
+                {me.roles.map((r) => (
+                  <span
+                    key={r}
+                    className="rounded border border-border bg-muted px-2 py-px font-mono text-[11px] font-medium text-muted-foreground"
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            } />
+            <ProfileRow label="Department" value={<span className="font-mono">#{me.departmentId}</span>} />
+            <ProfileRow label="Status"     value={<span className="font-mono">{me.status}</span>} />
+            <ProfileRow label="Mode"       value={
+              <span className="font-mono text-amber-600 dark:text-amber-400">{me.identityMode}</span>
+            } />
+          </dl>
+        </div>
       )}
     </main>
+  );
+}
+
+function ProfileRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-3 gap-4 px-4 py-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="col-span-2">{value}</dd>
+    </div>
   );
 }

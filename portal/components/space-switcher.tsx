@@ -52,7 +52,7 @@ export function SpaceSwitcher() {
     <DropdownMenu>
       {/* Prominent card-style trigger for sidebar — replaces old top-right chip */}
       <DropdownMenuTrigger
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2.5 text-left text-sm transition-colors hover:bg-sidebar-accent/80"
+        className="flex w-full items-center justify-between gap-2 rounded-md border border-sidebar-border bg-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-sidebar-accent"
         aria-label="Switch space"
       >
         <div className="min-w-0 flex-1">

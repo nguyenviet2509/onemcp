@@ -141,7 +141,7 @@ function ReviewActions({
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
+    <section className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
       <h2 className="text-sm font-semibold">Review actions (maintainer only)</h2>
       {error && (
         <Alert variant="destructive" className="mt-2">
@@ -153,7 +153,7 @@ function ReviewActions({
         onChange={(e) => setNote(e.target.value)}
         rows={2}
         placeholder="Review note (optional)..."
-        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
+        className="mt-2 w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/15 focus:border-foreground"
         maxLength={1000}
       />
       <div className="mt-2 flex gap-2">

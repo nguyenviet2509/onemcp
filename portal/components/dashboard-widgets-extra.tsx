@@ -8,7 +8,7 @@ import { WidgetSkeleton } from './dashboard-widgets';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // ── Widget 4: Top Viewed ──────────────────────────────────────────────────────
-// Uses viewCount field from Artifact type (Phase 1C field confirmed).
+// Option A row layout: numbered list, rank muted, count muted right-aligned.
 
 export function TopViewedWidget() {
   const [items, setItems] = useState<Artifact[] | null>(null);
@@ -32,24 +32,24 @@ export function TopViewedWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base font-semibold">Top viewed</CardTitle>
+        <CardTitle>Top viewed · 7d</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {error ? (
-          <WidgetError err={error} />
+          <div className="px-4 py-3"><WidgetError err={error} /></div>
         ) : items?.length === 0 || allZero ? (
-          <EmptyState
-            title="No views yet"
-            size="compact"
-          />
+          <div className="px-4 py-3">
+            <EmptyState size="compact" title="No views yet" />
+          </div>
         ) : (
-          <ol className="space-y-0.5">
+          <ol className="divide-y divide-border">
             {items?.map((a, idx) => (
-              <li key={a.id} className="flex items-center gap-2 text-sm">
-                <span className="w-5 shrink-0 text-right text-xs text-muted-foreground">{idx + 1}</span>
+              <li key={a.id} className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 transition-colors">
+                {/* Rank number — muted, fixed width */}
+                <span className="w-4 shrink-0 text-right text-xs text-muted-foreground">{idx + 1}</span>
                 <a
                   href={`/artifacts/${a.id}`}
-                  className="flex-1 truncate text-foreground hover:text-primary"
+                  className="flex-1 truncate text-sm text-foreground hover:text-primary"
                 >
                   {a.title}
                 </a>
@@ -64,8 +64,7 @@ export function TopViewedWidget() {
 }
 
 // ── Widget 5: Top Tags ────────────────────────────────────────────────────────
-// Aggregates tags from all published artifacts client-side.
-// Clickable badges navigate to /artifacts?tag=<tag>.
+// Option A chip layout: rounded (not pill), 11px text, panel-2 bg.
 
 interface TagCount {
   tag: string;
@@ -99,23 +98,24 @@ export function TopTagsWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base font-semibold">Top tags</CardTitle>
+        <CardTitle>Tags</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (
           <WidgetError err={error} />
         ) : tags?.length === 0 ? (
-          <EmptyState title="No tags yet" description="Tag your artifacts to see them here." />
+          <EmptyState size="compact" title="No tags yet" />
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {tags?.map(({ tag, count }) => (
               <a
                 key={tag}
                 href={`/artifacts?tag=${encodeURIComponent(tag)}`}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                // Option A chip: rounded (4px), border, panel-2 bg, 11px text, no pill
+                className="inline-flex items-center gap-1 rounded border border-border bg-muted px-2 py-px text-[11px] font-medium text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors"
               >
                 {tag}
-                <span className="text-muted-foreground/60">{count}</span>
+                <span className="text-muted-foreground/60">· {count}</span>
               </a>
             ))}
           </div>

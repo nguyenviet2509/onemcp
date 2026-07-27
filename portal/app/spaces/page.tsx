@@ -144,7 +144,7 @@ export default function SpacesPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {spaces.map((s) => (
-                <tr key={s.id} className="bg-card hover:bg-muted/30 transition-colors">
+                <tr key={s.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3 font-medium">{s.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.slug}</td>
                   <td className="px-4 py-3">

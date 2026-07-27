@@ -13,36 +13,32 @@ export interface PageShellProps {
   children: ReactNode;
 }
 
-// Shared layout shell — every list/detail/form page MUST use this component.
-// Enforces consistent max-width, padding, header slot, and breadcrumb row.
-// Dark mode handled via Tailwind dark: variants using design tokens.
+// Shared layout shell — Option A: px-8 py-6 for hero pages, px-6 py-6 for list pages.
+// Breadcrumb uses muted text + slash separator. Header h1 is tracking-tight font-semibold.
 export function PageShell({ title, breadcrumb, actions, children }: PageShellProps) {
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-6">
-      {/* Breadcrumb row */}
+    <main className="mx-auto w-full max-w-6xl px-8 py-6">
+      {/* Breadcrumb row — Option A: xs muted text, slash-separated */}
       {breadcrumb && breadcrumb.length > 0 && (
-        <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-sm text-secondary-500 dark:text-secondary-400">
+        <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           {breadcrumb.map((item, i) => (
             <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && <span aria-hidden>/</span>}
+              {i > 0 && <span aria-hidden className="text-muted-foreground/50">/</span>}
               {item.href ? (
-                <Link
-                  href={item.href}
-                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                >
+                <Link href={item.href} className="hover:text-foreground transition-colors">
                   {item.label}
                 </Link>
               ) : (
-                <span className="text-secondary-900 dark:text-secondary-100">{item.label}</span>
+                <span className="text-foreground">{item.label}</span>
               )}
             </span>
           ))}
         </nav>
       )}
 
-      {/* Page header */}
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-secondary-900 dark:text-secondary-50">
+      {/* Page header — tracking-tight, items-baseline for text alignment */}
+      <div className="mb-6 flex items-baseline justify-between gap-4">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
           {title}
         </h1>
         {actions && (
@@ -50,7 +46,6 @@ export function PageShell({ title, breadcrumb, actions, children }: PageShellPro
         )}
       </div>
 
-      {/* Main content */}
       {children}
     </main>
   );

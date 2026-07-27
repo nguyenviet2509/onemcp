@@ -235,7 +235,7 @@ function SearchPageInner() {
             return (
               <li
                 key={`${h.kind}-${h.id}`}
-                className="rounded-lg border border-border bg-card p-4 dark:bg-card"
+                className="rounded-lg border border-border bg-card p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex flex-wrap items-baseline gap-2">
                   <Badge variant="secondary" className="font-mono text-xs">{h.kind}</Badge>
@@ -252,7 +252,7 @@ function SearchPageInner() {
                   )}
                 </div>
                 <p
-                  className="mt-2 text-sm text-secondary-700 dark:text-secondary-300 [&_b]:bg-yellow-100 [&_b]:font-semibold [&_mark]:bg-yellow-100 dark:[&_b]:bg-yellow-900/50 dark:[&_mark]:bg-yellow-900/50"
+                  className="mt-2 text-sm text-muted-foreground [&_b]:bg-primary/10 [&_b]:font-semibold [&_mark]:bg-primary/10 [&_mark]:text-foreground"
                   dangerouslySetInnerHTML={{ __html: snippetHtml }}
                 />
                 {h.tags.length > 0 && (

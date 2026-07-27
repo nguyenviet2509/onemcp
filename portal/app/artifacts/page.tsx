@@ -7,18 +7,13 @@ import { Checkbox } from '../../components/ui/checkbox';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { Separator } from '../../components/ui/separator';
 import { PageShell } from '../../components/page-shell';
 import { EmptyState } from '../../components/empty-state';
 import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filter-panel';
 import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
 import { Artifact, ArtifactStatus, listArtifacts } from '../../lib/api/artifacts';
-// FileTextIcon removed (icon budget: 0 outside sidebar-nav).
 import { statusVariant } from '../../lib/status-pill-variants';
 
-// STATUS_CLASSES replaced by statusVariant() helper from lib/status-pill-variants.ts
-
-// Builds ListArtifactsParams from FilterState (adapter layer).
 function filterToParams(f: FilterState) {
   return {
     space: f.space || undefined,
@@ -31,6 +26,7 @@ function filterToParams(f: FilterState) {
   };
 }
 
+// Option A artifact row: flat divide-y layout, no card-per-row shadow.
 function ArtifactRow({
   artifact,
   checked,
@@ -41,7 +37,7 @@ function ArtifactRow({
   onToggle: (id: string) => void;
 }) {
   return (
-    <li className="flex items-start gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/40">
+    <li className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
       <Checkbox
         checked={checked}
         onCheckedChange={() => onToggle(artifact.id)}
@@ -50,29 +46,25 @@ function ArtifactRow({
       />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
-            {artifact.type}
-          </span>
           <Link
             href={`/artifacts/${artifact.id}`}
-            className="truncate text-sm font-semibold text-primary hover:underline"
+            className="truncate text-sm font-medium text-foreground hover:text-primary"
           >
             {artifact.title}
           </Link>
-          <Badge variant={statusVariant(artifact.status)}>
-            {artifact.status}
-          </Badge>
+          <Badge variant={statusVariant(artifact.status)}>{artifact.status}</Badge>
+          {artifact.type && (
+            <Badge variant="template">{artifact.type}</Badge>
+          )}
         </div>
-        <p className="mt-0.5 font-mono text-xs text-muted-foreground">{artifact.slug}</p>
         {artifact.tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {artifact.tags.map((t) => (
-              <Badge key={t} variant="outline" className="text-xs">
-                {t}
-              </Badge>
+              <Badge key={t} variant="tag">{t}</Badge>
             ))}
           </div>
         )}
+        <p className="mt-0.5 font-mono text-xs text-muted-foreground">{artifact.slug}</p>
       </div>
     </li>
   );
@@ -80,18 +72,17 @@ function ArtifactRow({
 
 function LoadingRows() {
   return (
-    <ul className="space-y-2">
+    <div className="divide-y divide-border rounded-lg border border-border">
       {Array.from({ length: 5 }).map((_, i) => (
-        <li key={i} className="rounded-lg border border-border bg-card px-4 py-3">
+        <div key={i} className="px-4 py-3">
           <Skeleton className="mb-2 h-4 w-1/3" />
           <Skeleton className="h-3 w-2/3" />
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
 
-// Inner component that requires useSearchParams — wrapped in Suspense below.
 function ArtifactsContent() {
   const [items, setItems] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,13 +97,12 @@ function ArtifactsContent() {
     listArtifacts(filterToParams(f))
       .then((data) => {
         setItems(data);
-        setSelectedIds(new Set()); // reset selection on filter change
+        setSelectedIds(new Set());
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
   }, []);
 
-  // Checkbox toggle helpers.
   function toggleOne(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -134,7 +124,6 @@ function ArtifactsContent() {
 
   return (
     <>
-      {/* Filter panel — syncs to URL + calls fetchList on change */}
       <ArtifactFilterPanel onChange={fetchList} />
 
       <div className="mt-4">
@@ -158,7 +147,7 @@ function ArtifactsContent() {
           />
         ) : (
           <>
-            {/* Select-all header row */}
+            {/* Select-all header */}
             <div className="mb-2 flex items-center gap-3 px-1">
               <Checkbox
                 checked={allChecked}
@@ -170,9 +159,9 @@ function ArtifactsContent() {
                 {items.length} artifact{items.length !== 1 ? 's' : ''}
               </span>
             </div>
-            <Separator className="mb-3" />
 
-            <ul className="space-y-2">
+            {/* Artifact list — Option A: divide-y, no per-row card */}
+            <ul className="divide-y divide-border rounded-lg border border-border">
               {items.map((a) => (
                 <ArtifactRow
                   key={a.id}
@@ -186,7 +175,6 @@ function ArtifactsContent() {
         )}
       </div>
 
-      {/* Sticky bulk actions bar — only visible when items selected */}
       <ArtifactBulkActions
         selectedIds={selectedIds}
         allArtifacts={items}
@@ -207,7 +195,6 @@ export default function ArtifactsListPage() {
         </Link>
       }
     >
-      {/* Suspense boundary required because ArtifactFilterPanel uses useSearchParams */}
       <Suspense fallback={<LoadingRows />}>
         <ArtifactsContent />
       </Suspense>

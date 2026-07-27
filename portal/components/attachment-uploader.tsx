@@ -63,7 +63,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Attachments ({items.length})</h2>
         {canWrite && (
-          <label className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700">
+          <label className="cursor-pointer rounded border border-foreground bg-foreground px-3 py-1 text-xs text-background hover:opacity-90 transition-opacity">
             {busy ? 'Uploading...' : '+ Upload'}
             <input
               ref={inputRef}
@@ -77,7 +77,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
         )}
       </div>
       {error && (
-        <p className="mt-2 rounded bg-red-50 px-3 py-2 text-xs text-red-900 dark:bg-red-950 dark:text-red-100">
+        <p className="mt-2 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {error}
         </p>
       )}
@@ -89,7 +89,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
             <li key={a.id} className="flex items-center justify-between rounded px-2 py-1 hover:bg-muted">
               <a
                 href={downloadAttachmentUrl(a.id)}
-                className="flex-1 truncate text-blue-600 hover:underline"
+                className="flex-1 truncate text-primary hover:underline"
                 download={a.filename}
               >
                 {a.filename}
@@ -100,7 +100,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
               {canWrite && (
                 <button
                   onClick={() => handleDelete(a.id)}
-                  className="ml-3 text-xs text-red-600 hover:underline"
+                  className="ml-3 text-xs text-destructive hover:underline"
                 >
                   delete
                 </button>

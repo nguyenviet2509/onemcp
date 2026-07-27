@@ -13,7 +13,7 @@ interface Props {
 export function StructuredEditor({ template, values, onChange }: Props) {
   return (
     <div className="space-y-4">
-      <p className="rounded bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:bg-blue-950 dark:text-blue-100">
+      <p className="rounded border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
         Template <b>{template.label}</b> v{template.version}: {template.description}
       </p>
       {template.fields.map((f) => (
@@ -45,7 +45,7 @@ function FieldEditor({
     <div>
       <label className="mb-1 flex items-center gap-2 text-sm font-medium">
         {field.label}
-        {field.required && <span className="text-xs text-red-600">*</span>}
+        {field.required && <span className="text-xs text-destructive">*</span>}
         {field.minLength && <span className="text-xs text-muted-foreground">min {field.minLength} chars</span>}
       </label>
       {field.type === 'markdown' ? (

@@ -87,7 +87,7 @@ export function IdentifyAsDropdown() {
           <button
             onClick={save}
             disabled={verifying}
-            className="rounded bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            className="rounded border border-foreground bg-foreground px-2.5 py-1 text-xs text-background hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {verifying ? 'Checking…' : 'Save'}
           </button>
@@ -101,7 +101,7 @@ export function IdentifyAsDropdown() {
           )}
         </div>
         {error && (
-          <p className="text-[10px] text-red-400 leading-tight">{error}</p>
+          <p className="text-[10px] text-destructive leading-tight">{error}</p>
         )}
       </div>
     );
@@ -120,14 +120,14 @@ export function IdentifyAsDropdown() {
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={() => { setDraft(current); setEditing(true); }}
-            className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors"
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
           >
             change
           </button>
           <span className="text-muted-foreground/40">·</span>
           <button
             onClick={clear}
-            className="text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
           >
             clear
           </button>

@@ -35,12 +35,13 @@ export default function OnboardingPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {DEPTS.map((dept) => (
           <Link key={dept.key} href={`/onboarding/${dept.key}`} className="group block">
-            <Card className="h-full p-6 transition-shadow group-hover:shadow-md">
-              <h2 className="text-base font-semibold text-secondary-900 dark:text-secondary-50">
+            {/* Option A card: border hover, no shadow */}
+            <Card className="h-full p-6 transition-colors group-hover:bg-muted/50">
+              <h2 className="text-sm font-semibold text-foreground">
                 {dept.label}
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">{dept.description}</p>
-              <span className="mt-4 inline-block text-sm font-medium text-primary group-hover:underline">
+              <p className="mt-2 text-xs text-muted-foreground">{dept.description}</p>
+              <span className="mt-4 inline-block text-xs font-medium text-foreground group-hover:underline">
                 View guide →
               </span>
             </Card>

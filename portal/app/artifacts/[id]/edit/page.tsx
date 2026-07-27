@@ -17,6 +17,7 @@ interface StructuredShape {
   fields?: Record<string, string>;
 }
 
+// Option A edit page: token-only styles, inverted primary submit btn.
 export default function EditArtifactPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
@@ -65,36 +66,46 @@ export default function EditArtifactPage({ params }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-6">
-      <div className="text-sm">
-        <Link href={`/artifacts/${id}`} className="text-blue-600 hover:underline">
+    <main className="mx-auto max-w-3xl px-8 py-6">
+      {/* Breadcrumb */}
+      <div className="mb-4 text-xs text-muted-foreground">
+        <Link href={`/artifacts/${id}`} className="hover:text-foreground transition-colors">
           ← Back to detail
         </Link>
       </div>
-      <h1 className="mt-4 text-2xl font-bold">Edit: {title || '...'}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Update sẽ tạo pending version mới (type={type}). Maintainer approve để publish.
-      </p>
 
-      {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Edit: {title || '…'}
+        </h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Update creates a pending version (type={type}). Maintainer approves to publish.
+        </p>
+      </div>
+
+      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+
       {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {!loading && expectedVersion !== null && template && (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <p className="text-xs text-muted-foreground">
-            Editing on top of version <code>{expectedVersion}</code>. Concurrent submit → 409 conflict.
+            Editing on top of version <code className="font-mono">{expectedVersion}</code>.
+            Concurrent submit → 409 conflict.
           </p>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Tags (comma-separated)</label>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Tags (comma-separated)
+            </label>
             <input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full rounded border border-border bg-background px-3 py-2 text-sm text-foreground"
+              className="h-8 w-full rounded-md border border-border bg-transparent px-2.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/15 focus:border-foreground"
             />
           </div>
 
@@ -105,14 +116,18 @@ export default function EditArtifactPage({ params }: Props) {
           />
 
           <div className="flex items-center gap-3 pt-2">
+            {/* Option A primary: inverted bg=foreground, text=background */}
             <button
               type="submit"
               disabled={busy}
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-md border border-foreground bg-foreground px-3 py-1.5 text-[13px] font-medium text-background hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              {busy ? 'Saving...' : 'Submit new version'}
+              {busy ? 'Saving…' : 'Submit new version'}
             </button>
-            <Link href={`/artifacts/${id}`} className="text-sm text-muted-foreground hover:underline">
+            <Link
+              href={`/artifacts/${id}`}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Cancel
             </Link>
           </div>

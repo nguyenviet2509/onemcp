@@ -19,10 +19,13 @@ export function WidgetSkeleton() {
       <CardHeader>
         <CardTitle><Skeleton className="h-4 w-32" /></CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+      <CardContent className="p-0">
+        <div className="divide-y divide-border">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-4 w-full" />
+            <div key={i} className="px-4 py-2.5">
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="mt-1.5 h-3 w-1/3" />
+            </div>
           ))}
         </div>
       </CardContent>
@@ -41,8 +44,7 @@ function relativeTime(iso: string): string {
 }
 
 // ── Widget 1: Recent Activity ─────────────────────────────────────────────────
-// Clock icon removed (Phase 2 icon purge). Section title text-only.
-// Status pill uses shadcn Badge — semantic variants applied in Phase 3.
+// Option A row layout: divide-y divide-border, hover:bg-muted, no icons.
 
 export function RecentActivityWidget() {
   const { space } = useCurrentSpace();
@@ -66,39 +68,34 @@ export function RecentActivityWidget() {
 
   return (
     <Card>
-      {/* Section title text-only — no icon (icon budget: 0 outside sidebar-nav) */}
       <CardHeader>
-        <CardTitle className="text-base font-semibold">Recent activity</CardTitle>
+        <CardTitle>Recent activity</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {error ? (
-          <WidgetError err={error} />
+          <div className="px-4 py-3"><WidgetError err={error} /></div>
         ) : items?.length === 0 ? (
-          <EmptyState title="No recent activity" description="Artifacts will appear here once created." />
+          <div className="px-4 py-3">
+            <EmptyState size="compact" title="No recent activity" />
+          </div>
         ) : (
           <ul className="divide-y divide-border">
             {items?.map((a) => (
-              <li key={a.id} className="flex items-start gap-2 py-1.5 text-sm">
+              <li key={a.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors">
+                {/* Status color bar — matches Option A accent bar */}
+                <div className={`w-1 h-5 shrink-0 rounded-full ${statusBarColor(a.status)}`} />
                 <div className="min-w-0 flex-1">
                   <a
                     href={`/artifacts/${a.id}`}
-                    className="font-medium text-foreground hover:text-primary"
+                    className="block truncate text-sm font-medium text-foreground hover:text-primary"
                   >
                     {a.title}
                   </a>
-                  {/* Semantic status + template pills */}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                    <Badge variant={statusVariant(a.status)} className="text-[10px] px-1 py-0">
-                      {a.status}
-                    </Badge>
-                    {a.type && (
-                      <Badge variant="template" className="font-mono text-[10px] px-1 py-0">
-                        {a.type}
-                      </Badge>
-                    )}
-                    <span className="text-xs text-muted-foreground">{relativeTime(a.updatedAt)}</span>
-                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{relativeTime(a.updatedAt)}</p>
                 </div>
+                {a.type && (
+                  <Badge variant="default" className="shrink-0">{a.type}</Badge>
+                )}
               </li>
             ))}
           </ul>
@@ -106,6 +103,17 @@ export function RecentActivityWidget() {
       </CardContent>
     </Card>
   );
+}
+
+// Maps artifact status → Option A accent color class for the bar
+function statusBarColor(status: string): string {
+  switch (status) {
+    case 'published': return 'bg-emerald-500';
+    case 'pending':   return 'bg-amber-500';
+    case 'draft':     return 'bg-muted-foreground';
+    case 'archived':  return 'bg-muted-foreground/50';
+    default:          return 'bg-muted-foreground/50';
+  }
 }
 
 // ── Widget 2: My Drafts ───────────────────────────────────────────────────────
@@ -116,9 +124,7 @@ export function MyDraftsWidget() {
 
   useEffect(() => {
     listArtifacts({ status: 'pending', author: 'me' })
-      .then((all) => {
-        setItems(all.slice(0, 5));
-      })
+      .then((all) => setItems(all.slice(0, 5)))
       .catch((e) => setError(e));
   }, []);
 
@@ -127,23 +133,25 @@ export function MyDraftsWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">My drafts</CardTitle>
+        <CardTitle>My drafts</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {error ? (
-          <WidgetError err={error} />
+          <div className="px-4 py-3"><WidgetError err={error} /></div>
         ) : items?.length === 0 ? (
-          <EmptyState title="No drafts" description="Artifacts you submit will appear here." />
+          <div className="px-4 py-3">
+            <EmptyState size="compact" title="No drafts" />
+          </div>
         ) : (
-          <ul className="space-y-1">
+          <ul className="divide-y divide-border">
             {items?.map((a) => (
               <li key={a.id}>
                 <a
                   href={`/artifacts/${a.id}`}
-                  className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted"
+                  className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors"
                 >
                   <span className="truncate text-foreground">{a.title}</span>
-                  <span className="ml-2 shrink-0 text-xs text-muted-foreground">{relativeTime(a.updatedAt)}</span>
+                  <span className="ml-3 shrink-0 text-xs text-muted-foreground">{relativeTime(a.updatedAt)}</span>
                 </a>
               </li>
             ))}
@@ -169,7 +177,7 @@ export function PendingReviewWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">Pending review</CardTitle>
+        <CardTitle>Pending review</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -177,13 +185,14 @@ export function PendingReviewWidget() {
         ) : count === null ? (
           <Skeleton className="h-8 w-full" />
         ) : count === 0 ? (
-          <EmptyState title="Nothing to review" description="All caught up." />
+          <EmptyState size="compact" title="Nothing to review" />
         ) : (
           <div className="flex items-center justify-between">
-            <span className="text-2xl font-semibold leading-tight text-foreground">{count}</span>
+            {/* Option A stat number: 26px tracking-tight */}
+            <span className="text-[26px] font-semibold leading-none tracking-tight text-foreground">{count}</span>
             <a
               href="/artifacts/review"
-              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="rounded-md border border-foreground bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"
             >
               Review
             </a>

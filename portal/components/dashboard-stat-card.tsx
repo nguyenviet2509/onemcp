@@ -11,8 +11,7 @@ interface DashboardStatCardProps {
   loading?: boolean;
 }
 
-// Single stat card primitive — muted uppercase label + big number + optional subtext.
-// Uses CSS var tokens for theme-awareness (bg-card, text-foreground, text-muted-foreground).
+// Option A stat card: label xs uppercase tracking-wider muted, number 26px font-semibold tracking-tight.
 export function DashboardStatCard({
   label,
   value,
@@ -23,18 +22,19 @@ export function DashboardStatCard({
   return (
     <Card>
       <CardContent>
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {/* Section label — 10px uppercase tracking-wider per Option A */}
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {label}
         </p>
         {loading || value === null ? (
-          <Skeleton className="mt-1 h-8 w-14" />
+          <Skeleton className="mt-2 h-8 w-14" />
         ) : (
-          <p className={cn('mt-0 text-3xl font-semibold leading-tight text-foreground', valueColor)}>
-            {value}
+          <p className={cn('mt-1.5 text-[26px] font-semibold leading-none tracking-tight text-foreground', valueColor)}>
+            {value.toLocaleString()}
           </p>
         )}
         {subtext && !loading && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{subtext}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{subtext}</p>
         )}
       </CardContent>
     </Card>
