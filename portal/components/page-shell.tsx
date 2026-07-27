@@ -18,7 +18,7 @@ export interface PageShellProps {
 // Dark mode handled via Tailwind dark: variants using design tokens.
 export function PageShell({ title, breadcrumb, actions, children }: PageShellProps) {
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
+    <main className="mx-auto w-full max-w-6xl px-6 py-6">
       {/* Breadcrumb row */}
       {breadcrumb && breadcrumb.length > 0 && (
         <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-sm text-secondary-500 dark:text-secondary-400">
@@ -41,7 +41,7 @@ export function PageShell({ title, breadcrumb, actions, children }: PageShellPro
       )}
 
       {/* Page header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-4 flex items-start justify-between gap-4">
         <h1 className="text-2xl font-semibold text-secondary-900 dark:text-secondary-50">
           {title}
         </h1>

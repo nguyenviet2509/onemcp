@@ -180,7 +180,7 @@ export function PendingReviewWidget() {
           <EmptyState title="Nothing to review" description="All caught up." />
         ) : (
           <div className="flex items-center justify-between">
-            <span className="text-3xl font-bold text-foreground">{count}</span>
+            <span className="text-2xl font-semibold leading-tight text-foreground">{count}</span>
             <a
               href="/artifacts/review"
               className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"

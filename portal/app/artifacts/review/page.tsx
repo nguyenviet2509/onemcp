@@ -23,9 +23,9 @@ export default function ArtifactReviewQueuePage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
+    <main className="mx-auto max-w-4xl px-6 py-6">
       <div className="text-sm">
-        <Link href="/artifacts" className="text-blue-600 hover:underline">
+        <Link href="/artifacts" className="text-primary hover:underline">
           ← All artifacts
         </Link>
       </div>
@@ -36,7 +36,7 @@ export default function ArtifactReviewQueuePage() {
 
       {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
       {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
+        <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}

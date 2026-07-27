@@ -27,8 +27,8 @@ export function AppShell({ children }: AppShellProps) {
         <SidebarBrand />
 
         {/* SPACE section: prominent card-style switcher */}
-        <div className="px-3 py-3 border-b border-sidebar-border">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="px-3 py-2.5 border-b border-sidebar-border">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Space
           </p>
           <Suspense fallback={null}>
@@ -41,7 +41,7 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* SAVED SEARCHES section */}
         <div className="flex-1 border-t border-sidebar-border">
-          <div className="px-3 pt-3">
+          <div className="px-3 pt-2.5">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Saved searches
             </p>
@@ -50,7 +50,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
 
         {/* Secondary nav + identity + theme toggle at bottom */}
-        <div className="border-t border-sidebar-border pt-2">
+        <div className="border-t border-sidebar-border pt-1.5">
           <SidebarSecondaryNav />
           {/* IdentifyAsDropdown kept until SSO ships */}
           <div className="px-3 pb-3 space-y-2">

@@ -36,7 +36,7 @@ export default function SkillsListPage() {
   }, [items]);
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-6">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold">Skills</h1>
         <span className="text-sm text-muted-foreground">{items.length} skill(s)</span>
@@ -80,7 +80,7 @@ export default function SkillsListPage() {
 
       {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
       {error && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
+        <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -98,13 +98,13 @@ export default function SkillsListPage() {
         {filtered.map((s) => (
           <li
             key={s.id}
-            className="rounded-lg border border-border bg-card p-4 shadow-sm hover:border-blue-500"
+            className="rounded-lg border border-border bg-card p-4 hover:border-primary/40 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div>
                 <Link
                   href={`/skills/${encodeURIComponent(s.name)}`}
-                  className="text-lg font-semibold text-blue-600 hover:underline"
+                  className="text-lg font-semibold text-primary hover:underline"
                 >
                   {s.name}
                 </Link>

@@ -18,7 +18,7 @@ export function SidebarBrand() {
   }, []);
 
   return (
-    <div className="px-4 py-5 border-b border-sidebar-border">
+    <div className="px-4 py-4 border-b border-sidebar-border">
       <Link
         href="/"
         className="block text-base font-semibold text-sidebar-foreground hover:text-foreground transition-colors"

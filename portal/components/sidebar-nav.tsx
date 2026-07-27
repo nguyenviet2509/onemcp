@@ -33,7 +33,7 @@ export function SidebarNav() {
   }, []);
 
   return (
-    <nav aria-label="Main navigation" className="px-2 py-3">
+    <nav aria-label="Main navigation" className="px-2 py-2">
       <ul className="space-y-0.5">
         {NAV_ITEMS.map(({ href, label, icon: Icon, showCount }) => {
           // Active: exact match for dashboard, prefix match for others

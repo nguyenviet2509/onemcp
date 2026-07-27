@@ -55,7 +55,7 @@ export function SavedSearchesList() {
   }
 
   return (
-    <div className="px-3 pb-3">
+    <div className="px-3 pb-2">
       {loading && (
         <div className="space-y-1.5">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-6 w-full rounded" />)}
