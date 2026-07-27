@@ -52,16 +52,16 @@ export function SpaceSwitcher() {
     <DropdownMenu>
       {/* Prominent card-style trigger for sidebar — replaces old top-right chip */}
       <DropdownMenuTrigger
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-700"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2.5 text-left text-sm transition-colors hover:bg-sidebar-accent/80"
         aria-label="Switch space"
       >
         <div className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-slate-200">{label}</span>
+          <span className="block truncate font-medium text-sidebar-foreground">{label}</span>
           {space.slug && (
-            <span className="block font-mono text-[10px] text-slate-500">{space.slug}</span>
+            <span className="block font-mono text-[10px] text-muted-foreground">{space.slug}</span>
           )}
         </div>
-        <span className="shrink-0 text-[10px] text-slate-500" aria-hidden>▼</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground" aria-hidden>▼</span>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" sideOffset={6} className="min-w-[200px]">

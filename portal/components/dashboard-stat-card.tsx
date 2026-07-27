@@ -12,7 +12,7 @@ interface DashboardStatCardProps {
 }
 
 // Single stat card primitive — muted uppercase label + big number + optional subtext.
-// Dark-first: bg-slate-900 border-slate-800, label slate-500, value slate-100.
+// Uses CSS var tokens for theme-awareness (bg-card, text-foreground, text-muted-foreground).
 export function DashboardStatCard({
   label,
   value,
@@ -21,20 +21,20 @@ export function DashboardStatCard({
   loading,
 }: DashboardStatCardProps) {
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-border">
       <CardContent className="pt-5 pb-4 px-5">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {label}
         </p>
         {loading || value === null ? (
           <Skeleton className="mt-2 h-9 w-16" />
         ) : (
-          <p className={cn('mt-1 text-4xl font-semibold text-slate-100', valueColor)}>
+          <p className={cn('mt-1 text-4xl font-semibold text-foreground', valueColor)}>
             {value}
           </p>
         )}
         {subtext && !loading && (
-          <p className="mt-1 text-xs text-slate-500">{subtext}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{subtext}</p>
         )}
       </CardContent>
     </Card>

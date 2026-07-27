@@ -85,7 +85,10 @@ body {
     --sidebar-ring: oklch(0.556 0 0);
   }
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    /* outline-color: ring with 50% opacity — written as CSS to avoid Tailwind v3
+       opacity modifier limitation with CSS-var-backed color tokens */
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
   body {
     @apply bg-background text-foreground;

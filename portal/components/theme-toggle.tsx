@@ -16,7 +16,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button className="text-xs text-slate-600 cursor-default" aria-label="Loading theme">
+      <button className="text-xs text-muted-foreground cursor-default" aria-label="Loading theme">
         Theme
       </button>
     );
@@ -39,7 +39,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(nextTheme[current] ?? 'dark')}
-      className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
       aria-label={`Switch theme (current: ${labels[current] ?? current})`}
       title="Click to cycle theme"
     >

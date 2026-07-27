@@ -1,32 +1,62 @@
 import type { Config } from 'tailwindcss';
 
-// Design tokens aligned with iNET brand palette.
-// NOTE: mcp__inet-viui__* tools not available in this session — tokens below are
-// derived from iNET public brand guidelines (blue primary, neutral grays).
-// TODO: run viui MCP token query in a future session to get exact hex values.
+// Design tokens aligned with CSS vars in globals.css.
+// Colors reference CSS custom properties so Tailwind utility classes
+// (bg-background, text-foreground, etc.) respond to .dark class toggle.
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // iNET primary: blue family
-        primary: {
-          50:  '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',  // iNET brand blue (primary action)
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+        // Reference CSS vars from globals.css (defined in :root light + .dark)
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
         },
-        // Secondary: slate neutral (iNET uses cool-gray)
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)',
+        },
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+        },
         secondary: {
-          50:  '#f8fafc',
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground, var(--primary-foreground))',
+        },
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        // Sidebar tokens
+        sidebar: {
+          DEFAULT: 'var(--sidebar)',
+          foreground: 'var(--sidebar-foreground)',
+          border: 'var(--sidebar-border)',
+          accent: 'var(--sidebar-accent)',
+          'accent-foreground': 'var(--sidebar-accent-foreground)',
+        },
+        // Semantic pill colors — kept hardcoded (accent variants used by Badge status variants)
+        emerald: { 400: '#34d399', 500: '#10b981' },
+        amber: { 400: '#fbbf24', 500: '#f59e0b' },
+        rose: { 400: '#fb7185', 500: '#f43f5e' },
+        // Slate kept for status-archived badge + semantic pill backgrounds
+        slate: {
           100: '#f1f5f9',
           200: '#e2e8f0',
           300: '#cbd5e1',
@@ -38,46 +68,13 @@ const config: Config = {
           900: '#0f172a',
           950: '#020617',
         },
-        // Accent: iNET orange highlight
-        accent: {
-          50:  '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',  // iNET accent orange
-          600: '#ea580c',
-          700: '#c2410c',
-        },
-        // Semantic
-        success: '#16a34a',
-        warning: '#d97706',
-        destructive: '#dc2626',
-        muted: {
-          DEFAULT: '#f1f5f9',
-          foreground: '#64748b',
-        },
-        border: '#e2e8f0',
-        input: '#e2e8f0',
-        ring: '#3b82f6',
-        background: '#ffffff',
-        foreground: '#0f172a',
-        card: {
-          DEFAULT: '#ffffff',
-          foreground: '#0f172a',
-        },
-        // Dark-first app shell palette — slate-950 base, slate-900 sidebar
-        // Used via arbitrary values in app-shell / sidebar components.
-        // Defined here for Tailwind to include in the generated CSS.
-        slate: {
-          950: '#020617',
-        },
-        // Violet accent for primary actions in dark mode (Submit new CTA, active states)
-        violet: {
-          400: '#a78bfa',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-        },
+        // Violet — primary CTA accent (Submit new, active states)
+        violet: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' },
+        // iNET brand blue — links, action buttons, form highlights
+        blue: { 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+        red: { 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' },
+        green: { 100: '#dcfce7', 600: '#16a34a', 700: '#15803d', 800: '#166534', 950: '#052e16' },
+        amber_ext: {},
       },
       borderRadius: {
         sm:  '0.25rem',
@@ -86,10 +83,10 @@ const config: Config = {
         lg:  '0.625rem',
         xl:  '0.75rem',
         '2xl': '1rem',
+        '4xl': '2rem',
       },
       fontFamily: {
         // Inter self-hosted via next/font (--font-inter CSS var injected by layout.tsx).
-        // Falls back to system-ui stack if variable not loaded.
         sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
@@ -104,10 +101,9 @@ const config: Config = {
         '4xl':['2.25rem',  { lineHeight: '2.5rem' }],
       },
       spacing: {
-        // Explicit semantic slots (aliases to Tailwind default scale)
-        'page-x': '1.5rem',   // px-6 horizontal page padding
-        'page-y': '2rem',     // py-8 vertical page padding
-        'section': '3rem',    // gap between page sections
+        'page-x': '1.5rem',
+        'page-y': '2rem',
+        'section': '3rem',
       },
       boxShadow: {
         card: '0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.05)',

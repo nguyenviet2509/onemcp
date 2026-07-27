@@ -39,21 +39,21 @@ function FieldEditor({
     maxLength: field.maxLength,
     placeholder: field.placeholder,
     className:
-      'w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900',
+      'w-full rounded border border-border bg-background px-3 py-2 text-sm text-foreground',
   };
   return (
     <div>
       <label className="mb-1 flex items-center gap-2 text-sm font-medium">
         {field.label}
         {field.required && <span className="text-xs text-red-600">*</span>}
-        {field.minLength && <span className="text-xs text-slate-400">min {field.minLength} chars</span>}
+        {field.minLength && <span className="text-xs text-muted-foreground">min {field.minLength} chars</span>}
       </label>
       {field.type === 'markdown' ? (
         <textarea {...common} rows={6} className={common.className + ' font-mono'} />
       ) : (
         <input {...common} type="text" />
       )}
-      {field.description && <p className="mt-1 text-xs text-slate-500">{field.description}</p>}
+      {field.description && <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>}
     </div>
   );
 }

@@ -18,25 +18,25 @@ export function SidebarBrand() {
   }, []);
 
   return (
-    <div className="px-4 py-5 border-b border-slate-800">
+    <div className="px-4 py-5 border-b border-sidebar-border">
       <Link
         href="/"
-        className="block text-base font-semibold text-slate-100 hover:text-white transition-colors"
+        className="block text-base font-semibold text-sidebar-foreground hover:text-foreground transition-colors"
         aria-label="OneMCP home"
       >
         OneMCP
       </Link>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         {PORTAL_VERSION}
         {identity ? (
           <>
             {' · '}
-            <span className="text-slate-400">{identity}</span>
+            <span className="text-foreground/70">{identity}</span>
           </>
         ) : (
           <>
             {' · '}
-            <span className="text-slate-600 italic">— sign in</span>
+            <span className="text-muted-foreground/60 italic">— sign in</span>
           </>
         )}
       </p>

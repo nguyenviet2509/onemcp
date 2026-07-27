@@ -30,18 +30,18 @@ export default function ArtifactReviewQueuePage() {
         </Link>
       </div>
       <h1 className="mt-4 text-2xl font-bold">Review queue</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Artifacts đang chờ approve. Click để xem chi tiết + approve/reject.
       </p>
 
-      {loading && <p className="mt-6 text-slate-500">Loading...</p>}
+      {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
       {error && (
         <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
           {error}
         </div>
       )}
       {!loading && !error && items.length === 0 && (
-        <div className="mt-8 rounded border border-slate-200 p-8 text-center text-slate-500 dark:border-slate-800">
+        <div className="mt-8 rounded border border-border p-8 text-center text-muted-foreground">
           Queue trống. Không có pending artifact nào.
         </div>
       )}

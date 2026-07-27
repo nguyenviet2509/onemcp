@@ -12,23 +12,23 @@ interface AppShellProps {
 }
 
 // Root app shell — fixed 240px sidebar + flex main content area.
-// Dark-first: root bg-slate-950, sidebar bg-slate-900.
+// Sidebar uses CSS var tokens (bg-sidebar, border-sidebar-border) for theme-awareness.
 // SpaceProvider must wrap this component (done in layout.tsx).
 // SSO not ready — no /login bypass needed yet; layout wraps ALL routes.
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-background">
       {/* Fixed-width sidebar */}
       <aside
-        className="flex w-60 shrink-0 flex-col bg-slate-900 border-r border-slate-800 overflow-y-auto"
+        className="flex w-60 shrink-0 flex-col bg-sidebar border-r border-sidebar-border overflow-y-auto"
         aria-label="Sidebar"
       >
         {/* Brand: logo + version + identity */}
         <SidebarBrand />
 
         {/* SPACE section: prominent card-style switcher */}
-        <div className="px-3 py-3 border-b border-slate-800">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+        <div className="px-3 py-3 border-b border-sidebar-border">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Space
           </p>
           <Suspense fallback={null}>
@@ -40,9 +40,9 @@ export function AppShell({ children }: AppShellProps) {
         <SidebarNav />
 
         {/* SAVED SEARCHES section */}
-        <div className="flex-1 border-t border-slate-800">
+        <div className="flex-1 border-t border-sidebar-border">
           <div className="px-3 pt-3">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Saved searches
             </p>
           </div>
@@ -50,7 +50,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
 
         {/* Secondary nav + identity + theme toggle at bottom */}
-        <div className="border-t border-slate-800 pt-2">
+        <div className="border-t border-sidebar-border pt-2">
           <SidebarSecondaryNav />
           {/* IdentifyAsDropdown kept until SSO ships */}
           <div className="px-3 pb-3 space-y-2">

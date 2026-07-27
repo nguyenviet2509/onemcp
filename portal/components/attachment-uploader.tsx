@@ -59,7 +59,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+    <section className="mt-6 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Attachments ({items.length})</h2>
         {canWrite && (
@@ -82,11 +82,11 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
         </p>
       )}
       {items.length === 0 ? (
-        <p className="mt-3 text-xs text-slate-500">Chưa có attachment nào.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Chưa có attachment nào.</p>
       ) : (
         <ul className="mt-3 space-y-1 text-sm">
           {items.map((a) => (
-            <li key={a.id} className="flex items-center justify-between rounded px-2 py-1 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <li key={a.id} className="flex items-center justify-between rounded px-2 py-1 hover:bg-muted">
               <a
                 href={downloadAttachmentUrl(a.id)}
                 className="flex-1 truncate text-blue-600 hover:underline"
@@ -94,7 +94,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
               >
                 {a.filename}
               </a>
-              <span className="ml-3 font-mono text-xs text-slate-500">
+              <span className="ml-3 font-mono text-xs text-muted-foreground">
                 {a.contentType} · {humanSize(Number(a.sizeBytes))}
               </span>
               {canWrite && (
@@ -109,7 +109,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-slate-400">
+      <p className="mt-2 text-xs text-muted-foreground">
         Allowed: pdf, md, txt, png, jpg, docx · max 100MB
       </p>
     </section>

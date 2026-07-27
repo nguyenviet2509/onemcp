@@ -71,12 +71,12 @@ export function IdentifyAsDropdown() {
   // Edit / no-identity form
   if (editing || !current) {
     return (
-      <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-2.5 space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+      <div className="rounded-lg border border-sidebar-border bg-sidebar p-2.5 space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Identity
         </p>
         <input
-          className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="w-full rounded border border-border bg-muted px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           placeholder="username"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -94,7 +94,7 @@ export function IdentifyAsDropdown() {
           {current && !verifying && (
             <button
               onClick={() => { setEditing(false); setError(null); }}
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Cancel
             </button>
@@ -109,12 +109,12 @@ export function IdentifyAsDropdown() {
 
   // Identity set — compact display row
   return (
-    <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-2.5 space-y-1.5">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+    <div className="rounded-lg border border-sidebar-border bg-sidebar p-2.5 space-y-1.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Identity
       </p>
       <div className="flex items-center justify-between gap-2">
-        <code className="truncate rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-mono text-slate-300">
+        <code className="truncate rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-foreground">
           {current}
         </code>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -124,10 +124,10 @@ export function IdentifyAsDropdown() {
           >
             change
           </button>
-          <span className="text-slate-700">·</span>
+          <span className="text-muted-foreground/40">·</span>
           <button
             onClick={clear}
-            className="text-[10px] text-slate-500 hover:text-red-400 transition-colors"
+            className="text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
           >
             clear
           </button>

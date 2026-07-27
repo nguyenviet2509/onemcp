@@ -25,19 +25,19 @@ export function DashboardGreeting() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       {/* Left: greeting + space context */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-100">
+        <h1 className="text-2xl font-semibold text-foreground">
           Chào {displayName},
         </h1>
         {space.slug ? (
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             Space:{' '}
-            <span className="font-mono text-slate-300">{space.slug}</span>
+            <span className="font-mono text-foreground">{space.slug}</span>
             {space.name && space.name !== space.slug && (
               <> · {space.name}</>
             )}
           </p>
         ) : (
-          <p className="mt-1 text-sm text-slate-500">All spaces</p>
+          <p className="mt-1 text-sm text-muted-foreground">All spaces</p>
         )}
       </div>
 

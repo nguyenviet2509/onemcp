@@ -72,11 +72,11 @@ export default function EditArtifactPage({ params }: Props) {
         </Link>
       </div>
       <h1 className="mt-4 text-2xl font-bold">Edit: {title || '...'}</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Update sẽ tạo pending version mới (type={type}). Maintainer approve để publish.
       </p>
 
-      {loading && <p className="mt-6 text-slate-500">Loading...</p>}
+      {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
       {error && (
         <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
           {error}
@@ -85,7 +85,7 @@ export default function EditArtifactPage({ params }: Props) {
 
       {!loading && expectedVersion !== null && template && (
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Editing on top of version <code>{expectedVersion}</code>. Concurrent submit → 409 conflict.
           </p>
 
@@ -94,7 +94,7 @@ export default function EditArtifactPage({ params }: Props) {
             <input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+              className="w-full rounded border border-border bg-background px-3 py-2 text-sm text-foreground"
             />
           </div>
 
@@ -112,7 +112,7 @@ export default function EditArtifactPage({ params }: Props) {
             >
               {busy ? 'Saving...' : 'Submit new version'}
             </button>
-            <Link href={`/artifacts/${id}`} className="text-sm text-slate-500 hover:underline">
+            <Link href={`/artifacts/${id}`} className="text-sm text-muted-foreground hover:underline">
               Cancel
             </Link>
           </div>

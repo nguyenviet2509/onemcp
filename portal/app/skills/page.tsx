@@ -39,7 +39,7 @@ export default function SkillsListPage() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold">Skills</h1>
-        <span className="text-sm text-slate-500">{items.length} skill(s)</span>
+        <span className="text-sm text-muted-foreground">{items.length} skill(s)</span>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -47,7 +47,7 @@ export default function SkillsListPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search name or description..."
-          className="flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="flex-1 rounded border border-border bg-background px-3 py-2 text-sm text-foreground"
         />
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -56,7 +56,7 @@ export default function SkillsListPage() {
               className={`rounded px-2 py-1 text-xs ${
                 tag === null
                   ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                  : 'bg-muted text-foreground hover:bg-muted/80'
               }`}
             >
               all
@@ -68,7 +68,7 @@ export default function SkillsListPage() {
                 className={`rounded px-2 py-1 text-xs ${
                   t === tag
                     ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
                 {t}
@@ -78,7 +78,7 @@ export default function SkillsListPage() {
         )}
       </div>
 
-      {loading && <p className="mt-6 text-slate-500">Loading...</p>}
+      {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
       {error && (
         <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
           {error}
@@ -86,7 +86,7 @@ export default function SkillsListPage() {
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="mt-8 rounded border border-slate-200 p-8 text-center text-slate-500 dark:border-slate-800">
+        <div className="mt-8 rounded border border-border p-8 text-center text-muted-foreground">
           <p className="font-medium">Chưa có skill nào phù hợp filter.</p>
           <p className="mt-1 text-xs">
             Skills được sync tự động từ GitLab qua webhook (P2 part 2). Hoặc admin có thể seed thủ công.
@@ -98,7 +98,7 @@ export default function SkillsListPage() {
         {filtered.map((s) => (
           <li
             key={s.id}
-            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:border-blue-500 dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-lg border border-border bg-card p-4 shadow-sm hover:border-blue-500"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -108,15 +108,15 @@ export default function SkillsListPage() {
                 >
                   {s.name}
                 </Link>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                  {s.description ?? <em className="text-slate-400">no description</em>}
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {s.description ?? <em className="text-muted-foreground/60">no description</em>}
                 </p>
               </div>
               <span
                 className={`rounded px-2 py-0.5 text-xs ${
                   s.status === 'active'
                     ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-100'
-                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {s.status}
@@ -127,7 +127,7 @@ export default function SkillsListPage() {
                 {s.tags.map((t) => (
                   <span
                     key={t}
-                    className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="rounded bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground"
                   >
                     {t}
                   </span>

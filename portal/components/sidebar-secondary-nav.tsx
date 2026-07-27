@@ -18,7 +18,7 @@ export function SidebarSecondaryNav() {
 
   return (
     <nav aria-label="Secondary navigation" className="px-2 pb-4">
-      <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+      <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Account
       </p>
       <ul className="space-y-0.5">
@@ -31,8 +31,8 @@ export function SidebarSecondaryNav() {
                 className={[
                   'block rounded-md px-3 py-1.5 text-sm transition-colors',
                   isActive
-                    ? 'bg-slate-800 text-slate-100'
-                    : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300',
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground',
                 ].join(' ')}
                 aria-current={isActive ? 'page' : undefined}
               >

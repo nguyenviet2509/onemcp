@@ -31,7 +31,7 @@ export default function ProfilePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-2xl font-bold">Profile</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         V1 identity mode (trust header). Full auth deferred post-v1.
       </p>
 
@@ -41,7 +41,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {loading && <div className="mt-6 text-slate-500">Loading...</div>}
+      {loading && <div className="mt-6 text-muted-foreground">Loading...</div>}
 
       {error && (
         <div className="mt-6 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
@@ -53,7 +53,7 @@ export default function ProfilePage() {
         <div className="mt-6 flex gap-3">
           <Link
             href="/profile/api-keys"
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             API Keys →
           </Link>
@@ -61,14 +61,14 @@ export default function ProfilePage() {
       )}
 
       {me && (
-        <dl className="mt-4 grid grid-cols-3 gap-3 rounded-lg border border-slate-200 p-6 text-sm dark:border-slate-800">
-          <dt className="text-slate-500">User ID</dt>
+        <dl className="mt-4 grid grid-cols-3 gap-3 rounded-lg border border-border p-6 text-sm">
+          <dt className="text-muted-foreground">User ID</dt>
           <dd className="col-span-2 font-mono">{me.id}</dd>
 
-          <dt className="text-slate-500">Username</dt>
+          <dt className="text-muted-foreground">Username</dt>
           <dd className="col-span-2 font-mono">{me.username}</dd>
 
-          <dt className="text-slate-500">Roles</dt>
+          <dt className="text-muted-foreground">Roles</dt>
           <dd className="col-span-2">
             {me.roles.map((r) => (
               <span
@@ -80,13 +80,13 @@ export default function ProfilePage() {
             ))}
           </dd>
 
-          <dt className="text-slate-500">Department</dt>
+          <dt className="text-muted-foreground">Department</dt>
           <dd className="col-span-2 font-mono">#{me.departmentId}</dd>
 
-          <dt className="text-slate-500">Status</dt>
+          <dt className="text-muted-foreground">Status</dt>
           <dd className="col-span-2 font-mono">{me.status}</dd>
 
-          <dt className="text-slate-500">Mode</dt>
+          <dt className="text-muted-foreground">Mode</dt>
           <dd className="col-span-2 font-mono text-amber-600 dark:text-amber-400">
             {me.identityMode}
           </dd>
