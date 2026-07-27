@@ -1,7 +1,7 @@
 # OneMCP Portal — User Guide
 
-> Version: Phase 3D (v1.5)
-> Last updated: 2026-07-26
+> Version: Phase 3D-ui (v1.5 UI refresh)
+> Last updated: 2026-07-27
 
 ---
 
@@ -28,9 +28,40 @@ OneMCP Portal is a Next.js 15 web application for creating, searching, and manag
 
 ---
 
+## Layout Overview
+
+The portal uses a **fixed sidebar + main content** layout (240px sidebar, flex main area). Background: `slate-950` root, `slate-900` sidebar.
+
+### Sidebar sections (top → bottom)
+
+| Section | Content |
+|---|---|
+| **Brand** | "OneMCP" logo + `v1.5 · {identity}` |
+| **Space** | Space switcher card — current space name + slug |
+| **Navigation** | 5 primary nav items (icons only here) |
+| **Saved searches** | Real-time list of your saved searches |
+| **Account** | Profile / API keys / Spaces / Onboarding (text links) |
+| **Identity** | IdentifyAsDropdown (pre-SSO) |
+
+### Primary navigation (5 items — sidebar only)
+
+| Icon | Label | URL |
+|---|---|---|
+| LayoutDashboard | Dashboard | `/` |
+| FileText | Artifacts | `/artifacts` |
+| Search | Search | `/search` |
+| Sparkles | Skills | `/skills` |
+| ClipboardCheck | Review queue | `/artifacts/review` |
+
+The **Review queue** item shows a count badge when pending artifacts exist.
+
+**Icon budget:** Exactly 5 icons site-wide — sidebar nav only. All other UI is text-only.
+
+---
+
 ## Space Switcher
 
-The **Space Switcher** dropdown appears in the top navigation bar. Selecting a space filters artifacts and search results to that space.
+The **Space Switcher** card appears in the sidebar SPACE section. Selecting a space filters artifacts and search results to that space.
 
 - Selection is persisted in `localStorage` and reflected in the URL (`?space=<slug>`).
 - Changing space re-fetches the current page's data automatically.
@@ -99,13 +130,13 @@ Results show: title, kind badge, source mode badge, snippet with highlighted mat
 
 ## Saved Searches
 
-Saved searches appear in a compact strip below the navigation bar.
+Saved searches appear in the **sidebar** under the primary nav (SAVED SEARCHES section).
 
 - Click a saved search item to navigate to `/search` with the saved query and filters pre-applied.
-- Hover any item to reveal the **delete** (trash) icon. Click it to confirm deletion.
+- Hover any item to reveal the **del** button. Click it to confirm deletion.
 - Loading state shows skeleton lines; empty state shows "No saved searches yet."
 
-<!-- TODO: screenshot — saved searches strip with items -->
+<!-- TODO: screenshot — sidebar saved searches section -->
 
 ---
 
@@ -243,9 +274,26 @@ All filter parameters can be combined. The URL fully represents the page state a
 
 ---
 
+## Semantic Pill Legend
+
+Status and type labels use consistent color-coded pills (shadcn `Badge` component) across all pages:
+
+| Variant | Color | When used |
+|---|---|---|
+| `status-published` | Emerald (green) | Artifact published and visible |
+| `status-pending` | Amber (yellow) | Awaiting review / in review queue |
+| `status-rejected` | Rose (red) | Rejected by reviewer |
+| `status-archived` | Slate (gray) | Archived / no longer active |
+| `template` | Slate outline | Artifact type / template key |
+| `tag` | Neutral, hover primary | Tag labels on artifacts |
+
+All pills are text-only — color is never the sole indicator (the status word is always present).
+
+---
+
 ## Dark Mode
 
-The portal supports dark mode via the system preference or manual toggle (if theme switcher is enabled in layout). All components use Tailwind `dark:` variants — no custom CSS overrides.
+The portal is **dark-first** — `slate-950` root, `slate-900` sidebar, `slate-800` interactive elements. The `dark` class is set on `<html>` in the root layout. Light mode is supported via Tailwind `dark:` variants but not the primary design target.
 
 ---
 

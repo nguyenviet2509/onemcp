@@ -66,6 +66,18 @@ const config: Config = {
           DEFAULT: '#ffffff',
           foreground: '#0f172a',
         },
+        // Dark-first app shell palette — slate-950 base, slate-900 sidebar
+        // Used via arbitrary values in app-shell / sidebar components.
+        // Defined here for Tailwind to include in the generated CSS.
+        slate: {
+          950: '#020617',
+        },
+        // Violet accent for primary actions in dark mode (Submit new CTA, active states)
+        violet: {
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+        },
       },
       borderRadius: {
         sm:  '0.25rem',
