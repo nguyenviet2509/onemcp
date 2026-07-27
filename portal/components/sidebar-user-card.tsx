@@ -133,15 +133,22 @@ export function SidebarUserCard() {
           </div>
           {current ? (
             <>
-              <DropdownMenuItem onSelect={() => { setDraft(current); setEditing(true); }}>
+              <DropdownMenuItem
+                render={<button type="button" onClick={() => { setDraft(current); setEditing(true); }} />}
+              >
                 Change identity…
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onClear} variant="destructive">
+              <DropdownMenuItem
+                variant="destructive"
+                render={<button type="button" onClick={onClear} />}
+              >
                 Clear identity
               </DropdownMenuItem>
             </>
           ) : (
-            <DropdownMenuItem onSelect={() => { setDraft(''); setEditing(true); }}>
+            <DropdownMenuItem
+              render={<button type="button" onClick={() => { setDraft(''); setEditing(true); }} />}
+            >
               Sign in…
             </DropdownMenuItem>
           )}
@@ -149,9 +156,13 @@ export function SidebarUserCard() {
           <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Theme
           </div>
-          {/* Base-ui Menu.Item fires onSelect (not onClick) — match space-switcher pattern */}
+          {/* render prop → real <button> ensures native onClick fires reliably */}
           {(['light', 'dark', 'system'] as const).map((t) => (
-            <DropdownMenuItem key={t} onSelect={() => setTheme(t)} className="flex items-center justify-between">
+            <DropdownMenuItem
+              key={t}
+              className="flex items-center justify-between"
+              render={<button type="button" onClick={() => setTheme(t)} />}
+            >
               <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
               {mounted && currentTheme === t && (
                 <span className="text-xs text-muted-foreground" aria-hidden>✓</span>

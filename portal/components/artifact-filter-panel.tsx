@@ -84,6 +84,17 @@ export function ArtifactFilterPanel({ onChange }: Props) {
     listTemplates().then(setTemplates).catch(() => {});
   }, []);
 
+  // Sync space from URL param on change — enables sidebar SpaceSwitcher to
+  // filter this list without remounting. Only sync space (other filters own
+  // their local state to avoid clobbering debounced typing).
+  const urlSpace = searchParams.get('space') ?? '';
+  useEffect(() => {
+    if (urlSpace !== local.space) {
+      setLocal((prev) => ({ ...prev, space: urlSpace }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlSpace]);
+
   // Build effective filter (debounced text fields merged with instant selects).
   const effective: FilterState = {
     ...local,
