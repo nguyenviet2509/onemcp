@@ -55,11 +55,7 @@ export function SavedSearchesList() {
   }
 
   return (
-    <div className="px-3 py-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Saved searches
-      </p>
-
+    <div className="px-3 pb-3">
       {loading && (
         <div className="space-y-1.5">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-6 w-full rounded" />)}

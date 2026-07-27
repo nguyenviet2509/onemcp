@@ -50,21 +50,21 @@ export function SpaceSwitcher() {
 
   return (
     <DropdownMenu>
+      {/* Prominent card-style trigger for sidebar — replaces old top-right chip */}
       <DropdownMenuTrigger
-        className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-sm text-foreground shadow-sm transition-colors hover:bg-muted"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-700"
         aria-label="Switch space"
       >
-        {/* Space label — text only, no icon to preserve icon budget */}
-        <span className="max-w-[120px] truncate font-medium">{label}</span>
-        {space.slug && (
-          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono text-primary">
-            {space.slug}
-          </span>
-        )}
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <span className="block truncate font-medium text-slate-200">{label}</span>
+          {space.slug && (
+            <span className="block font-mono text-[10px] text-slate-500">{space.slug}</span>
+          )}
+        </div>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" sideOffset={6} className="min-w-[180px]">
+      <DropdownMenuContent align="start" sideOffset={6} className="min-w-[200px]">
         {/* "All spaces" option */}
         <DropdownMenuItem onSelect={() => select(null)} className="flex items-center justify-between">
           <span>All spaces</span>
