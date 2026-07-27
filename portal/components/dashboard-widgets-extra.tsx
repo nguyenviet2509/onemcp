@@ -43,7 +43,7 @@ export function TopViewedWidget() {
             size="compact"
           />
         ) : (
-          <ol className="space-y-1">
+          <ol className="space-y-0.5">
             {items?.map((a, idx) => (
               <li key={a.id} className="flex items-center gap-2 text-sm">
                 <span className="w-5 shrink-0 text-right text-xs text-muted-foreground">{idx + 1}</span>
@@ -107,7 +107,7 @@ export function TopTagsWidget() {
         ) : tags?.length === 0 ? (
           <EmptyState title="No tags yet" description="Tag your artifacts to see them here." />
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {tags?.map(({ tag, count }) => (
               <a
                 key={tag}

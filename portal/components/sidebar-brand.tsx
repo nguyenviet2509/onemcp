@@ -18,7 +18,7 @@ export function SidebarBrand() {
   }, []);
 
   return (
-    <div className="px-4 py-4 border-b border-sidebar-border">
+    <div className="px-4 py-3 border-b border-sidebar-border">
       <Link
         href="/"
         className="block text-base font-semibold text-sidebar-foreground hover:text-foreground transition-colors"
@@ -26,7 +26,7 @@ export function SidebarBrand() {
       >
         OneMCP
       </Link>
-      <p className="mt-1 text-xs text-muted-foreground">
+      <p className="mt-0.5 text-xs text-muted-foreground">
         {PORTAL_VERSION}
         {identity ? (
           <>

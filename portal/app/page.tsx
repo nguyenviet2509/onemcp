@@ -12,7 +12,7 @@ export default function DashboardPage() {
   return (
     // Suspense required: child widgets + stat cards use useCurrentSpace (searchParams)
     <Suspense>
-      <div className="px-6 py-6 space-y-4">
+      <div className="px-5 py-4 space-y-3">
         {/* Greeting header + CTAs */}
         <DashboardGreeting />
 
@@ -20,13 +20,13 @@ export default function DashboardPage() {
         <DashboardStatCards />
 
         {/* 2-column widget layout: recent activity wide + top viewed/tags stacked */}
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-3 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Suspense fallback={<WidgetSkeleton />}>
               <RecentActivityWidget />
             </Suspense>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Suspense fallback={<WidgetSkeleton />}>
               <TopViewedWidget />
             </Suspense>

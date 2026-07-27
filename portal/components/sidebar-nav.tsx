@@ -33,7 +33,7 @@ export function SidebarNav() {
   }, []);
 
   return (
-    <nav aria-label="Main navigation" className="px-2 py-2">
+    <nav aria-label="Main navigation" className="px-2 py-1.5">
       <ul className="space-y-0.5">
         {NAV_ITEMS.map(({ href, label, icon: Icon, showCount }) => {
           // Active: exact match for dashboard, prefix match for others
@@ -45,7 +45,7 @@ export function SidebarNav() {
               <Link
                 href={href}
                 className={[
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                     : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground',

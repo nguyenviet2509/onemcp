@@ -22,14 +22,14 @@ export function DashboardGreeting() {
   const displayName = identity ?? 'there';
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       {/* Left: greeting + space context */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
+        <h1 className="text-xl font-semibold text-foreground">
           Chào {displayName},
         </h1>
         {space.slug ? (
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Space:{' '}
             <span className="font-mono text-foreground">{space.slug}</span>
             {space.name && space.name !== space.slug && (
@@ -37,7 +37,7 @@ export function DashboardGreeting() {
             )}
           </p>
         ) : (
-          <p className="mt-1 text-sm text-muted-foreground">All spaces</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">All spaces</p>
         )}
       </div>
 

@@ -44,7 +44,7 @@ export function DashboardStatCards() {
 
   return (
     // 3 visible cards (SEARCH HIT RATE hidden) — responsive md:3 col
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <DashboardStatCard
         label="Total KB (space)"
         value={counts.total}

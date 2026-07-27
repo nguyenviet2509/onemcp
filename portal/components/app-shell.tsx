@@ -20,14 +20,14 @@ export function AppShell({ children }: AppShellProps) {
     <div className="flex min-h-screen bg-background">
       {/* Fixed-width sidebar */}
       <aside
-        className="flex w-60 shrink-0 flex-col bg-sidebar border-r border-sidebar-border overflow-y-auto"
+        className="flex w-56 shrink-0 flex-col bg-sidebar border-r border-sidebar-border overflow-y-auto"
         aria-label="Sidebar"
       >
         {/* Brand: logo + version + identity */}
         <SidebarBrand />
 
         {/* SPACE section: prominent card-style switcher */}
-        <div className="px-3 py-2.5 border-b border-sidebar-border">
+        <div className="px-3 py-2 border-b border-sidebar-border">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Space
           </p>
@@ -41,7 +41,7 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* SAVED SEARCHES section */}
         <div className="flex-1 border-t border-sidebar-border">
-          <div className="px-3 pt-2.5">
+          <div className="px-3 pt-2">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Saved searches
             </p>

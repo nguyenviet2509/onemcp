@@ -23,13 +23,13 @@ export function DashboardStatCard({
   return (
     <Card>
       <CardContent>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
           {label}
         </p>
         {loading || value === null ? (
-          <Skeleton className="mt-1.5 h-8 w-14" />
+          <Skeleton className="mt-1 h-8 w-14" />
         ) : (
-          <p className={cn('mt-0.5 text-3xl font-semibold leading-tight text-foreground', valueColor)}>
+          <p className={cn('mt-0 text-3xl font-semibold leading-tight text-foreground', valueColor)}>
             {value}
           </p>
         )}

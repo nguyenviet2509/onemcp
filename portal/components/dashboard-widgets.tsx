@@ -78,7 +78,7 @@ export function RecentActivityWidget() {
         ) : (
           <ul className="divide-y divide-border">
             {items?.map((a) => (
-              <li key={a.id} className="flex items-start gap-2 py-2 text-sm">
+              <li key={a.id} className="flex items-start gap-2 py-1.5 text-sm">
                 <div className="min-w-0 flex-1">
                   <a
                     href={`/artifacts/${a.id}`}

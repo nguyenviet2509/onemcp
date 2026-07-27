@@ -17,7 +17,7 @@ export function SidebarSecondaryNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Secondary navigation" className="px-2 pb-3">
+    <nav aria-label="Secondary navigation" className="px-2 pb-2">
       <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Account
       </p>
@@ -29,7 +29,7 @@ export function SidebarSecondaryNav() {
               <Link
                 href={href}
                 className={[
-                  'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                  'block rounded-md px-3 py-1 text-sm transition-colors',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                     : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground',
