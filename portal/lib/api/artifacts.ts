@@ -113,3 +113,7 @@ export function reviewArtifact(id: string, action: 'approve' | 'reject', note?: 
     body: JSON.stringify({ action, note }),
   });
 }
+
+export function deleteArtifact(id: string) {
+  return apiFetch<void>(`/artifacts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

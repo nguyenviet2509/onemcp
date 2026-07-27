@@ -11,7 +11,7 @@ import { PageShell } from '../../components/page-shell';
 import { EmptyState } from '../../components/empty-state';
 import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filter-panel';
 import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
-import { Artifact, ArtifactStatus, listArtifacts } from '../../lib/api/artifacts';
+import { Artifact, ArtifactStatus, deleteArtifact, listArtifacts } from '../../lib/api/artifacts';
 import { statusVariant } from '../../lib/status-pill-variants';
 import { Pagination, paginateItems } from '../../components/pagination';
 
@@ -28,17 +28,31 @@ function filterToParams(f: FilterState) {
 }
 
 // Option A artifact row: flat divide-y layout, no card-per-row shadow.
+// Row-end fast actions: Edit link + Delete button (revealed on hover for
+// discoverability; visible on touch via focus-within fallback).
 function ArtifactRow({
   artifact,
   checked,
   onToggle,
+  onDeleted,
 }: {
   artifact: Artifact;
   checked: boolean;
   onToggle: (id: string) => void;
+  onDeleted: (id: string) => void;
 }) {
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!confirm(`Xóa artifact "${artifact.title}"? Không thể undo.`)) return;
+    try {
+      await deleteArtifact(artifact.id);
+      onDeleted(artifact.id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Delete failed');
+    }
+  }
   return (
-    <li className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+    <li className="group flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
       <Checkbox
         checked={checked}
         onCheckedChange={() => onToggle(artifact.id)}
@@ -66,6 +80,21 @@ function ArtifactRow({
           </div>
         )}
         <p className="mt-0.5 font-mono text-xs text-muted-foreground">{artifact.slug}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <Link
+          href={`/artifacts/${artifact.id}/edit`}
+          className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+        >
+          Edit
+        </Link>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+        >
+          Delete
+        </button>
       </div>
     </li>
   );
@@ -173,6 +202,7 @@ function ArtifactsContent() {
                   artifact={a}
                   checked={selectedIds.has(a.id)}
                   onToggle={toggleOne}
+                  onDeleted={(id) => setItems((prev) => prev.filter((x) => x.id !== id))}
                 />
               ))}
             </ul>

@@ -339,6 +339,23 @@ export class ArtifactsService {
     });
   }
 
+  // Delete — owner or reviewer only. Cascade versions via transaction; embedding
+  // table FKs cleaned up by ON DELETE CASCADE at DB layer where present.
+  async remove(user: RequestUser, id: string): Promise<void> {
+    const artifact = await this.artifacts.findOne({
+      where: { id, departmentId: user.departmentId },
+    });
+    if (!artifact) throw new NotFoundException('Artifact không tồn tại');
+    const isOwner = artifact.ownerId === user.id;
+    if (!isOwner && !this.isReviewer(user)) {
+      throw new ForbiddenException('Chỉ owner hoặc maintainer mới xóa được');
+    }
+    await this.ds.transaction(async (m) => {
+      await m.getRepository(ArtifactVersion).delete({ artifactId: artifact.id });
+      await m.getRepository(Artifact).delete({ id: artifact.id });
+    });
+  }
+
   // Load runbook theo name (slug/title) hoặc service — gọi bởi MCP load_runbook tool.
   // Ghi audit event + increment metrics khi tìm thấy.
   async loadRunbook(

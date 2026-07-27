@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -107,5 +108,13 @@ export class ArtifactsController {
       });
     }
     return this.artifacts.review(user, id, parsed.data);
+  }
+
+  // Delete — owner or reviewer only. Cascades versions + attachments in service.
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@CurrentUser() user: RequestUser | undefined, @Param('id') id: string) {
+    if (!user) throw new UnauthorizedException();
+    return this.artifacts.remove(user, id);
   }
 }
