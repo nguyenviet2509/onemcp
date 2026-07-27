@@ -51,7 +51,8 @@ export class ArtifactsController {
   @Get(':id')
   detail(@CurrentUser() user: RequestUser | undefined, @Param('id') id: string) {
     if (!user) throw new UnauthorizedException();
-    return this.artifacts.findOne(user, id);
+    // trackView=true — this is the sole external view-count trigger.
+    return this.artifacts.findOne(user, id, true);
   }
 
   @Get(':id/versions')

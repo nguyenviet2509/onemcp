@@ -189,7 +189,13 @@ export class ArtifactsService {
     return qb.orderBy('a.updatedAt', 'DESC').limit(100).getMany();
   }
 
-  async findOne(user: RequestUser, id: string): Promise<{ artifact: Artifact; version: ArtifactVersion | null }> {
+  // trackView defaults false — internal callers (listVersions, update, review)
+  // must NOT bump the counter. Only the GET /artifacts/:id controller passes true.
+  async findOne(
+    user: RequestUser,
+    id: string,
+    trackView = false,
+  ): Promise<{ artifact: Artifact; version: ArtifactVersion | null }> {
     const artifact = await this.artifacts.findOne({
       where: { id, departmentId: user.departmentId },
     });
@@ -212,9 +218,8 @@ export class ArtifactsService {
       version = await this.versions.findOne({ where: { id: artifact.currentVersionId } });
     }
 
-    // Fire-and-forget view increment — only for published artifacts (skip
-    // draft/rejected noise). Await not needed; drives Top Viewed widget.
-    if (artifact.status === 'published') {
+    // Fire-and-forget view increment — published + explicit track flag only.
+    if (trackView && artifact.status === 'published') {
       this.artifacts
         .increment({ id: artifact.id }, 'viewCount', 1)
         .then(() =>
