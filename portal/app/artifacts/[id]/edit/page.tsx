@@ -65,7 +65,7 @@ export default function EditArtifactPage({ params }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-3xl px-6 py-6">
       <div className="text-sm">
         <Link href={`/artifacts/${id}`} className="text-blue-600 hover:underline">
           ← Back to detail

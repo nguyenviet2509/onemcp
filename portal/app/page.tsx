@@ -12,7 +12,7 @@ export default function DashboardPage() {
   return (
     // Suspense required: child widgets + stat cards use useCurrentSpace (searchParams)
     <Suspense>
-      <div className="px-5 py-4 space-y-3">
+      <div className="px-6 py-6 space-y-3">
         {/* Greeting header + CTAs */}
         <DashboardGreeting />
 

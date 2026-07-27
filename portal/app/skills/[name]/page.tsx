@@ -65,7 +65,7 @@ export default function SkillDetailPage({ params }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-6">
       <div className="text-sm">
         <Link href="/skills" className="text-blue-600 hover:underline">
           ← All skills
