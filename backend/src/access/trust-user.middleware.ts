@@ -4,15 +4,12 @@ import { NextFunction, Response } from 'express';
 import { AuthedRequest } from '../common/user-request';
 import { UsersService } from '../users/users.service';
 import { RoleAssignerService } from './role-assigner.service';
-import { AdminCidrGuard } from './admin-cidr.guard';
 import { normalizeIp } from './cidr-parser';
 
 // V1 identity: đọc X-Onemcp-User header → upsert user → attach req.user.
-// Validate:
-//   - Header bắt buộc (trừ /health)
-//   - Username regex chặt để tránh pollution
-//   - Role claim admin/maintainer từ non-admin CIDR → reject (C1/C3 mitigation)
-//   - User status=disabled → reject 403 (C4 mitigation)
+// Post-pivot 2026-07-27: BỎ CIDR check cho privileged role claim.
+// Roles cấp thuần theo env `ADMIN_USERNAMES` / `MAINTAINER_USERNAMES` username match.
+// Sẽ được thay hoàn toàn bằng SSO cookie auth ở plan 260727-0843.
 const USERNAME_RE = /^[a-z0-9._-]{2,32}$/;
 
 @Injectable()
@@ -24,7 +21,6 @@ export class TrustUserMiddleware implements NestMiddleware {
     private readonly config: ConfigService,
     private readonly users: UsersService,
     private readonly roles: RoleAssignerService,
-    private readonly adminGuard: AdminCidrGuard,
   ) {
     this.headerName = (this.config.get<string>('TRUST_USER_HEADER') || 'X-Onemcp-User').toLowerCase();
   }
@@ -59,17 +55,10 @@ export class TrustUserMiddleware implements NestMiddleware {
     }
 
     const assigned = this.roles.rolesFor(username);
-    const isPrivileged = assigned.some((r) => r === 'super-admin' || r === 'maintainer' || r === 'dept-admin');
 
-    // C1/C3 mitigation: role privileged phải từ ADMIN_ALLOW_CIDR.
-    // Middleware chạy TRƯỚC IpCidrGuard nên req.clientIp có thể chưa set —
-    // dùng req.ip (đã trust proxy). Set luôn req.clientIp để guard reuse.
-    const clientIp = normalizeIp(req.ip ?? req.socket.remoteAddress ?? '');
-    req.clientIp = clientIp;
-    if (isPrivileged && !this.adminGuard.isAdminIp(clientIp)) {
-      this.log.warn(`impersonation_attempt username=${username} ip=${clientIp}`);
-      throw new ForbiddenException('Privileged role claim from non-admin IP');
-    }
+    // Set clientIp cho downstream (audit log). KHÔNG CIDR check role claim nữa
+    // (post-pivot 260727: bỏ ADMIN_ALLOW_CIDR).
+    req.clientIp = normalizeIp(req.ip ?? req.socket.remoteAddress ?? '');
 
     const user = await this.users.upsertByUsername(username);
     if (user.status === 'disabled') {

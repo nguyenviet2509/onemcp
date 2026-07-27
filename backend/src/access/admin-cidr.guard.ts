@@ -1,33 +1,18 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import CIDRMatcher from 'cidr-matcher';
-import { AuthedRequest } from '../common/user-request';
-import { parseCidrList } from './cidr-parser';
+import { CanActivate, Injectable, Logger } from '@nestjs/common';
 
-// Admin-scope guard — strictier hơn IpCidrGuard.
-// Áp cho /admin/* routes + admin actions. Không thay thế IpCidrGuard, chạy sau.
-// C3 mitigation từ red-team review.
+// Post-pivot 2026-07-27: BỎ CIDR gate. Guard giữ interface để không đụng
+// consumer (templates/spaces controllers), luôn trả true. Admin auth chuyển
+// hoàn toàn qua RBAC role từ SSO / env `ADMIN_USERNAMES`.
+// Sẽ xoá file này ở SSO plan Phase 1 cleanup.
 @Injectable()
 export class AdminCidrGuard implements CanActivate {
   private readonly log = new Logger(AdminCidrGuard.name);
-  private readonly adminMatcher: CIDRMatcher;
 
-  constructor(private readonly config: ConfigService) {
-    this.adminMatcher = parseCidrList(this.config.get<string>('ADMIN_ALLOW_CIDR', ''));
-  }
-
-  canActivate(ctx: ExecutionContext): boolean {
-    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
-    const ip = req.clientIp ?? req.ip ?? '';
-    if (!this.adminMatcher.contains(ip)) {
-      this.log.warn(`admin_ip_rejected ${ip} → ${req.originalUrl}`);
-      throw new ForbiddenException('Admin routes chỉ cho phép từ ADMIN_ALLOW_CIDR');
-    }
+  canActivate(): boolean {
     return true;
   }
 
-  // Helper để kiểm tra IP có admin capability trước khi trust role claim từ header.
-  isAdminIp(ip: string): boolean {
-    return this.adminMatcher.contains(ip);
+  isAdminIp(_ip: string): boolean {
+    return true;
   }
 }
