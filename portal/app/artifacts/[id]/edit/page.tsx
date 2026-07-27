@@ -12,9 +12,21 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-interface StructuredShape {
-  template_version?: number;
-  fields?: Record<string, string>;
+// Normalize backend 'structured' payload → flat {fieldKey: value}.
+// Backend supports 2 shapes (see template-validator.validate): nested
+// {template_version, fields:{key: val}} OR flat {key: val}. Read either.
+function extractFields(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object') return {};
+  const obj = raw as Record<string, unknown>;
+  if (obj.fields && typeof obj.fields === 'object') {
+    return { ...(obj.fields as Record<string, string>) };
+  }
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === 'template_version') continue;
+    if (typeof v === 'string') out[k] = v;
+  }
+  return out;
 }
 
 // Option A edit page: token-only styles, inverted primary submit btn.
@@ -38,8 +50,7 @@ export default function EditArtifactPage({ params }: Props) {
         setType(d.artifact.type);
         setTags(d.artifact.tags.join(', '));
         setExpectedVersion(d.version?.versionNo ?? 0);
-        const structured = (d.version?.structured ?? {}) as StructuredShape;
-        setFields(structured.fields ?? {});
+        setFields(extractFields(d.version?.structured));
         const t = await getTemplate(d.artifact.type);
         setTemplate(t);
       })
