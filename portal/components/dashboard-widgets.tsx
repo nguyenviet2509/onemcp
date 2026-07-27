@@ -59,7 +59,7 @@ export function RecentActivityWidget() {
         const sorted = [...all].sort(
           (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
         );
-        setItems(sorted.slice(0, 10));
+        setItems(sorted.slice(0, 5));
       })
       .catch((e) => setError(e));
   }, [space.slug]);

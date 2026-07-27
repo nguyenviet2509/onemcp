@@ -20,7 +20,7 @@ export function TopViewedWidget() {
         const sorted = [...all].sort(
           (a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0),
         );
-        setItems(sorted.slice(0, 10));
+        setItems(sorted.slice(0, 5));
       })
       .catch((e) => setError(e));
   }, []);
