@@ -5,6 +5,7 @@ import { SidebarSecondaryNav } from './sidebar-secondary-nav';
 import { SpaceSwitcher } from './space-switcher';
 import { SavedSearchesList } from './saved-searches-list';
 import { IdentifyAsDropdown } from './identify-as-dropdown';
+import { ThemeToggle } from './theme-toggle';
 
 interface AppShellProps {
   children: ReactNode;
@@ -48,12 +49,16 @@ export function AppShell({ children }: AppShellProps) {
           <SavedSearchesList />
         </div>
 
-        {/* Secondary nav + identity at bottom */}
+        {/* Secondary nav + identity + theme toggle at bottom */}
         <div className="border-t border-slate-800 pt-2">
           <SidebarSecondaryNav />
           {/* IdentifyAsDropdown kept until SSO ships */}
-          <div className="px-3 pb-4">
+          <div className="px-3 pb-3 space-y-2">
             <IdentifyAsDropdown />
+            {/* Theme toggle — text-only, zero icon budget */}
+            <div className="flex justify-end">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </aside>
