@@ -1,9 +1,8 @@
-import { Suspense, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { SidebarBrand } from './sidebar-brand';
 import { SidebarNav } from './sidebar-nav';
 import { SidebarSecondaryNav } from './sidebar-secondary-nav';
-import { SpaceSwitcher } from './space-switcher';
 import { SidebarUserCard } from './sidebar-user-card';
 
 interface AppShellProps {
@@ -39,14 +38,6 @@ export function AppShell({ children }: AppShellProps) {
             </Link>
           </div>
 
-          <div className="px-2 pt-3">
-            <SectionHeader>Space</SectionHeader>
-            <div className="px-0.5">
-              <Suspense fallback={null}>
-                <SpaceSwitcher />
-              </Suspense>
-            </div>
-          </div>
         </div>
 
         {/* Middle zone — scrollable nav; min-h-0 ensures flex child can shrink */}
