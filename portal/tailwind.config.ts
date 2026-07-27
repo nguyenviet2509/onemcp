@@ -88,8 +88,9 @@ const config: Config = {
         '2xl': '1rem',
       },
       fontFamily: {
-        // iNET uses system-ui stack — no Google Fonts dependency
-        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Inter self-hosted via next/font (--font-inter CSS var injected by layout.tsx).
+        // Falls back to system-ui stack if variable not loaded.
+        sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {

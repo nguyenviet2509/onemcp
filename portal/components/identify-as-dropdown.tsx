@@ -10,6 +10,9 @@ import { ApiError, apiFetch } from '../lib/api-client';
 // Post-save verification: call GET /api/users/me để catch tình huống backend
 // từ chối role claim (VD username "admin" từ non-admin IP → 403 khắp nơi).
 // Nếu 403 → không reload, revert identity, show inline hint để user đổi username.
+//
+// Layout: vertical stack trong Card wrapper để tránh overflow ở sidebar 240px.
+// TODO(sso): replace với UserMenu khi SSO ships.
 export function IdentifyAsDropdown() {
   const [current, setCurrent] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -46,8 +49,7 @@ export function IdentifyAsDropdown() {
       setVerifying(false);
       if (e instanceof ApiError && e.status === 403) {
         setError(
-          `Username "${next}" không truy cập được từ IP hiện tại (role bị chặn CIDR). ` +
-          'Dùng username khác (VD email @inet.vn) hoặc truy cập qua mạng nội bộ.',
+          `"${next}" không truy cập được từ IP hiện tại. Dùng email @inet.vn hoặc mạng nội bộ.`,
         );
       } else {
         setError(e instanceof Error ? e.message : 'Verify failed');
@@ -66,62 +68,71 @@ export function IdentifyAsDropdown() {
     window.location.reload();
   }
 
+  // Edit / no-identity form
   if (editing || !current) {
     return (
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-2.5 space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          Identity
+        </p>
         <input
-          className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900"
+          className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-500"
           placeholder="username"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !verifying && save()}
           disabled={verifying}
         />
-        <button
-          onClick={save}
-          disabled={verifying}
-          className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {verifying ? 'Verifying…' : 'Save'}
-        </button>
-        {current && !verifying && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              setEditing(false);
-              setError(null);
-            }}
-            className="text-slate-500 hover:text-slate-700"
+            onClick={save}
+            disabled={verifying}
+            className="rounded bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
           >
-            Cancel
+            {verifying ? 'Checking…' : 'Save'}
           </button>
-        )}
+          {current && !verifying && (
+            <button
+              onClick={() => { setEditing(false); setError(null); }}
+              className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
         {error && (
-          <span className="block w-full text-xs text-red-600 md:max-w-md">
-            {error}
-          </span>
+          <p className="text-[10px] text-red-400 leading-tight">{error}</p>
         )}
       </div>
     );
   }
 
+  // Identity set — compact display row
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-slate-500">Identified as</span>
-      <code className="rounded bg-slate-100 px-2 py-0.5 font-mono dark:bg-slate-800">
-        {current}
-      </code>
-      <button
-        onClick={() => {
-          setDraft(current);
-          setEditing(true);
-        }}
-        className="text-blue-600 hover:underline"
-      >
-        change
-      </button>
-      <button onClick={clear} className="text-slate-400 hover:text-red-600">
-        clear
-      </button>
+    <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-2.5 space-y-1.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+        Identity
+      </p>
+      <div className="flex items-center justify-between gap-2">
+        <code className="truncate rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-mono text-slate-300">
+          {current}
+        </code>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            onClick={() => { setDraft(current); setEditing(true); }}
+            className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors"
+          >
+            change
+          </button>
+          <span className="text-slate-700">·</span>
+          <button
+            onClick={clear}
+            className="text-[10px] text-slate-500 hover:text-red-400 transition-colors"
+          >
+            clear
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
