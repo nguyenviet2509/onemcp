@@ -68,7 +68,7 @@ export function RecentActivityWidget() {
     <Card>
       {/* Section title text-only — no icon (icon budget: 0 outside sidebar-nav) */}
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">Recent activity</CardTitle>
+        <CardTitle className="text-base font-semibold">Recent activity</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (

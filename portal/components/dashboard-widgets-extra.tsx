@@ -32,7 +32,7 @@ export function TopViewedWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">Top viewed</CardTitle>
+        <CardTitle className="text-base font-semibold">Top viewed</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -40,7 +40,7 @@ export function TopViewedWidget() {
         ) : items?.length === 0 || allZero ? (
           <EmptyState
             title="No views yet"
-            description="Published artifacts will rank here once they receive views."
+            size="compact"
           />
         ) : (
           <ol className="space-y-1">
@@ -99,7 +99,7 @@ export function TopTagsWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">Top tags</CardTitle>
+        <CardTitle className="text-base font-semibold">Top tags</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (

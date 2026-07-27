@@ -44,9 +44,10 @@ export function DashboardGreeting() {
       {/* Right: CTAs — Import hidden, Submit new visible */}
       <div className="flex shrink-0 items-center gap-2">
         {/* Import CTA hidden until backend endpoint ready */}
+        {/* violet-600 bg ensures WCAG AA contrast on both dark and light root */}
         <Link
           href="/artifacts/new"
-          className={buttonVariants({ variant: 'default', size: 'sm' })}
+          className={buttonVariants({ variant: 'default', size: 'sm' }) + ' bg-violet-600 hover:bg-violet-500 text-white border-transparent'}
         >
           Submit new
         </Link>
