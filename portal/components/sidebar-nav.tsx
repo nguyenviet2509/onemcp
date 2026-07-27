@@ -3,25 +3,26 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, Search, Sparkles, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, FileText, Search, Wrench, ClipboardCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { listArtifacts } from '@/lib/api/artifacts';
 
-// Exactly 5 nav icons — icon budget enforced here. ZERO icons elsewhere.
+// Primary nav — 5 items. Icons: lucide, size-3.5, stroke-width 1.5 (modern minimal).
+// Icon budget: 5 total site-wide, all lives here. Secondary nav is text-only.
+// Wrench for Skills = MCP tools/utilities (semantic fit; replaces Sparkles decor).
 const NAV_ITEMS: Array<{
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>;
   showCount?: boolean;
 }> = [
   { href: '/',                 label: 'Dashboard',    icon: LayoutDashboard },
   { href: '/artifacts',        label: 'Artifacts',    icon: FileText },
   { href: '/search',           label: 'Search',       icon: Search },
-  { href: '/skills',           label: 'Skills',       icon: Sparkles },
+  { href: '/skills',           label: 'Skills',       icon: Wrench },
   { href: '/artifacts/review', label: 'Review queue', icon: ClipboardCheck, showCount: true },
 ];
 
-// Primary sidebar navigation with active state + pending review count badge.
 export function SidebarNav() {
   const pathname = usePathname();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
@@ -33,10 +34,9 @@ export function SidebarNav() {
   }, []);
 
   return (
-    <nav aria-label="Main navigation" className="px-2 py-1.5">
-      <ul className="space-y-0.5">
+    <nav aria-label="Main navigation" className="px-2 pb-1 pt-1">
+      <ul className="space-y-px">
         {NAV_ITEMS.map(({ href, label, icon: Icon, showCount }) => {
-          // Active: exact match for dashboard, prefix match for others
           const isActive =
             href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -45,17 +45,24 @@ export function SidebarNav() {
               <Link
                 href={href}
                 className={[
-                  'flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground',
+                    ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
+                    : 'font-normal text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground',
                 ].join(' ')}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                <span className="flex-1">{label}</span>
+                <Icon
+                  className={[
+                    'size-3.5 shrink-0 transition-colors',
+                    isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground',
+                  ].join(' ')}
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+                <span className="flex-1 truncate">{label}</span>
                 {showCount && pendingCount !== null && pendingCount > 0 && (
-                  <Badge variant="secondary" className="tabular-nums text-xs">
+                  <Badge variant="secondary" className="tabular-nums px-1.5 text-[10px] font-medium">
                     {pendingCount}
                   </Badge>
                 )}
