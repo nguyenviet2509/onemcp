@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Clock } from 'lucide-react';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
 import { useCurrentSpace } from '../lib/space-context';
 import { EmptyState } from './empty-state';
 import { WidgetError } from './widget-error';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,7 +29,7 @@ export function WidgetSkeleton() {
   );
 }
 
-// ── Relative time helper (date-fns installed) ─────────────────────────────────
+// ── Relative time helper ──────────────────────────────────────────────────────
 
 function relativeTime(iso: string): string {
   try {
@@ -40,6 +40,8 @@ function relativeTime(iso: string): string {
 }
 
 // ── Widget 1: Recent Activity ─────────────────────────────────────────────────
+// Clock icon removed (Phase 2 icon purge). Section title text-only.
+// Status pill uses shadcn Badge — semantic variants applied in Phase 3.
 
 export function RecentActivityWidget() {
   const { space } = useCurrentSpace();
@@ -63,11 +65,9 @@ export function RecentActivityWidget() {
 
   return (
     <Card>
+      {/* Section title text-only — no icon (icon budget: 0 outside sidebar-nav) */}
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <Clock className="h-4 w-4 text-muted-foreground" aria-hidden />
-          Recent activity
-        </CardTitle>
+        <CardTitle className="text-sm font-semibold">Recent activity</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -85,11 +85,17 @@ export function RecentActivityWidget() {
                   >
                     {a.title}
                   </a>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono">
-                      {a.type}
-                    </span>
-                    <span>{relativeTime(a.updatedAt)}</span>
+                  {/* Status + template pills side-by-side; semantic colors in Phase 3 */}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline" className="font-mono text-[10px] px-1 py-0">
+                      {a.status}
+                    </Badge>
+                    {a.type && (
+                      <Badge variant="secondary" className="font-mono text-[10px] px-1 py-0">
+                        {a.type}
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">{relativeTime(a.updatedAt)}</span>
                   </div>
                 </div>
               </li>
@@ -108,7 +114,6 @@ export function MyDraftsWidget() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    // Backend now supports ?author=me — filter server-side to avoid over-fetching.
     listArtifacts({ status: 'pending', author: 'me' })
       .then((all) => {
         setItems(all.slice(0, 5));

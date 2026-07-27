@@ -1,74 +1,41 @@
 'use client';
 
 import { Suspense } from 'react';
-import { PageShell } from '../components/page-shell';
-import { WidgetSkeleton, RecentActivityWidget, MyDraftsWidget, PendingReviewWidget } from '../components/dashboard-widgets';
+import { DashboardGreeting } from '../components/dashboard-greeting';
+import { DashboardStatCards } from '../components/dashboard-stat-cards';
+import { WidgetSkeleton, RecentActivityWidget } from '../components/dashboard-widgets';
 import { TopViewedWidget, TopTagsWidget } from '../components/dashboard-widgets-extra';
-import { buttonVariants } from '@/components/ui/button';
 
-// CTA row — primary actions at top of dashboard
-function CtaRow() {
-  return (
-    <div className="mb-6 flex flex-wrap gap-3">
-      <a href="/artifacts/new" className={buttonVariants({ variant: 'default' })}>
-        New artifact
-      </a>
-      <a href="/search" className={buttonVariants({ variant: 'outline' })}>
-        Search
-      </a>
-    </div>
-  );
-}
-
-// Dashboard home — 5 widgets in a responsive grid.
-// Icons used: Clock (widget 1 header) = 1 total. CTA uses text-only.
-// Icon budget: 1 / 8 max — well within guardrail.
+// Dashboard home — greeting + stat cards + 2-column widget layout.
+// AppShell provides sidebar; this page owns main content area only.
 export default function DashboardPage() {
   return (
-    // Suspense boundary required because child widgets use useSearchParams indirectly
-    // via useCurrentSpace → SpaceProvider which reads searchParams.
+    // Suspense required: child widgets + stat cards use useCurrentSpace (searchParams)
     <Suspense>
-      <PageShell title="Dashboard">
-        <CtaRow />
+      <div className="px-6 py-8 space-y-6">
+        {/* Greeting header + CTAs */}
+        <DashboardGreeting />
 
-        {/* Widget grid: 1 col mobile → 2 col md → 3 col lg */}
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {/* Widget 1: Recent activity — spans full width on lg to anchor the grid */}
+        {/* 3 stat cards (SEARCH HIT RATE hidden — no backend metric) */}
+        <DashboardStatCards />
+
+        {/* 2-column widget layout: recent activity wide + top viewed/tags stacked */}
+        <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Suspense fallback={<WidgetSkeleton />}>
               <RecentActivityWidget />
             </Suspense>
           </div>
-
-          {/* Widget 3: Pending review — summary count, smaller footprint */}
-          <div>
-            <Suspense fallback={<WidgetSkeleton />}>
-              <PendingReviewWidget />
-            </Suspense>
-          </div>
-
-          {/* Widget 2: My drafts */}
-          <div>
-            <Suspense fallback={<WidgetSkeleton />}>
-              <MyDraftsWidget />
-            </Suspense>
-          </div>
-
-          {/* Widget 4: Top viewed */}
-          <div>
+          <div className="space-y-4">
             <Suspense fallback={<WidgetSkeleton />}>
               <TopViewedWidget />
             </Suspense>
-          </div>
-
-          {/* Widget 5: Top tags */}
-          <div>
             <Suspense fallback={<WidgetSkeleton />}>
               <TopTagsWidget />
             </Suspense>
           </div>
         </div>
-      </PageShell>
+      </div>
     </Suspense>
   );
 }
