@@ -133,15 +133,15 @@ export function SidebarUserCard() {
           </DropdownMenuLabel>
           {current ? (
             <>
-              <DropdownMenuItem onClick={() => { setDraft(current); setEditing(true); }}>
+              <DropdownMenuItem onSelect={() => { setDraft(current); setEditing(true); }}>
                 Change identity…
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onClear} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem onSelect={onClear} variant="destructive">
                 Clear identity
               </DropdownMenuItem>
             </>
           ) : (
-            <DropdownMenuItem onClick={() => { setDraft(''); setEditing(true); }}>
+            <DropdownMenuItem onSelect={() => { setDraft(''); setEditing(true); }}>
               Sign in…
             </DropdownMenuItem>
           )}
@@ -149,11 +149,13 @@ export function SidebarUserCard() {
           <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Theme
           </DropdownMenuLabel>
-          {/* Plain items avoid RadioGroup runtime crash with next-themes SSR */}
+          {/* Base-ui Menu.Item fires onSelect (not onClick) — match space-switcher pattern */}
           {(['light', 'dark', 'system'] as const).map((t) => (
-            <DropdownMenuItem key={t} onClick={() => setTheme(t)}>
-              {mounted && currentTheme === t ? '✓ ' : ''}
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+            <DropdownMenuItem key={t} onSelect={() => setTheme(t)} className="flex items-center justify-between">
+              <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+              {mounted && currentTheme === t && (
+                <span className="text-xs text-muted-foreground" aria-hidden>✓</span>
+              )}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
