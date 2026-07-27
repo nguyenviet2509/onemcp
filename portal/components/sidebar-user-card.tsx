@@ -7,7 +7,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ApiError, apiFetch } from '@/lib/api-client';
@@ -128,9 +127,10 @@ export function SidebarUserCard() {
           <span aria-hidden className="text-base leading-none tracking-tighter">···</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" sideOffset={6} className="w-52">
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {/* Plain div label — base-ui GroupLabel throws if not inside Group */}
+          <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Identity
-          </DropdownMenuLabel>
+          </div>
           {current ? (
             <>
               <DropdownMenuItem onSelect={() => { setDraft(current); setEditing(true); }}>
@@ -146,9 +146,9 @@ export function SidebarUserCard() {
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Theme
-          </DropdownMenuLabel>
+          </div>
           {/* Base-ui Menu.Item fires onSelect (not onClick) — match space-switcher pattern */}
           {(['light', 'dark', 'system'] as const).map((t) => (
             <DropdownMenuItem key={t} onSelect={() => setTheme(t)} className="flex items-center justify-between">

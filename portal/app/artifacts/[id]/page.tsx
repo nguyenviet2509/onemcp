@@ -2,177 +2,100 @@
 
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { AttachmentUploader } from '../../../components/attachment-uploader';
 import { MarkdownView } from '../../../components/markdown-view';
-import { PageShell } from '../../../components/page-shell';
-import { VersionDiffView } from '../../../components/version-diff-view';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
 import { Badge } from '../../../components/ui/badge';
 import { Button, buttonVariants } from '../../../components/ui/button';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { ApiError } from '../../../lib/api-client';
-import {
-  ArtifactDetail,
-  ArtifactVersion,
-  getArtifact,
-  listArtifactVersions,
-  reviewArtifact,
-} from '../../../lib/api/artifacts';
-
-// STATUS_CLASS replaced by statusVariant() from lib/status-pill-variants.ts
+import { ArtifactDetail, getArtifact } from '../../../lib/api/artifacts';
 import { statusVariant } from '../../../lib/status-pill-variants';
+import { ArtifactDetailSidebar } from './artifact-detail-sidebar';
+import { ArtifactReviewActions } from './artifact-review-actions';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-// --- History tab inner component ---
-function HistoryTab({ artifactId }: { artifactId: string }) {
-  const [versions, setVersions] = useState<ArtifactVersion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
+// Header action cluster — star (local toggle), copy link, edit
+function HeaderActions({ id, title }: { id: string; title: string }) {
+  const [starred, setStarred] = useState(false);
 
-  useEffect(() => {
-    listArtifactVersions(artifactId)
-      .then(setVersions)
-      .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
-      .finally(() => setLoading(false));
-  }, [artifactId]);
-
-  if (loading) return <Skeleton className="h-32 w-full" />;
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
   }
-  if (versions.length === 0) {
-    return <p className="text-sm text-muted-foreground">No version history available.</p>;
-  }
-
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 2) return [prev[1], id]; // keep last two
-      return [...prev, id];
-    });
-  }
-
-  // Find the two selected versions for diff (older first).
-  const diffPair =
-    selected.length === 2
-      ? ([
-          versions.find((v) => v.id === selected[0])!,
-          versions.find((v) => v.id === selected[1])!,
-        ].sort((a, b) => a.versionNo - b.versionNo) as [ArtifactVersion, ArtifactVersion])
-      : null;
 
   return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">
-        Select 2 versions to compare side-by-side.
-      </p>
-      <ul className="space-y-2">
-        {versions.map((v) => {
-          const isSelected = selected.includes(v.id);
-          return (
-            <li
-              key={v.id}
-              onClick={() => toggleSelect(v.id)}
-              className={`cursor-pointer rounded-lg border px-4 py-2.5 text-sm transition-colors ${
-                isSelected
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card hover:border-primary/40'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">v{v.versionNo}</span>
-                <Badge variant={statusVariant(v.status)}>{v.status}</Badge>
-              </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {new Date(v.submittedAt).toLocaleString()}
-                {v.reviewedAt && ` · reviewed ${new Date(v.reviewedAt).toLocaleString()}`}
-              </p>
-            </li>
-          );
-        })}
-      </ul>
-
-      {diffPair && (
-        <div className="mt-4">
-          <VersionDiffView versions={diffPair} />
-        </div>
-      )}
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setStarred((s) => !s)}
+        aria-pressed={starred}
+      >
+        {starred ? '★' : '☆'} Star
+      </Button>
+      <Button variant="outline" size="sm" onClick={copyLink}>
+        Copy link
+      </Button>
+      <Link
+        href={`/artifacts/${id}/edit`}
+        className={buttonVariants({ size: 'sm' })}
+      >
+        Edit
+      </Link>
     </div>
   );
 }
 
-// --- Review actions sub-section (used inside View tab) ---
-function ReviewActions({
-  artifactId,
-  versionStatus,
-  onDone,
+// Full-width header block with border-bottom
+function DetailHeader({
+  id,
+  detail,
 }: {
-  artifactId: string;
-  versionStatus: string;
-  onDone: () => void;
+  id: string;
+  detail: ArtifactDetail;
 }) {
-  const [note, setNote] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (versionStatus !== 'pending') return null;
-
-  async function handleReview(action: 'approve' | 'reject') {
-    setBusy(true);
-    setError(null);
-    try {
-      await reviewArtifact(artifactId, action, note || undefined);
-      setNote('');
-      onDone();
-    } catch (e) {
-      setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { artifact, version } = detail;
+  const updatedAt = artifact.updatedAt
+    ? formatDistanceToNow(new Date(artifact.updatedAt), { addSuffix: true })
+    : null;
 
   return (
-    <section className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
-      <h2 className="text-sm font-semibold">Review actions (maintainer only)</h2>
-      {error && (
-        <Alert variant="destructive" className="mt-2">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={2}
-        placeholder="Review note (optional)..."
-        className="mt-2 w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/15 focus:border-foreground"
-        maxLength={1000}
-      />
-      <div className="mt-2 flex gap-2">
-        <Button disabled={busy} onClick={() => handleReview('approve')} size="sm">
-          Approve
-        </Button>
-        <Button
-          disabled={busy}
-          onClick={() => handleReview('reject')}
-          variant="destructive"
-          size="sm"
-        >
-          Reject
-        </Button>
+    <div className="border-b border-border px-8 py-4">
+      {/* Breadcrumb */}
+      <nav className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Link href="/artifacts" className="hover:text-foreground transition-colors">Artifacts</Link>
+        <span>/</span>
+        <span>{artifact.type}</span>
+        <span>/</span>
+        <span className="text-foreground">{artifact.title}</span>
+      </nav>
+
+      {/* Title row */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{artifact.title}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <Badge variant={statusVariant(artifact.status)} className="text-xs">
+              {artifact.status}
+            </Badge>
+            {version && <span>v{version.versionNo}</span>}
+            {version && <span>·</span>}
+            {updatedAt && <span>Updated {updatedAt}</span>}
+            {artifact.type && (
+              <>
+                <span>·</span>
+                <span>Type: {artifact.type}</span>
+              </>
+            )}
+          </div>
+        </div>
+        <HeaderActions id={id} title={artifact.title} />
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Backend enforces role — contributors receive 403.
-      </p>
-    </section>
+    </div>
   );
 }
 
@@ -196,110 +119,77 @@ export default function ArtifactDetailPage({ params }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const artifact = detail?.artifact;
-  const version = detail?.version;
-
-  return (
-    <PageShell
-      title={artifact?.title ?? 'Artifact detail'}
-      breadcrumb={[
-        { label: 'Artifacts', href: '/artifacts' },
-        { label: artifact?.title ?? id },
-      ]}
-      actions={
-        artifact ? (
-          <Link href={`/artifacts/${id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-            Edit
-          </Link>
-        ) : undefined
-      }
-    >
-      {loading && (
-        <div className="space-y-3">
-          <Skeleton className="h-6 w-1/3" />
-          <Skeleton className="h-4 w-1/2" />
+  if (loading) {
+    return (
+      <main className="w-full">
+        <div className="px-8 py-4 space-y-3">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-1/3" />
+        </div>
+        <div className="px-8 py-6 space-y-3">
           <Skeleton className="h-40 w-full" />
         </div>
-      )}
+      </main>
+    );
+  }
 
-      {error && (
+  if (error) {
+    return (
+      <main className="px-8 py-6">
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      )}
+      </main>
+    );
+  }
 
-      {detail && artifact && (
-        <>
-          {/* Meta row */}
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Badge variant="template" className="font-mono">{artifact.type}</Badge>
-            <Badge variant={statusVariant(artifact.status)}>{artifact.status}</Badge>
-            <code className="font-mono text-xs">{artifact.slug}</code>
-            {version && (
-              <>
-                <span>·</span>
-                <span>v{version.versionNo}</span>
-                <span>·</span>
-                <span>{new Date(version.submittedAt).toLocaleString()}</span>
-              </>
-            )}
-          </div>
+  if (!detail) return null;
 
-          {artifact.tags.length > 0 && (
-            <div className="mb-4 flex flex-wrap items-center gap-1">
-              <span className="mr-1 text-xs uppercase tracking-wider text-muted-foreground">Tags</span>
-              {artifact.tags.map((t) => (
-                <Badge key={t} variant="outline" className="text-xs">
-                  {t}
-                </Badge>
-              ))}
-            </div>
+  const { artifact, version } = detail;
+
+  return (
+    <main className="w-full">
+      <DetailHeader id={id} detail={detail} />
+
+      {/* Body: article (left) + sidebar (right) */}
+      <div className="grid grid-cols-[1fr_260px]">
+        {/* Left — markdown body + attachments + review actions */}
+        <div className="px-8 py-6 max-w-3xl">
+          {version ? (
+            <article className="prose prose-sm dark:prose-invert max-w-none">
+              <MarkdownView source={version.body} />
+            </article>
+          ) : (
+            <p className="text-sm text-muted-foreground">No content version available.</p>
           )}
 
-          {/* Tabs: View | History | Attachments — Edit removed, single Edit btn in header */}
-          <Tabs defaultValue="view">
-            <TabsList variant="default">
-              <TabsTrigger value="view">View</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="attachments">Attachments</TabsTrigger>
-            </TabsList>
+          {/* Attachments section below article */}
+          <section className="mt-8 border-t border-border pt-6">
+            <h2 className="mb-3 text-sm font-semibold">Attachments</h2>
+            <AttachmentUploader artifactId={id} />
+          </section>
 
-            {/* View tab — read-only markdown + review actions */}
-            <TabsContent value="view" className="mt-4">
-              {version ? (
-                <article className="rounded-lg border border-border bg-card p-6">
-                  <MarkdownView source={version.body} />
-                </article>
-              ) : (
-                <p className="text-sm text-muted-foreground">No content version available.</p>
-              )}
-              {version && (
-                <ReviewActions
-                  artifactId={id}
-                  versionStatus={version.status}
-                  onDone={reload}
-                />
-              )}
-              {version?.reviewedAt && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Reviewed {new Date(version.reviewedAt).toLocaleString()} — {version.status}
-                  {version.reviewNote && ` · ${version.reviewNote}`}
-                </p>
-              )}
-            </TabsContent>
+          {/* Review actions — renders only when version is pending */}
+          {version && (
+            <ArtifactReviewActions
+              artifactId={id}
+              versionStatus={version.status}
+              onDone={reload}
+            />
+          )}
 
-            {/* History tab — version list + diff */}
-            <TabsContent value="history" className="mt-4">
-              <HistoryTab artifactId={id} />
-            </TabsContent>
+          {version?.reviewedAt && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Reviewed {new Date(version.reviewedAt).toLocaleString()} — {version.status}
+              {version.reviewNote && ` · ${version.reviewNote}`}
+            </p>
+          )}
+        </div>
 
-            {/* Attachments tab */}
-            <TabsContent value="attachments" className="mt-4">
-              <AttachmentUploader artifactId={id} />
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
-    </PageShell>
+        {/* Right — tags, related, activity */}
+        <ArtifactDetailSidebar artifactId={id} tags={artifact.tags} />
+      </div>
+    </main>
   );
 }

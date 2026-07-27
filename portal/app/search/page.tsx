@@ -1,40 +1,114 @@
 'use client';
 
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-// SearchIcon, BookmarkIcon removed (icon budget: 0 outside sidebar-nav).
+import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
-import { PageShell } from '@/components/page-shell';
-import { EmptyState } from '@/components/empty-state';
-import { ArtifactFilterPanel, FilterState } from '@/components/artifact-filter-panel';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { search, SearchHit } from '@/lib/api/search';
 import { createSaved } from '@/lib/api/saved-searches';
+import { listSpaces } from '@/lib/api/spaces';
 import { ApiError } from '@/lib/api-client';
 
-// Matches SearchParams.mode in lib/api/search.ts
 type SearchMode = 'hybrid' | 'fts' | 'vector';
 
-// Strip non-<b>/<mark> tags for safe snippet rendering.
+// Strip unsafe tags — keep <b> <i> <mark> for snippet highlighting
 function sanitizeSnippet(s: string): string {
   return s.replace(/<(?!\/?(?:b|i|mark)\b)[^>]*>/gi, '');
 }
 
-// Highlight query terms in plain text with <mark>.
 function highlightTerms(text: string, q: string): string {
   if (!q.trim()) return text;
   const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+}
+
+function relativeTime(iso: string): string {
+  try {
+    return formatDistanceToNow(new Date(iso), { addSuffix: true });
+  } catch {
+    return iso;
+  }
+}
+
+// Single result card
+function ResultCard({ hit, q }: { hit: SearchHit; q: string }) {
+  const snippetHtml = hit.snippet.includes('<b>') || hit.snippet.includes('<mark>')
+    ? sanitizeSnippet(hit.snippet)
+    : highlightTerms(hit.snippet, q);
+
+  const itemLink = hit.kind === 'skill'
+    ? `/skills/${encodeURIComponent(hit.name)}`
+    : `/artifacts/${hit.id}`;
+
+  const rrfScore = hit.meta?.rrfScore as number | undefined;
+  const updatedAt = hit.meta?.updatedAt as string | undefined;
+  const versionNo = hit.meta?.versionNo as number | undefined;
+
+  return (
+    <a
+      href={itemLink}
+      className="block rounded-lg border border-border bg-card p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm font-semibold text-foreground">{hit.name}</span>
+        {rrfScore !== undefined && (
+          <span className="text-xs text-muted-foreground">
+            {rrfScore.toFixed(2)}
+          </span>
+        )}
+      </div>
+      <p
+        className="text-sm text-muted-foreground [&_mark]:bg-primary/15 [&_mark]:text-foreground [&_b]:font-semibold"
+        dangerouslySetInnerHTML={{ __html: snippetHtml }}
+      />
+      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+        <Badge variant="outline" className="text-xs">{hit.kind}</Badge>
+        {hit.tags.slice(0, 2).map((t) => (
+          <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
+        ))}
+        {hit.tags.length > 0 && <span>·</span>}
+        {versionNo !== undefined && <span>v{versionNo}</span>}
+        {updatedAt && <span>· {relativeTime(updatedAt)}</span>}
+      </div>
+    </a>
+  );
+}
+
+// Active filter chips from current filter state
+function FilterChips({
+  mode,
+  space,
+  onClearSpace,
+}: {
+  mode: SearchMode;
+  space: string;
+  onClearSpace: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-muted-foreground">
+      <span>Filters:</span>
+      {space && (
+        <button
+          onClick={onClearSpace}
+          className="inline-flex items-center gap-1 rounded border border-border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted/80 transition-colors"
+        >
+          Space: {space} ×
+        </button>
+      )}
+      <Badge variant="outline" className="text-xs font-normal pointer-events-none">
+        Mode: {mode}
+      </Badge>
+    </div>
+  );
 }
 
 function SearchPageInner() {
@@ -44,81 +118,65 @@ function SearchPageInner() {
   const [q, setQ] = useState(searchParams.get('q') ?? '');
   const rawMode = searchParams.get('mode');
   const [mode, setMode] = useState<SearchMode>(
-    (rawMode === 'fts' || rawMode === 'vector') ? rawMode : 'hybrid'
+    rawMode === 'fts' || rawMode === 'vector' ? rawMode : 'hybrid'
   );
+  const [space, setSpace] = useState(searchParams.get('space') ?? '');
+  const [spaceCount, setSpaceCount] = useState(0);
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [totalMs, setTotalMs] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [filters, setFilters] = useState<FilterState | null>(null);
 
   // Save-search dialog
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const runSearch = useCallback(async (query: string, currentMode: SearchMode, currentFilters: FilterState | null) => {
-    if (query.trim().length < 2) return;
-    setBusy(true);
-    setError(null);
-    setSubmitted(true);
-    try {
-      const tags = currentFilters?.tags
-        ? currentFilters.tags.split(',').map((t) => t.trim()).filter(Boolean)
-        : undefined;
-      const r = await search({
-        q: query.trim(),
-        mode: currentMode,
-        space: currentFilters?.space || undefined,
-        templateKey: currentFilters?.templateKey || undefined,
-        tags,
-        dept: currentFilters?.['dept' as keyof FilterState] || undefined,
-      });
-      setHits(r);
-    } catch (e) {
-      setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
-    } finally {
-      setBusy(false);
-    }
+  // Load space count for subtitle — non-critical, silent failure
+  useEffect(() => {
+    listSpaces().then((ss) => setSpaceCount(ss.length)).catch(() => {});
   }, []);
+
+  const runSearch = useCallback(
+    async (query: string, currentMode: SearchMode, currentSpace: string) => {
+      if (query.trim().length < 2) return;
+      setBusy(true);
+      setError(null);
+      setSubmitted(true);
+      const t0 = Date.now();
+      try {
+        const r = await search({
+          q: query.trim(),
+          mode: currentMode,
+          space: currentSpace || undefined,
+        });
+        setHits(r);
+        setTotalMs(Date.now() - t0);
+      } catch (e) {
+        setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    []
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
     params.set('q', q);
     params.set('mode', mode);
+    if (space) params.set('space', space); else params.delete('space');
     router.replace(`?${params.toString()}`, { scroll: false });
-    runSearch(q, mode, filters);
-  }
-
-  function handleModeChange(newMode: string) {
-    const m = newMode as SearchMode;
-    setMode(m);
-    if (submitted && q.trim().length >= 2) {
-      runSearch(q, m, filters);
-    }
-  }
-
-  function handleFilterChange(f: FilterState) {
-    setFilters(f);
+    runSearch(q, mode, space);
   }
 
   async function handleSave() {
     if (!saveName.trim() || !q.trim()) return;
     setSaving(true);
     try {
-      await createSaved({
-        name: saveName.trim(),
-        query: q.trim(),
-        filters: {
-          mode,
-          space: filters?.space || undefined,
-          templateKey: filters?.templateKey || undefined,
-          tags: filters?.tags
-            ? filters.tags.split(',').map((t) => t.trim()).filter(Boolean)
-            : undefined,
-        },
-      });
+      await createSaved({ name: saveName.trim(), query: q.trim(), filters: { mode, space: space || undefined } });
       toast.success('Search saved');
       setSaveOpen(false);
       setSaveName('');
@@ -129,151 +187,143 @@ function SearchPageInner() {
     }
   }
 
-  const saveAction = (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!submitted || hits.length === 0}
-        onClick={() => setSaveOpen(true)}
-      >
-        Save search
-      </Button>
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Save this search</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-3 py-2">
-          <Label htmlFor="save-name">Name</Label>
-          <Input
-            id="save-name"
-            value={saveName}
-            onChange={(e) => setSaveName(e.target.value)}
-            placeholder="e.g. Payment webhook issues"
-            autoFocus
-          />
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
-            {saving ? 'Saving…' : 'Save'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-    </>
-  );
+  // Use spaces count as proxy for "total artifacts" subtitle — best effort
+  const totalLabel = spaceCount > 0 ? `${spaceCount}+ spaces` : 'all';
 
   return (
-    <PageShell title="Search" actions={saveAction}>
-      {/* Mode tabs + search bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Tabs value={mode} onValueChange={handleModeChange} className="w-auto">
-          <TabsList>
-            <TabsTrigger value="hybrid">Hybrid</TabsTrigger>
-            <TabsTrigger value="fts">Full-text</TabsTrigger>
-            <TabsTrigger value="vector">Vector (semantic)</TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <main className="max-w-3xl mx-auto px-6 py-10">
+      {/* Center header */}
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight mb-1">Search OneMCP</h1>
+        <p className="text-sm text-muted-foreground">
+          Hybrid semantic + keyword search across {totalLabel}
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search artifacts, skills…"
-          className="flex-1"
-          autoFocus
+      {/* Search input */}
+      <form onSubmit={handleSubmit}>
+        <div className="relative">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Ask anything…"
+            autoFocus
+            className="w-full rounded-lg border border-border bg-card py-3 pl-11 pr-16 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground transition-colors"
+          />
+          {/* Search glyph — text only, no icon import */}
+          <span className="pointer-events-none absolute left-4 top-3.5 text-lg text-muted-foreground select-none">
+            ⌕
+          </span>
+          <kbd className="pointer-events-none absolute right-3 top-3.5 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+            Enter
+          </kbd>
+        </div>
+
+        <FilterChips
+          mode={mode}
+          space={space}
+          onClearSpace={() => { setSpace(''); }}
         />
-        <Button type="submit" disabled={busy || q.trim().length < 2}>
-          {busy ? 'Searching…' : 'Search'}
-        </Button>
       </form>
 
-      {/* Filter panel */}
-      <div className="mb-6">
-        <ArtifactFilterPanel onChange={handleFilterChange} />
+      {/* Mode selector — compact text buttons below filter row */}
+      <div className="flex items-center gap-1 mt-3 text-xs">
+        {(['hybrid', 'fts', 'vector'] as SearchMode[]).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => { setMode(m); if (submitted && q.trim().length >= 2) runSearch(q, m, space); }}
+            className={`rounded px-2 py-0.5 transition-colors ${
+              mode === m
+                ? 'bg-muted text-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {m}
+          </button>
+        ))}
       </div>
 
       {/* Error */}
       {error && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mt-6">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Loading skeletons */}
-      {busy && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
-          ))}
-        </div>
-      )}
+      {/* Results area */}
+      <div className="mt-8">
+        {busy && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
+          </div>
+        )}
 
-      {/* Empty state */}
-      {submitted && !busy && hits.length === 0 && !error && (
-        <EmptyState
-          title="No results found"
-          description="Try different search terms, switch modes, or adjust filters."
-        />
-      )}
+        {submitted && !busy && hits.length === 0 && !error && (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No results found. Try different terms or switch mode.
+          </p>
+        )}
 
-      {/* Results */}
-      {!busy && hits.length > 0 && (
-        <ul className="space-y-3">
-          {hits.map((h) => {
-            const snippetHtml = h.snippet.includes('<b>') || h.snippet.includes('<mark>')
-              ? sanitizeSnippet(h.snippet)
-              : highlightTerms(h.snippet, q);
-            const itemLink = h.kind === 'skill'
-              ? `/skills/${encodeURIComponent(h.name)}`
-              : `/artifacts/${h.id}`;
-            const sourceMeta = h.meta?.source as string | undefined;
-            const rrfScore = h.meta?.rrfScore as number | undefined;
-
-            return (
-              <li
-                key={`${h.kind}-${h.id}`}
-                className="rounded-lg border border-border bg-card p-4 hover:bg-muted/50 transition-colors"
+        {!busy && hits.length > 0 && (
+          <>
+            {/* Result meta line */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-muted-foreground">
+                {hits.length} result{hits.length !== 1 ? 's' : ''}
+                {totalMs !== null && ` · ${totalMs}ms`}
+                {` · ${mode} mode`}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSaveOpen(true)}
               >
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <Badge variant="secondary" className="font-mono text-xs">{h.kind}</Badge>
-                  {sourceMeta && (
-                    <Badge variant="outline" className="font-mono text-xs">{sourceMeta}</Badge>
-                  )}
-                  <a href={itemLink} className="text-base font-semibold text-primary hover:underline">
-                    {h.name}
-                  </a>
-                  {rrfScore !== undefined && (
-                    <span className="ml-auto font-mono text-xs text-muted-foreground">
-                      rrf {rrfScore.toFixed(4)}
-                    </span>
-                  )}
-                </div>
-                <p
-                  className="mt-2 text-sm text-muted-foreground [&_b]:bg-primary/10 [&_b]:font-semibold [&_mark]:bg-primary/10 [&_mark]:text-foreground"
-                  dangerouslySetInnerHTML={{ __html: snippetHtml }}
-                />
-                {h.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {h.tags.map((t) => (
-                      <Badge key={t} variant="secondary" className="font-mono text-xs">{t}</Badge>
-                    ))}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </PageShell>
+                Save search
+              </Button>
+            </div>
+
+            <ul className="space-y-3">
+              {hits.map((h) => (
+                <li key={`${h.kind}-${h.id}`}>
+                  <ResultCard hit={h} q={q} />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+
+      {/* Save search dialog */}
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save this search</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Label htmlFor="save-name">Name</Label>
+            <Input
+              id="save-name"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder="e.g. Payment webhook issues"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </main>
   );
 }
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-6xl px-6 py-8"><Skeleton className="h-48 w-full" /></div>}>
+    <Suspense fallback={<div className="mx-auto max-w-3xl px-6 py-10"><Skeleton className="h-48 w-full" /></div>}>
       <SearchPageInner />
     </Suspense>
   );
