@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
+import { statusVariant } from '../lib/status-pill-variants';
 import { useCurrentSpace } from '../lib/space-context';
 import { EmptyState } from './empty-state';
 import { WidgetError } from './widget-error';
@@ -85,13 +86,13 @@ export function RecentActivityWidget() {
                   >
                     {a.title}
                   </a>
-                  {/* Status + template pills side-by-side; semantic colors in Phase 3 */}
+                  {/* Semantic status + template pills */}
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                    <Badge variant="outline" className="font-mono text-[10px] px-1 py-0">
+                    <Badge variant={statusVariant(a.status)} className="text-[10px] px-1 py-0">
                       {a.status}
                     </Badge>
                     {a.type && (
-                      <Badge variant="secondary" className="font-mono text-[10px] px-1 py-0">
+                      <Badge variant="template" className="font-mono text-[10px] px-1 py-0">
                         {a.type}
                       </Badge>
                     )}

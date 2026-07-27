@@ -20,13 +20,8 @@ import {
   reviewArtifact,
 } from '../../../lib/api/artifacts';
 
-// Status badge color classes — mirrors artifacts list page.
-const STATUS_CLASS: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-100',
-  published: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-100',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-100',
-  archived: 'bg-secondary text-secondary-foreground',
-};
+// STATUS_CLASS replaced by statusVariant() from lib/status-pill-variants.ts
+import { statusVariant } from '../../../lib/status-pill-variants';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -95,11 +90,7 @@ function HistoryTab({ artifactId }: { artifactId: string }) {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium">v{v.versionNo}</span>
-                <span
-                  className={`rounded px-1.5 py-0.5 text-xs ${STATUS_CLASS[v.status] ?? 'bg-muted text-muted-foreground'}`}
-                >
-                  {v.status}
-                </span>
+                <Badge variant={statusVariant(v.status)}>{v.status}</Badge>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {new Date(v.submittedAt).toLocaleString()}
@@ -241,12 +232,8 @@ export default function ArtifactDetailPage({ params }: Props) {
         <>
           {/* Meta row */}
           <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{artifact.type}</span>
-            <span
-              className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_CLASS[artifact.status] ?? ''}`}
-            >
-              {artifact.status}
-            </span>
+            <Badge variant="template" className="font-mono">{artifact.type}</Badge>
+            <Badge variant={statusVariant(artifact.status)}>{artifact.status}</Badge>
             <code className="font-mono text-xs">{artifact.slug}</code>
             {version && (
               <>

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../../lib/api-client';
 import { Artifact, listArtifacts } from '../../../lib/api/artifacts';
+import { Badge } from '../../../components/ui/badge';
+import { statusVariant } from '../../../lib/status-pill-variants';
 
 // Queue cho maintainer — chỉ show pending artifacts.
 // Non-maintainer sẽ chỉ thấy own pending (backend RBAC).
@@ -48,30 +50,29 @@ export default function ArtifactReviewQueuePage() {
         {items.map((a) => (
           <li
             key={a.id}
-            className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40"
+            className="rounded-lg border border-border bg-card p-4"
           >
             <div className="flex items-start justify-between">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    {a.type}
-                  </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="template" className="font-mono">{a.type}</Badge>
+                  <Badge variant={statusVariant(a.status)}>{a.status}</Badge>
                   <Link
                     href={`/artifacts/${a.id}`}
-                    className="text-lg font-semibold text-blue-600 hover:underline"
+                    className="text-base font-semibold text-primary hover:underline"
                   >
                     {a.title}
                   </Link>
                 </div>
-                <p className="mt-1 font-mono text-xs text-slate-500">
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
                   {a.slug} · owner #{a.ownerId} · created {new Date(a.createdAt).toLocaleString()}
                 </p>
               </div>
               <Link
                 href={`/artifacts/${a.id}`}
-                className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Review →
+                Review
               </Link>
             </div>
           </li>

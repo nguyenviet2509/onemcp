@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { ChevronDown } from 'lucide-react';
+// ChevronDown icon removed (icon budget: 0 outside sidebar-nav). Using text indicator.
 import { listSpaces, type Space } from '../lib/api/spaces';
 import { useCurrentSpace } from '../lib/space-context';
 import {
@@ -61,7 +61,7 @@ export function SpaceSwitcher() {
             <span className="block font-mono text-[10px] text-slate-500">{space.slug}</span>
           )}
         </div>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden />
+        <span className="shrink-0 text-[10px] text-slate-500" aria-hidden>▼</span>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" sideOffset={6} className="min-w-[200px]">

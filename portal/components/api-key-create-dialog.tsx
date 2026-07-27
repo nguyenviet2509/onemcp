@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CopyIcon, TriangleAlertIcon } from 'lucide-react';
+// Icons removed (icon budget: 0 outside sidebar-nav). Using text labels instead.
 import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -110,7 +110,6 @@ export function ApiKeyCreateDialog({ open, onOpenChange, onCreated }: Props) {
         ) : (
           <div className="flex flex-col gap-4 py-2">
             <Alert variant="destructive">
-              <TriangleAlertIcon className="size-4" />
               <AlertTitle>Copy now — this key will not be shown again</AlertTitle>
               <AlertDescription>
                 Store it securely. Once you close this dialog the full key is gone.
@@ -126,8 +125,8 @@ export function ApiKeyCreateDialog({ open, onOpenChange, onCreated }: Props) {
                   className="font-mono text-xs"
                   aria-label="Full API key value"
                 />
-                <Button variant="outline" size="icon" onClick={handleCopy} aria-label="Copy key">
-                  <CopyIcon className="size-4" aria-hidden />
+                <Button variant="outline" size="sm" onClick={handleCopy} aria-label="Copy key">
+                  Copy
                 </Button>
               </div>
             </div>

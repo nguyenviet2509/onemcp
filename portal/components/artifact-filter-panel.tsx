@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDownIcon, ChevronUpIcon, SlidersHorizontalIcon } from 'lucide-react';
+// Icons removed (icon budget: 0 outside sidebar-nav).
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -139,16 +139,14 @@ export function ArtifactFilterPanel({ onChange }: Props) {
         aria-expanded={open}
       >
         <span className="flex items-center gap-2">
-          <SlidersHorizontalIcon className="size-4 text-muted-foreground" aria-hidden />
           Filters
           {activeCount > 0 && (
             <Badge variant="secondary" className="tabular-nums">{activeCount}</Badge>
           )}
         </span>
-        {open
-          ? <ChevronUpIcon className="size-4 text-muted-foreground" aria-hidden />
-          : <ChevronDownIcon className="size-4 text-muted-foreground" aria-hidden />
-        }
+        <span className="text-xs text-muted-foreground" aria-hidden>
+          {open ? '▲' : '▼'}
+        </span>
       </button>
 
       {open && (

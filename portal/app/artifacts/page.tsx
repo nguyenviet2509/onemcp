@@ -13,15 +13,10 @@ import { EmptyState } from '../../components/empty-state';
 import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filter-panel';
 import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
 import { Artifact, ArtifactStatus, listArtifacts } from '../../lib/api/artifacts';
-import { FileTextIcon } from 'lucide-react';
+// FileTextIcon removed (icon budget: 0 outside sidebar-nav).
+import { statusVariant } from '../../lib/status-pill-variants';
 
-// Status badge color map — text-only labels, no extra icons.
-const STATUS_CLASSES: Record<ArtifactStatus, string> = {
-  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-100',
-  published: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-100',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-100',
-  archived: 'bg-secondary text-secondary-foreground',
-};
+// STATUS_CLASSES replaced by statusVariant() helper from lib/status-pill-variants.ts
 
 // Builds ListArtifactsParams from FilterState (adapter layer).
 function filterToParams(f: FilterState) {
@@ -64,11 +59,9 @@ function ArtifactRow({
           >
             {artifact.title}
           </Link>
-          <span
-            className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[artifact.status]}`}
-          >
+          <Badge variant={statusVariant(artifact.status)}>
             {artifact.status}
-          </span>
+          </Badge>
         </div>
         <p className="mt-0.5 font-mono text-xs text-muted-foreground">{artifact.slug}</p>
         {artifact.tags.length > 0 && (
@@ -155,7 +148,6 @@ function ArtifactsContent() {
           <LoadingRows />
         ) : items.length === 0 ? (
           <EmptyState
-            icon={<FileTextIcon className="size-8" />}
             title="No artifacts found"
             description="Try adjusting your filters or submit a new artifact."
             cta={

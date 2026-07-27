@@ -9,6 +9,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        // ── Existing shadcn variants ──────────────────────────────────────────
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
         secondary:
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
@@ -19,6 +20,26 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+
+        // ── NEW semantic status variants ──────────────────────────────────────
+        // Published: emerald tone — WCAG AA verified (emerald-400 on emerald-500/15 bg)
+        "status-published":
+          "border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
+        // Pending: amber tone
+        "status-pending":
+          "border-amber-500/30 bg-amber-500/15 text-amber-400",
+        // Rejected: rose tone
+        "status-rejected":
+          "border-rose-500/30 bg-rose-500/15 text-rose-400",
+        // Archived: slate muted tone
+        "status-archived":
+          "border-slate-500/30 bg-slate-500/15 text-slate-400",
+        // Template: neutral slate outline
+        template:
+          "border-slate-500/30 bg-slate-500/15 text-slate-300",
+        // Tag: neutral, hover to primary accent
+        tag:
+          "border-slate-500/20 bg-slate-500/10 text-slate-400 hover:border-primary/30 hover:text-primary",
       },
     },
     defaultVariants: {
@@ -26,6 +47,9 @@ const badgeVariants = cva(
     },
   }
 )
+
+// Export BadgeVariant type for use in status-pill-variants.ts helper
+export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>
 
 function Badge({
   className,

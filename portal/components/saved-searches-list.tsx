@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2Icon } from 'lucide-react';
+// Trash2Icon removed (icon budget: 0 outside sidebar-nav). Using text label.
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -87,9 +87,9 @@ export function SavedSearchesList() {
                 type="button"
                 aria-label={`Delete "${s.name}"`}
                 onClick={() => setDeleteTarget(s)}
-                className="hidden shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:flex"
+                className="hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:block"
               >
-                <Trash2Icon className="size-3" aria-hidden />
+                del
               </button>
             </li>
           ))}

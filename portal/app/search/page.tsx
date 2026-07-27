@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SearchIcon, BookmarkIcon } from 'lucide-react';
+// SearchIcon, BookmarkIcon removed (icon budget: 0 outside sidebar-nav).
 import { toast } from 'sonner';
 import { PageShell } from '@/components/page-shell';
 import { EmptyState } from '@/components/empty-state';
@@ -137,7 +137,6 @@ function SearchPageInner() {
         disabled={!submitted || hits.length === 0}
         onClick={() => setSaveOpen(true)}
       >
-        <BookmarkIcon className="size-4" aria-hidden />
         Save search
       </Button>
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
@@ -187,7 +186,6 @@ function SearchPageInner() {
           autoFocus
         />
         <Button type="submit" disabled={busy || q.trim().length < 2}>
-          <SearchIcon className="size-4" aria-hidden />
           {busy ? 'Searching…' : 'Search'}
         </Button>
       </form>
