@@ -58,13 +58,12 @@ interface Props {
   onChange: (f: FilterState) => void;
 }
 
-// Collapsible filter panel — syncs state to URL params (deep-linkable).
-// Text inputs debounced 300ms. Icon budget: 3 (SliderHorizontal, ChevronDown, ChevronUp).
+// Filter panel — always expanded, syncs state to URL params (deep-linkable).
+// Text inputs debounced 300ms.
 export function ArtifactFilterPanel({ onChange }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [open, setOpen] = useState(false);
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
 
@@ -142,124 +141,107 @@ export function ArtifactFilterPanel({ onChange }: Props) {
 
   return (
     <div className="rounded-lg border border-border bg-card">
-      {/* Header — always visible */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium"
-        aria-expanded={open}
-      >
-        <span className="flex items-center gap-2">
-          Filters
-          {activeCount > 0 && (
-            <Badge variant="secondary" className="tabular-nums">{activeCount}</Badge>
-          )}
-        </span>
-        <span className="text-xs text-muted-foreground" aria-hidden>
-          {open ? '▲' : '▼'}
-        </span>
-      </button>
+      <div className="flex items-center gap-2 px-4 py-3 text-sm font-medium">
+        Filters
+        {activeCount > 0 && (
+          <Badge variant="secondary" className="tabular-nums">{activeCount}</Badge>
+        )}
+      </div>
+      <Separator />
+      <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Space */}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">Space</span>
+          <select
+            value={local.space}
+            onChange={(e) => set('space', e.target.value)}
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
+          >
+            <option value="">All spaces</option>
+            {spaces.map((s) => (
+              <option key={s.id} value={s.slug}>{s.name}</option>
+            ))}
+          </select>
+        </label>
 
-      {open && (
-        <>
-          <Separator />
-          <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Template */}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">Template</span>
+          <select
+            value={local.templateKey}
+            onChange={(e) => set('templateKey', e.target.value)}
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
+          >
+            <option value="">All templates</option>
+            {templates.map((t) => (
+              <option key={t.key} value={t.key}>{t.label}</option>
+            ))}
+          </select>
+        </label>
 
-            {/* Space */}
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Space</span>
-              <select
-                value={local.space}
-                onChange={(e) => set('space', e.target.value)}
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
-              >
-                <option value="">All spaces</option>
-                {spaces.map((s) => (
-                  <option key={s.id} value={s.slug}>{s.name}</option>
-                ))}
-              </select>
-            </label>
+        {/* Status */}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">Status</span>
+          <select
+            value={local.status}
+            onChange={(e) => set('status', e.target.value)}
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
+          >
+            <option value="">All statuses</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </label>
 
-            {/* Template */}
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Template</span>
-              <select
-                value={local.templateKey}
-                onChange={(e) => set('templateKey', e.target.value)}
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
-              >
-                <option value="">All templates</option>
-                {templates.map((t) => (
-                  <option key={t.key} value={t.key}>{t.label}</option>
-                ))}
-              </select>
-            </label>
+        {/* Tags — free text, comma-separated */}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">Tags (comma-separated)</span>
+          <Input
+            value={local.tags}
+            onChange={(e) => set('tags', e.target.value)}
+            placeholder="e.g. ops, k8s"
+          />
+        </label>
 
-            {/* Status */}
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Status</span>
-              <select
-                value={local.status}
-                onChange={(e) => set('status', e.target.value)}
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
-              >
-                <option value="">All statuses</option>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </label>
+        {/* Author */}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">Author</span>
+          <Input
+            value={local.author}
+            onChange={(e) => set('author', e.target.value)}
+            placeholder='"me" or user id'
+          />
+        </label>
 
-            {/* Tags — free text, comma-separated */}
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Tags (comma-separated)</span>
-              <Input
-                value={local.tags}
-                onChange={(e) => set('tags', e.target.value)}
-                placeholder="e.g. ops, k8s"
-              />
-            </label>
-
-            {/* Author */}
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Author</span>
-              <Input
-                value={local.author}
-                onChange={(e) => set('author', e.target.value)}
-                placeholder='"me" or user id'
-              />
-            </label>
-
-            {/* Date range */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Date range</span>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={local.dateFrom}
-                  onChange={(e) => set('dateFrom', e.target.value)}
-                  className="flex-1"
-                  aria-label="From date"
-                />
-                <Input
-                  type="date"
-                  value={local.dateTo}
-                  onChange={(e) => set('dateTo', e.target.value)}
-                  className="flex-1"
-                  aria-label="To date"
-                />
-              </div>
-            </div>
+        {/* Date range */}
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">Date range</span>
+          <div className="flex gap-2">
+            <Input
+              type="date"
+              value={local.dateFrom}
+              onChange={(e) => set('dateFrom', e.target.value)}
+              className="flex-1"
+              aria-label="From date"
+            />
+            <Input
+              type="date"
+              value={local.dateTo}
+              onChange={(e) => set('dateTo', e.target.value)}
+              className="flex-1"
+              aria-label="To date"
+            />
           </div>
+        </div>
+      </div>
 
-          {activeCount > 0 && (
-            <div className="flex justify-end border-t border-border px-4 py-2">
-              <Button variant="ghost" size="sm" onClick={reset}>
-                Reset filters
-              </Button>
-            </div>
-          )}
-        </>
+      {activeCount > 0 && (
+        <div className="flex justify-end border-t border-border px-4 py-2">
+          <Button variant="ghost" size="sm" onClick={reset}>
+            Reset filters
+          </Button>
+        </div>
       )}
     </div>
   );
