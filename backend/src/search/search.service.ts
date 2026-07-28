@@ -186,7 +186,7 @@ export class SearchService {
                 COALESCE(ts_rank_cd(av.body_search, plainto_tsquery('simple', immutable_unaccent($2))), 0),
                 COALESCE(ts_rank_cd(
                   to_tsvector('simple', immutable_unaccent(a.title)),
-                  plainto_tsquery('simple', immutable_unaccent($2))
+                  NULLIF(replace(plainto_tsquery('simple', immutable_unaccent($2))::text, ' & ', ' | '), '')::tsquery
                 ), 0) * 2,
                 similarity(immutable_unaccent(a.title), immutable_unaccent($2)) * 2
               ) AS fts_rank,
@@ -202,7 +202,8 @@ export class SearchService {
          AND a.status = 'published'
          AND (
            av.body_search @@ plainto_tsquery('simple', immutable_unaccent($2))
-           OR to_tsvector('simple', immutable_unaccent(a.title)) @@ plainto_tsquery('simple', immutable_unaccent($2))
+           OR to_tsvector('simple', immutable_unaccent(a.title)) @@
+              NULLIF(replace(plainto_tsquery('simple', immutable_unaccent($2))::text, ' & ', ' | '), '')::tsquery
            OR immutable_unaccent(a.title) ILIKE '%' || immutable_unaccent($2) || '%'
            OR a.slug ILIKE '%' || $2 || '%'
          )
@@ -319,6 +320,8 @@ export class SearchService {
         AND a.status = 'published'
         AND (
           v.body_search @@ plainto_tsquery('simple', immutable_unaccent($2))
+          OR to_tsvector('simple', immutable_unaccent(a.title)) @@
+             NULLIF(replace(plainto_tsquery('simple', immutable_unaccent($2))::text, ' & ', ' | '), '')::tsquery
           OR immutable_unaccent(a.title) ILIKE '%' || immutable_unaccent($2) || '%'
           OR a.slug ILIKE '%' || $2 || '%'
         )
