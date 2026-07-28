@@ -155,7 +155,7 @@ export default function ArtifactDetailPage({ params }: Props) {
       {/* Body: article (left) + sidebar (right) */}
       <div className="grid grid-cols-[1fr_260px]">
         {/* Left — markdown body + attachments + review actions */}
-        <div className="px-8 py-6 max-w-3xl">
+        <div className="px-8 py-6 max-w-5xl">
           {version ? (
             <article className="prose prose-sm dark:prose-invert max-w-none">
               <MarkdownView source={version.body} />
