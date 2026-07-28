@@ -175,11 +175,21 @@ export class SearchService {
     const params: unknown[] = [deptId, query, limit];
     const filterClauses = buildArtifactFilterClauses(input, params);
 
+    // Also match on artifact title (FTS + trigram) — parity với legacy searchArtifacts.
+    // body_search chỉ index body của version; title (thường chứa discriminator như "solution 502")
+    // không nằm trong body → cần OR thêm title match để tránh miss.
     const rows = await this.ds.query<
       Array<{ artifact_id: string; version_id: string; fts_rank: number; snippet: string }>
     >(
       `SELECT a.id AS artifact_id, av.id AS version_id,
-              ts_rank_cd(av.body_search, plainto_tsquery('simple', immutable_unaccent($2))) AS fts_rank,
+              GREATEST(
+                COALESCE(ts_rank_cd(av.body_search, plainto_tsquery('simple', immutable_unaccent($2))), 0),
+                COALESCE(ts_rank_cd(
+                  to_tsvector('simple', immutable_unaccent(a.title)),
+                  plainto_tsquery('simple', immutable_unaccent($2))
+                ), 0) * 2,
+                similarity(immutable_unaccent(a.title), immutable_unaccent($2)) * 2
+              ) AS fts_rank,
               ts_headline(
                 'simple',
                 immutable_unaccent(COALESCE(av.body, '')),
@@ -190,7 +200,12 @@ export class SearchService {
        JOIN artifact_versions av ON av.id = a.current_version_id
        WHERE a.department_id = $1
          AND a.status = 'published'
-         AND av.body_search @@ plainto_tsquery('simple', immutable_unaccent($2))
+         AND (
+           av.body_search @@ plainto_tsquery('simple', immutable_unaccent($2))
+           OR to_tsvector('simple', immutable_unaccent(a.title)) @@ plainto_tsquery('simple', immutable_unaccent($2))
+           OR immutable_unaccent(a.title) ILIKE '%' || immutable_unaccent($2) || '%'
+           OR a.slug ILIKE '%' || $2 || '%'
+         )
          ${filterClauses}
        ORDER BY fts_rank DESC
        LIMIT $3`,
