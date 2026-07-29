@@ -13,7 +13,9 @@ export async function apiFetch<T = unknown>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const url = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? '' : '/'}${path}`;
+  // Must check '/api/' with trailing slash — otherwise '/api-keys' matches
+  // startsWith('/api') and skips the prefix, producing wrong URL '/api-keys'.
+  const url = path.startsWith('/api/') ? path : `/api${path.startsWith('/') ? '' : '/'}${path}`;
   const res = await fetch(url, { ...init, headers, credentials: 'same-origin' });
 
   if (!res.ok) {
