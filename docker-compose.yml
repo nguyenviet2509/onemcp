@@ -148,6 +148,9 @@ services:
       - backend
     environment:
       NODE_ENV: production
+      # Next 15 standalone binds to $HOSTNAME; force 0.0.0.0 so container
+      # loopback healthcheck succeeds (otherwise binds to container IP only).
+      HOSTNAME: 0.0.0.0
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost/api}
     ports:
       - "127.0.0.1:3001:3000"
