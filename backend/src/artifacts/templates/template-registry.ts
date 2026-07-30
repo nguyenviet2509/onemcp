@@ -22,29 +22,95 @@ export interface Template {
   fields: TemplateField[];
 }
 
+// V2: Session-summary oriented fields for wrapup hook (plan 260730-1043-openwebui-wrapup-hook).
+// Replaced V1 postmortem-style fields (summary/incident_timeline/root_cause/remediation).
+// context/work_done/outcome match the extractor prompts in Phase 2.
 const REPORT: Template = {
   type: 'report',
-  version: 1,
-  description: 'Postmortem / incident report template — capture what happened, why, how fixed.',
+  version: 2,
+  description: 'Session outcome report — tại sao làm, làm gì, kết quả cụ thể.',
   fields: [
-    { key: 'summary', label: 'Summary', type: 'markdown', required: true, minLength: 20, maxLength: 2000, placeholder: 'What happened, in 2-3 sentences.' },
-    { key: 'incident_timeline', label: 'Incident timeline', type: 'markdown', required: true, minLength: 20, placeholder: '- 14:00 alert fired\n- 14:05 on-call ack\n- 14:15 root cause found\n- 14:30 mitigation applied' },
-    { key: 'root_cause', label: 'Root cause', type: 'markdown', required: true, minLength: 20, placeholder: 'The underlying reason. Include why previous safeguards did not catch it.' },
-    { key: 'remediation', label: 'Remediation', type: 'markdown', required: true, minLength: 20, placeholder: 'What was done to fix + prevent recurrence.' },
-    { key: 'action_items', label: 'Action items', type: 'markdown', required: false, placeholder: '- [ ] item 1 (owner, due date)\n- [ ] item 2' },
+    {
+      key: 'context',
+      label: 'Context',
+      type: 'markdown',
+      required: true,
+      minLength: 50,
+      placeholder: 'Tại sao làm task này? Trigger từ đâu? Background context.',
+    },
+    {
+      key: 'work_done',
+      label: 'Work done',
+      type: 'markdown',
+      required: true,
+      minLength: 100,
+      placeholder: 'Đã làm gì? Từng bước, quyết định chính, code/config thay đổi.',
+    },
+    {
+      key: 'outcome',
+      label: 'Outcome',
+      type: 'markdown',
+      required: true,
+      minLength: 50,
+      placeholder: 'Kết quả cụ thể. Metrics, trạng thái, ảnh hưởng.',
+    },
+    {
+      key: 'next_steps',
+      label: 'Next steps',
+      type: 'markdown',
+      required: false,
+      placeholder: '- [ ] Follow-up task 1\n- [ ] Follow-up task 2',
+    },
   ],
 };
 
+// V2: Hypothesis-driven research fields for wrapup hook.
+// Replaced V1 methodology-oriented fields (methodology/findings/references/next_steps).
+// question/hypothesis/findings/references/conclusion match the extractor prompts in Phase 2.
 const RESEARCH: Template = {
   type: 'research',
-  version: 1,
-  description: 'Research note — question, method, findings, next steps.',
+  version: 2,
+  description: 'Research note — câu hỏi, giả thuyết, phát hiện, kết luận.',
   fields: [
-    { key: 'question', label: 'Research question', type: 'text', required: true, minLength: 10, maxLength: 500 },
-    { key: 'methodology', label: 'Methodology', type: 'markdown', required: true, minLength: 20, placeholder: 'How were data collected / benchmark run.' },
-    { key: 'findings', label: 'Findings', type: 'markdown', required: true, minLength: 30 },
-    { key: 'references', label: 'References', type: 'markdown', required: false, placeholder: '- link 1\n- link 2' },
-    { key: 'next_steps', label: 'Next steps', type: 'markdown', required: false },
+    {
+      key: 'question',
+      label: 'Research question',
+      type: 'text',
+      required: true,
+      minLength: 20,
+      maxLength: 500,
+      placeholder: 'Câu hỏi cần trả lời. Cụ thể, có thể kiểm chứng.',
+    },
+    {
+      key: 'hypothesis',
+      label: 'Hypothesis',
+      type: 'markdown',
+      required: false,
+      placeholder: 'Giả thuyết ban đầu trước khi nghiên cứu.',
+    },
+    {
+      key: 'findings',
+      label: 'Findings',
+      type: 'markdown',
+      required: true,
+      minLength: 200,
+      placeholder: 'Phát hiện chính. Data, ví dụ cụ thể, so sánh các phương án.',
+    },
+    {
+      key: 'references',
+      label: 'References',
+      type: 'markdown',
+      required: false,
+      placeholder: '- https://link1\n- https://link2',
+    },
+    {
+      key: 'conclusion',
+      label: 'Conclusion',
+      type: 'markdown',
+      required: true,
+      minLength: 50,
+      placeholder: 'Kết luận: câu trả lời cho research question, hàm ý thực tế.',
+    },
   ],
 };
 
