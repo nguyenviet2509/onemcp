@@ -121,6 +121,7 @@ function ArtifactsContent() {
   const [lastFilter, setLastFilter] = useState<FilterState | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const fetchList = useCallback((f: FilterState) => {
     setLastFilter(f);
@@ -152,7 +153,14 @@ function ArtifactsContent() {
     }
   }
 
-  const pagedItems = paginateItems(items, page, pageSize);
+  // Sort theo updatedAt; sortOrder đổi hướng. Sort trước rồi mới phân trang
+  // để page 1 luôn là bản mới/cũ nhất tuỳ chọn của user.
+  const sortedItems = [...items].sort((a, b) => {
+    const ta = new Date(a.updatedAt).getTime();
+    const tb = new Date(b.updatedAt).getTime();
+    return sortOrder === 'newest' ? tb - ta : ta - tb;
+  });
+  const pagedItems = paginateItems(sortedItems, page, pageSize);
   const allChecked = items.length > 0 && selectedIds.size === items.length;
   const someChecked = selectedIds.size > 0 && !allChecked;
 
@@ -181,7 +189,7 @@ function ArtifactsContent() {
           />
         ) : (
           <>
-            {/* Select-all header */}
+            {/* Select-all header + sort */}
             <div className="mb-2 flex items-center gap-3 px-1">
               <Checkbox
                 checked={allChecked}
@@ -192,6 +200,23 @@ function ArtifactsContent() {
               <span className="text-xs text-muted-foreground">
                 {items.length} artifact{items.length !== 1 ? 's' : ''}
               </span>
+              <div className="ml-auto flex items-center gap-2">
+                <label htmlFor="artifact-sort" className="text-xs text-muted-foreground">
+                  Sort:
+                </label>
+                <select
+                  id="artifact-sort"
+                  value={sortOrder}
+                  onChange={(e) => {
+                    setSortOrder(e.target.value as 'newest' | 'oldest');
+                    setPage(1);
+                  }}
+                  className="h-7 rounded-md border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                </select>
+              </div>
             </div>
 
             {/* Artifact list — Option A: divide-y, no per-row card */}
