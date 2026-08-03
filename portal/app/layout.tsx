@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import './globals.css';
 import { AppShell } from '../components/app-shell';
 import { SpaceProvider } from '../lib/space-context';
+import { Toaster } from '../components/ui/sonner';
 
 // Self-hosted via next/font — no CDN runtime call. Latin + Vietnamese subset.
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {children}
               </AppShell>
             </Suspense>
+            <Toaster position="top-right" richColors />
           </SpaceProvider>
         </ThemeProvider>
       </body>
