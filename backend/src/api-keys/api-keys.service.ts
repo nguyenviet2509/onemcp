@@ -66,13 +66,31 @@ export class ApiKeysService {
     return { id: saved.id, prefix, key: rawKey, expiresAt };
   }
 
-  // List keys for a user — never returns hash or full key.
-  list(userId: string): Promise<Pick<ApiKey, 'id' | 'keyPrefix' | 'label' | 'expiresAt' | 'lastUsedAt' | 'revoked' | 'createdAt'>[]> {
-    return this.repo.find({
-      where: { userId },
-      select: ['id', 'keyPrefix', 'label', 'expiresAt', 'lastUsedAt', 'revoked', 'createdAt'],
+  // List keys for a user — never returns hash or full key. Revoked keys are hidden.
+  async list(userId: string): Promise<
+    Array<{
+      id: string;
+      prefix: string;
+      label: string | null;
+      expiresAt: Date | null;
+      lastUsedAt: Date | null;
+      createdAt: Date;
+    }>
+  > {
+    const rows = await this.repo.find({
+      where: { userId, revoked: false },
+      select: ['id', 'keyPrefix', 'label', 'expiresAt', 'lastUsedAt', 'createdAt'],
       order: { createdAt: 'DESC' },
     });
+    // Map keyPrefix → prefix so the shape matches the portal API contract.
+    return rows.map((r) => ({
+      id: r.id,
+      prefix: r.keyPrefix,
+      label: r.label,
+      expiresAt: r.expiresAt,
+      lastUsedAt: r.lastUsedAt,
+      createdAt: r.createdAt,
+    }));
   }
 
   // Revoke a key — only the owning user can revoke.
