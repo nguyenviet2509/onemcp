@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
 import { EmptyState } from './empty-state';
 import { WidgetError } from './widget-error';
@@ -13,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export function TopViewedWidget() {
   const [items, setItems] = useState<Artifact[] | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const t = useTranslations('widgets');
 
   useEffect(() => {
     listArtifacts({ status: 'published' })
@@ -32,14 +34,14 @@ export function TopViewedWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top viewed · 7d</CardTitle>
+        <CardTitle>{t('popularArtifacts')} · 7d</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {error ? (
           <div className="px-4 py-3"><WidgetError err={error} /></div>
         ) : items?.length === 0 || allZero ? (
           <div className="px-4 py-3">
-            <EmptyState size="compact" title="No views yet" />
+            <EmptyState size="compact" title={t('noViews')} />
           </div>
         ) : (
           <ol className="divide-y divide-border">
@@ -74,6 +76,7 @@ interface TagCount {
 export function TopTagsWidget() {
   const [tags, setTags] = useState<TagCount[] | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const t = useTranslations('widgets');
 
   useEffect(() => {
     listArtifacts({ status: 'published' })
@@ -98,13 +101,13 @@ export function TopTagsWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tags</CardTitle>
+        <CardTitle>{t('tags')}</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (
           <WidgetError err={error} />
         ) : tags?.length === 0 ? (
-          <EmptyState size="compact" title="No tags yet" />
+          <EmptyState size="compact" title={t('noTags')} />
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {tags?.map(({ tag, count }) => (

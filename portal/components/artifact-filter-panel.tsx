@@ -69,6 +69,7 @@ export function ArtifactFilterPanel({ onChange }: Props) {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const tErrors = useTranslations('errors');
+  const t = useTranslations('filters');
 
   const [local, setLocal] = useState<FilterState>(() => fromSearchParams(searchParams));
 
@@ -148,7 +149,7 @@ export function ArtifactFilterPanel({ onChange }: Props) {
   return (
     <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center gap-2 px-4 py-3 text-sm font-medium">
-        Filters
+        {t('title')}
         {activeCount > 0 && (
           <Badge variant="secondary" className="tabular-nums">{activeCount}</Badge>
         )}
@@ -157,13 +158,13 @@ export function ArtifactFilterPanel({ onChange }: Props) {
       <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Space */}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Space</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('space')}</span>
           <select
             value={local.space}
             onChange={(e) => set('space', e.target.value)}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
           >
-            <option value="">All spaces</option>
+            <option value="">{t('allSpaces')}</option>
             {spaces.map((s) => (
               <option key={s.id} value={s.slug}>{s.name}</option>
             ))}
@@ -172,28 +173,28 @@ export function ArtifactFilterPanel({ onChange }: Props) {
 
         {/* Template */}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Template</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('template')}</span>
           <select
             value={local.templateKey}
             onChange={(e) => set('templateKey', e.target.value)}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
           >
-            <option value="">All templates</option>
-            {templates.map((t) => (
-              <option key={t.key} value={t.key}>{t.label}</option>
+            <option value="">{t('allTemplates')}</option>
+            {templates.map((tpl) => (
+              <option key={tpl.key} value={tpl.key}>{tpl.label}</option>
             ))}
           </select>
         </label>
 
         {/* Status */}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Status</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('status')}</span>
           <select
             value={local.status}
             onChange={(e) => set('status', e.target.value)}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
           >
-            <option value="">All statuses</option>
+            <option value="">{t('allStatuses')}</option>
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -202,41 +203,41 @@ export function ArtifactFilterPanel({ onChange }: Props) {
 
         {/* Tags — free text, comma-separated */}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Tags (comma-separated)</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('tagsField')}</span>
           <Input
             value={local.tags}
             onChange={(e) => set('tags', e.target.value)}
-            placeholder="e.g. ops, k8s"
+            placeholder={t('tagsPlaceholder')}
           />
         </label>
 
         {/* Author */}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Author</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('author')}</span>
           <Input
             value={local.author}
             onChange={(e) => set('author', e.target.value)}
-            placeholder='"me" or user id'
+            placeholder={t('authorPlaceholder')}
           />
         </label>
 
         {/* Date range */}
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Date range</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('dateRange')}</span>
           <div className="flex gap-2">
             <Input
               type="date"
               value={local.dateFrom}
               onChange={(e) => set('dateFrom', e.target.value)}
               className="flex-1"
-              aria-label="From date"
+              aria-label={t('fromDate')}
             />
             <Input
               type="date"
               value={local.dateTo}
               onChange={(e) => set('dateTo', e.target.value)}
               className="flex-1"
-              aria-label="To date"
+              aria-label={t('toDate')}
             />
           </div>
         </div>
@@ -245,7 +246,7 @@ export function ArtifactFilterPanel({ onChange }: Props) {
       {activeCount > 0 && (
         <div className="flex justify-end border-t border-border px-4 py-2">
           <Button variant="ghost" size="sm" onClick={reset}>
-            Reset filters
+            {t('resetFilters')}
           </Button>
         </div>
       )}

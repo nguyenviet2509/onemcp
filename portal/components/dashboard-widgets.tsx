@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { listArtifacts, type Artifact } from '../lib/api/artifacts';
 import { statusVariant } from '../lib/status-pill-variants';
 import { useCurrentSpace } from '../lib/space-context';
@@ -50,6 +51,7 @@ export function RecentActivityWidget() {
   const { space } = useCurrentSpace();
   const [items, setItems] = useState<Artifact[] | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const t = useTranslations('widgets');
 
   useEffect(() => {
     setItems(null);
@@ -69,14 +71,14 @@ export function RecentActivityWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent activity</CardTitle>
+        <CardTitle>{t('recentActivity')}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {error ? (
           <div className="px-4 py-3"><WidgetError err={error} /></div>
         ) : items?.length === 0 ? (
           <div className="px-4 py-3">
-            <EmptyState size="compact" title="No recent activity" />
+            <EmptyState size="compact" title={t('noRecentActivity')} />
           </div>
         ) : (
           <ul className="divide-y divide-border">
@@ -121,6 +123,7 @@ function statusBarColor(status: string): string {
 export function MyDraftsWidget() {
   const [items, setItems] = useState<Artifact[] | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const t = useTranslations('widgets');
 
   useEffect(() => {
     listArtifacts({ status: 'pending', author: 'me' })
@@ -133,14 +136,14 @@ export function MyDraftsWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>My drafts</CardTitle>
+        <CardTitle>{t('myDrafts')}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {error ? (
           <div className="px-4 py-3"><WidgetError err={error} /></div>
         ) : items?.length === 0 ? (
           <div className="px-4 py-3">
-            <EmptyState size="compact" title="No drafts" />
+            <EmptyState size="compact" title={t('noDrafts')} />
           </div>
         ) : (
           <ul className="divide-y divide-border">
@@ -167,6 +170,8 @@ export function MyDraftsWidget() {
 export function PendingReviewWidget() {
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const t = useTranslations('widgets');
+  const tReview = useTranslations('pages.artifactsReview');
 
   useEffect(() => {
     listArtifacts({ status: 'pending' })
@@ -177,7 +182,7 @@ export function PendingReviewWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Pending review</CardTitle>
+        <CardTitle>{t('pendingReview')}</CardTitle>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -185,7 +190,7 @@ export function PendingReviewWidget() {
         ) : count === null ? (
           <Skeleton className="h-8 w-full" />
         ) : count === 0 ? (
-          <EmptyState size="compact" title="Nothing to review" />
+          <EmptyState size="compact" title={t('nothingToReview')} />
         ) : (
           <div className="flex items-center justify-between">
             {/* Option A stat number: 26px tracking-tight */}
@@ -194,7 +199,7 @@ export function PendingReviewWidget() {
               href="/artifacts/review"
               className="rounded-md border border-foreground bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90 transition-opacity"
             >
-              Review
+              {tReview('review')}
             </a>
           </div>
         )}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { StructuredEditor } from '../../../../components/structured-editor';
 import { ApiError } from '../../../../lib/api-client';
 import { ArtifactType, getArtifact, updateArtifact } from '../../../../lib/api/artifacts';
@@ -41,6 +42,8 @@ export default function EditArtifactPage({ params }: Props) {
   const [expectedVersion, setExpectedVersion] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const t = useTranslations('pages.artifactsEdit');
+  const tCommon = useTranslations('common');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,20 +84,20 @@ export default function EditArtifactPage({ params }: Props) {
       {/* Breadcrumb */}
       <div className="mb-4 text-xs text-muted-foreground">
         <Link href={`/artifacts/${id}`} className="hover:text-foreground transition-colors">
-          ← Back to detail
+          ← {tCommon('back')}
         </Link>
       </div>
 
       <div className="mb-6">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Edit: {title || '…'}
+          {t('title', { title: title || '…' })}
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Update creates a pending version (type={type}). Maintainer approves to publish.
+          {t('note')} (type={type})
         </p>
       </div>
 
-      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+      {loading && <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>}
 
       {error && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -105,13 +108,12 @@ export default function EditArtifactPage({ params }: Props) {
       {!loading && expectedVersion !== null && template && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="text-xs text-muted-foreground">
-            Editing on top of version <code className="font-mono">{expectedVersion}</code>.
-            Concurrent submit → 409 conflict.
+            {t('editingOn', { version: expectedVersion })}
           </p>
 
           <div>
             <label className="mb-1 block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Tags (comma-separated)
+              {t('tagsLabel')}
             </label>
             <input
               value={tags}
@@ -133,13 +135,13 @@ export default function EditArtifactPage({ params }: Props) {
               disabled={busy}
               className="rounded-md border border-foreground bg-foreground px-3 py-1.5 text-[13px] font-medium text-background hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              {busy ? 'Saving…' : 'Submit new version'}
+              {busy ? tCommon('saving') : t('submitNewVersion')}
             </button>
             <Link
               href={`/artifacts/${id}`}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Cancel
+              {tCommon('cancel')}
             </Link>
           </div>
         </form>

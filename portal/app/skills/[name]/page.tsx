@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
+import { useTranslations } from 'next-intl';
 import { ApiError } from '../../../lib/api-client';
 import {
   approveSkillVersion,
@@ -24,6 +25,10 @@ export default function SkillDetailPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const t = useTranslations('pages.skillsDetail');
+  const tSkills = useTranslations('pages.skills');
+  const tCommon = useTranslations('common');
+  const tReview = useTranslations('pages.artifactsReviewActions');
 
   const reload = () =>
     Promise.all([getSkill(name), listSkillVersions(name)])
@@ -55,11 +60,11 @@ export default function SkillDetailPage({ params }: Props) {
       {/* Breadcrumb */}
       <div className="mb-4 text-xs text-muted-foreground">
         <Link href="/skills" className="hover:text-foreground transition-colors">
-          ← All skills
+          ← {tSkills('title')}
         </Link>
       </div>
 
-      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+      {loading && <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>}
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
@@ -114,20 +119,20 @@ export default function SkillDetailPage({ params }: Props) {
           {/* Version history */}
           <section className="mt-8">
             <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Version history
+              {t('versionHistory')}
             </h2>
             {versions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No versions yet.</p>
+              <p className="text-sm text-muted-foreground">{t('noVersions')}</p>
             ) : (
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border bg-muted/30">
                     <tr>
-                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Version</th>
-                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Commit</th>
-                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Status</th>
-                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Approved at</th>
-                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Actions</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('columns.version')}</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('columns.commit')}</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('columns.status')}</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('columns.approvedAt')}</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('columns.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -150,14 +155,14 @@ export default function SkillDetailPage({ params }: Props) {
                                 onClick={() => handleApprove(v.id)}
                                 className="rounded border border-foreground bg-foreground px-2 py-px text-[11px] font-medium text-background hover:opacity-90 disabled:opacity-50 transition-opacity"
                               >
-                                approve
+                                {tReview('approve')}
                               </button>
                               <button
                                 disabled={busyId === v.id}
                                 onClick={() => handleReject(v.id)}
                                 className="rounded border border-destructive/50 bg-destructive/10 px-2 py-px text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50 transition-colors"
                               >
-                                reject
+                                {tReview('reject')}
                               </button>
                             </div>
                           ) : (

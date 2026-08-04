@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
 import { Button } from '../../../components/ui/button';
 import { ApiError } from '../../../lib/api-client';
@@ -17,6 +18,8 @@ export function ArtifactReviewActions({ artifactId, versionStatus, onDone }: Pro
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations('pages.artifactsReviewActions');
+  const tReview = useTranslations('pages.artifactsReview');
 
   if (versionStatus !== 'pending') return null;
 
@@ -36,7 +39,7 @@ export function ArtifactReviewActions({ artifactId, versionStatus, onDone }: Pro
 
   return (
     <section className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
-      <h2 className="text-sm font-semibold">Review actions (maintainer only)</h2>
+      <h2 className="text-sm font-semibold">{tReview('title')}</h2>
       {error && (
         <Alert variant="destructive" className="mt-2">
           <AlertDescription>{error}</AlertDescription>
@@ -46,21 +49,18 @@ export function ArtifactReviewActions({ artifactId, versionStatus, onDone }: Pro
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={2}
-        placeholder="Review note (optional)..."
+        placeholder={t('placeholder')}
         className="mt-2 w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/15 focus:border-foreground"
         maxLength={1000}
       />
       <div className="mt-2 flex gap-2">
         <Button disabled={busy} onClick={() => handleReview('approve')} size="sm">
-          Approve
+          {t('approve')}
         </Button>
         <Button disabled={busy} onClick={() => handleReview('reject')} variant="destructive" size="sm">
-          Reject
+          {t('reject')}
         </Button>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Backend enforces role — contributors receive 403.
-      </p>
     </section>
   );
 }

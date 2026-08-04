@@ -46,6 +46,7 @@
     "identity": "Identity",
     "theme": "Theme",
     "language": "Language",
+    "navigate": "Navigate",
     "themes": {
       "light": "Light",
       "dark": "Dark",
@@ -260,8 +261,46 @@
     },
     "onboarding": {
       "title": "Onboarding",
-      "welcome": "Welcome to OneMCP",
-      "viewGuide": "View guide →"
+      "welcome": "Welcome to OneMCP. Select your department to see a tailored getting-started guide with relevant templates and artifact collections.",
+      "viewGuide": "View guide →",
+      "depts": {
+        "tech": {
+          "label": "Engineering / Tech",
+          "description": "Runbooks, KB articles, incident templates, and on-call guides for the tech team."
+        },
+        "ops": {
+          "label": "Operations",
+          "description": "SOPs, process checklists, procurement guides, and operational runbooks."
+        },
+        "support": {
+          "label": "Customer Support",
+          "description": "FAQ playbooks, ticket templates, escalation paths, and response scripts."
+        }
+      }
+    },
+    "skillsDetail": {
+      "versionHistory": "Version history",
+      "noVersions": "No versions yet.",
+      "columns": {
+        "version": "Version",
+        "commit": "Commit",
+        "status": "Status",
+        "approvedAt": "Approved at",
+        "actions": "Actions"
+      }
+    },
+    "artifactsDetailSidebar": {
+      "tags": "Tags",
+      "related": "Related",
+      "activity": "Activity"
+    },
+    "artifactsReviewActions": {
+      "placeholder": "Review note (optional)…",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reviewedBy": "Reviewed by {user} — {status}",
+      "approveFailed": "Approve failed",
+      "rejectFailed": "Reject failed"
     }
   },
   "form": {
@@ -279,6 +318,42 @@
     "hints": {
       "slugImmutable": "Slug cannot be changed after creation."
     }
+  },
+  "filters": {
+    "title": "Filters",
+    "space": "Space",
+    "template": "Template",
+    "status": "Status",
+    "author": "Author",
+    "dateRange": "Date range",
+    "tagsField": "Tags",
+    "tagsPlaceholder": "e.g. ops, k8s",
+    "allSpaces": "All spaces",
+    "allTemplates": "All templates",
+    "allStatuses": "All statuses",
+    "authorPlaceholder": "me or user id",
+    "fromDate": "From date",
+    "toDate": "To date",
+    "resetFilters": "Reset filters",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest",
+    "artifactCount": "{count, plural, =0 {No artifacts} =1 {1 artifact} other {# artifacts}}"
+  },
+  "widgets": {
+    "recentActivity": "Recent activity",
+    "noRecentActivity": "No recent activity.",
+    "myDrafts": "My drafts",
+    "noDrafts": "No drafts.",
+    "pendingReview": "Pending review",
+    "nothingToReview": "Nothing to review.",
+    "popularArtifacts": "Popular artifacts",
+    "noViews": "No views yet.",
+    "topTags": "Top tags",
+    "noTags": "No tags yet.",
+    "tags": "Tags"
+  },
+  "reviewNote": {
+    "noContent": "No content to review."
   },
   "attachments": {
     "title": "Attachments ({count})",

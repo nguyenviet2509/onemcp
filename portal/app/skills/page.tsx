@@ -17,6 +17,7 @@ export default function SkillsListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
   const t = useTranslations('pages.skills');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     setLoading(true);
@@ -92,7 +93,7 @@ export default function SkillsListPage() {
         )}
       </div>
 
-      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+      {loading && <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>}
 
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">

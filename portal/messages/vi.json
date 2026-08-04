@@ -46,6 +46,7 @@
     "identity": "Danh tính",
     "theme": "Giao diện",
     "language": "Ngôn ngữ",
+    "navigate": "Điều hướng",
     "themes": {
       "light": "Sáng",
       "dark": "Tối",
@@ -260,8 +261,46 @@
     },
     "onboarding": {
       "title": "Hướng dẫn",
-      "welcome": "Chào mừng đến với OneMCP",
-      "viewGuide": "Xem hướng dẫn →"
+      "welcome": "Chào mừng đến với OneMCP. Chọn phòng ban để xem hướng dẫn khởi động cùng template và bộ tài liệu phù hợp.",
+      "viewGuide": "Xem hướng dẫn →",
+      "depts": {
+        "tech": {
+          "label": "Kỹ thuật",
+          "description": "Runbook, KB, template sự cố và hướng dẫn on-call cho team kỹ thuật."
+        },
+        "ops": {
+          "label": "Vận hành",
+          "description": "SOP, checklist quy trình, hướng dẫn mua sắm và runbook vận hành."
+        },
+        "support": {
+          "label": "Chăm sóc khách hàng",
+          "description": "Playbook FAQ, template ticket, escalation path và kịch bản trả lời."
+        }
+      }
+    },
+    "skillsDetail": {
+      "versionHistory": "Lịch sử phiên bản",
+      "noVersions": "Chưa có phiên bản.",
+      "columns": {
+        "version": "Phiên bản",
+        "commit": "Commit",
+        "status": "Trạng thái",
+        "approvedAt": "Duyệt lúc",
+        "actions": "Hành động"
+      }
+    },
+    "artifactsDetailSidebar": {
+      "tags": "Tag",
+      "related": "Liên quan",
+      "activity": "Hoạt động"
+    },
+    "artifactsReviewActions": {
+      "placeholder": "Ghi chú duyệt (tùy chọn)…",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "reviewedBy": "Duyệt bởi {user} — {status}",
+      "approveFailed": "Duyệt thất bại",
+      "rejectFailed": "Từ chối thất bại"
     }
   },
   "form": {
@@ -279,6 +318,42 @@
     "hints": {
       "slugImmutable": "Slug không thể đổi sau khi tạo."
     }
+  },
+  "filters": {
+    "title": "Bộ lọc",
+    "space": "Space",
+    "template": "Template",
+    "status": "Trạng thái",
+    "author": "Tác giả",
+    "dateRange": "Khoảng thời gian",
+    "tagsField": "Tag",
+    "tagsPlaceholder": "vd: ops, k8s",
+    "allSpaces": "Tất cả space",
+    "allTemplates": "Tất cả template",
+    "allStatuses": "Tất cả trạng thái",
+    "authorPlaceholder": "me hoặc user id",
+    "fromDate": "Từ ngày",
+    "toDate": "Đến ngày",
+    "resetFilters": "Đặt lại bộ lọc",
+    "sortNewest": "Mới nhất",
+    "sortOldest": "Cũ nhất",
+    "artifactCount": "{count, plural, =0 {Không có tài liệu} =1 {1 tài liệu} other {# tài liệu}}"
+  },
+  "widgets": {
+    "recentActivity": "Hoạt động gần đây",
+    "noRecentActivity": "Chưa có hoạt động.",
+    "myDrafts": "Bản nháp của tôi",
+    "noDrafts": "Chưa có bản nháp.",
+    "pendingReview": "Chờ duyệt",
+    "nothingToReview": "Không có gì để duyệt.",
+    "popularArtifacts": "Tài liệu phổ biến",
+    "noViews": "Chưa có lượt xem.",
+    "topTags": "Tag phổ biến",
+    "noTags": "Chưa có tag.",
+    "tags": "Tag"
+  },
+  "reviewNote": {
+    "noContent": "Chưa có nội dung để duyệt."
   },
   "attachments": {
     "title": "Đính kèm ({count})",

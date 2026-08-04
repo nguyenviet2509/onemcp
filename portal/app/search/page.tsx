@@ -94,19 +94,20 @@ function FilterChips({
   space: string;
   onClearSpace: () => void;
 }) {
+  const t = useTranslations('pages.search');
   return (
     <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-muted-foreground">
-      <span>Filters:</span>
+      <span>{t('filters')}</span>
       {space && (
         <button
           onClick={onClearSpace}
           className="inline-flex items-center gap-1 rounded border border-border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted/80 transition-colors"
         >
-          Space: {space} ×
+          {t('spaceChip', { slug: space })} ×
         </button>
       )}
       <Badge variant="outline" className="text-xs font-normal pointer-events-none">
-        Mode: {mode}
+        {t('modeChip', { mode })}
       </Badge>
     </div>
   );
@@ -116,6 +117,8 @@ function SearchPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations('pages.search');
+  const tCommon = useTranslations('common');
+  const tForm = useTranslations('form');
 
   const [q, setQ] = useState(searchParams.get('q') ?? '');
   const rawMode = searchParams.get('mode');
@@ -184,18 +187,18 @@ function SearchPageInner() {
         mode,
         filters: { spaceId: space || undefined },
       });
-      toast.success('Search saved');
+      toast.success(t('saveToast'));
       setSaveOpen(false);
       setSaveName('');
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to save search');
+      toast.error(e instanceof ApiError ? e.message : t('saveFailed'));
     } finally {
       setSaving(false);
     }
   }
 
   // Use spaces count as proxy for "total artifacts" subtitle — best effort
-  const totalLabel = spaceCount > 0 ? `${spaceCount}+ spaces` : 'all';
+  const totalLabel = spaceCount > 0 ? t('totalSpaces', { count: spaceCount }) : t('totalAll');
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-10">
@@ -203,7 +206,7 @@ function SearchPageInner() {
       <div className="text-center mb-8">
         <h1 className="text-xl font-semibold tracking-tight text-foreground mb-1">{t('title')}</h1>
         <p className="text-sm text-muted-foreground">
-          Hybrid semantic + keyword search across {totalLabel}
+          {t('hybridDesc', { scope: totalLabel })}
         </p>
       </div>
 
@@ -213,7 +216,7 @@ function SearchPageInner() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Ask anything…"
+            placeholder={t('askAnything')}
             autoFocus
             className="w-full rounded-lg border border-border bg-card py-3 pl-12 pr-16 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground transition-colors"
           />
@@ -268,7 +271,7 @@ function SearchPageInner() {
 
         {submitted && !busy && hits.length === 0 && !error && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No results found. Try different terms or switch mode.
+            {t('noResults')}
           </p>
         )}
 
@@ -277,16 +280,16 @@ function SearchPageInner() {
             {/* Result meta line */}
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-muted-foreground">
-                {hits.length} result{hits.length !== 1 ? 's' : ''}
+                {t('resultsCount', { count: hits.length })}
                 {totalMs !== null && ` · ${totalMs}ms`}
-                {` · ${mode} mode`}
+                {` · ${mode}`}
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSaveOpen(true)}
               >
-                Save search
+                {t('saveSearch')}
               </Button>
             </div>
 
@@ -305,21 +308,21 @@ function SearchPageInner() {
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save this search</DialogTitle>
+            <DialogTitle>{t('saveDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3 py-2">
-            <Label htmlFor="save-name">Name</Label>
+            <Label htmlFor="save-name">{tForm('labels.name')}</Label>
             <Input
               id="save-name"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
-              placeholder="e.g. Payment webhook issues"
+              placeholder={t('savePlaceholder')}
               autoFocus
             />
           </div>
           <DialogFooter>
             <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? tCommon('saving') : tCommon('save')}
             </Button>
           </DialogFooter>
         </DialogContent>

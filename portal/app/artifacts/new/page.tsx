@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { TemplatePicker } from '../../../components/template-picker';
 import { MarkdownEditor, MarkdownEditorDark } from '../../../components/markdown-editor';
 import { PageShell } from '../../../components/page-shell';
@@ -123,7 +124,8 @@ function TemplateFieldInput({
 
 // Step indicator row.
 function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
-  const steps = ['Template', 'Details', 'Body'];
+  const t = useTranslations('pages.artifactsNew.steps');
+  const steps = [t('template'), t('details'), t('body')];
   return (
     <div className="mb-6 flex items-center gap-2 text-sm">
       {steps.map((label, i) => {
@@ -163,6 +165,9 @@ export default function NewArtifactPage() {
   const [template, setTemplate] = useState<Template | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations('pages.artifactsNew');
+  const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
 
   // Hydrate draft from localStorage on client mount only.
   const hydrated = useRef(false);
@@ -216,7 +221,7 @@ export default function NewArtifactPage() {
         tags: draft.tags.split(',').map((t) => t.trim()).filter(Boolean),
       });
       clearDraft();
-      toast.success('Artifact submitted for review');
+      toast.success(t('submittingToast'));
       router.push(`/artifacts/${result.artifact.id}`);
     } catch (e) {
       setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
@@ -229,10 +234,10 @@ export default function NewArtifactPage() {
 
   return (
     <PageShell
-      title="New artifact"
+      title={t('title')}
       breadcrumb={[
-        { label: 'Artifacts', href: '/artifacts' },
-        { label: 'New' },
+        { label: tNav('artifacts'), href: '/artifacts' },
+        { label: t('title') },
       ]}
     >
       <StepIndicator step={step} />
@@ -247,7 +252,7 @@ export default function NewArtifactPage() {
       {step === 1 && (
         <div className="space-y-6">
           <p className="text-sm text-muted-foreground">
-            Choose a template to structure your artifact.
+            {t('chooseTemplate')}
           </p>
           <TemplatePicker
             selected={draft.templateKey}
@@ -255,14 +260,14 @@ export default function NewArtifactPage() {
           />
           <div className="flex items-center justify-between pt-2">
             <Link href="/artifacts" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Cancel
+              {tCommon('cancel')}
             </Link>
             <Button
               size="sm"
               disabled={!canGoToStep2}
               onClick={() => setStep(2)}
             >
-              Continue
+              {tCommon('continue')}
             </Button>
           </div>
         </div>
@@ -272,44 +277,44 @@ export default function NewArtifactPage() {
       {step === 2 && (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">
-            Fill in the required fields for this artifact.
+            {t('fillFields')}
           </p>
 
           <div className="space-y-4 rounded-lg border border-border bg-card p-5">
             {/* Title */}
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Title <span className="text-destructive">*</span></span>
+              <span className="text-sm font-medium">{t('titleField')} <span className="text-destructive">*</span></span>
               <Input
                 required
                 value={draft.title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="e.g. Payment service postmortem 2026-Q3"
+                placeholder={t('titlePlaceholder')}
                 maxLength={255}
               />
             </label>
 
             {/* Slug — auto-generated but editable */}
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Slug <span className="text-destructive">*</span></span>
+              <span className="text-sm font-medium">{t('slugField')} <span className="text-destructive">*</span></span>
               <Input
                 required
                 value={draft.slug}
                 onChange={(e) => updateDraft({ slug: e.target.value })}
                 className="font-mono"
-                placeholder="e.g. payment-postmortem-2026-q3"
+                placeholder={t('slugPlaceholder')}
                 pattern="[a-z0-9][a-z0-9-]*"
                 maxLength={160}
               />
-              <span className="text-xs text-muted-foreground">Lowercase letters, numbers and hyphens only.</span>
+              <span className="text-xs text-muted-foreground">{t('slugHint')}</span>
             </label>
 
             {/* Tags */}
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">Tags</span>
+              <span className="text-sm font-medium">{t('tagsField')}</span>
               <Input
                 value={draft.tags}
                 onChange={(e) => updateDraft({ tags: e.target.value })}
-                placeholder="ops, k8s, payment (comma-separated)"
+                placeholder={t('tagsPlaceholder')}
               />
             </label>
 
@@ -344,10 +349,10 @@ export default function NewArtifactPage() {
 
           <div className="flex items-center justify-between pt-2">
             <Button variant="outline" size="sm" onClick={() => setStep(1)}>
-              Back
+              {tCommon('back')}
             </Button>
             <Button size="sm" disabled={!canGoToStep3} onClick={() => setStep(3)}>
-              Continue
+              {tCommon('continue')}
             </Button>
           </div>
         </div>
@@ -357,7 +362,7 @@ export default function NewArtifactPage() {
       {step === 3 && (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">
-            Write the artifact body. Live preview updates as you type.
+            {t('writeBody')}
           </p>
 
           {/* Render both light + dark editors; CSS hides the inactive one */}
@@ -366,10 +371,10 @@ export default function NewArtifactPage() {
 
           <div className="flex items-center justify-between pt-2">
             <Button variant="outline" size="sm" onClick={() => setStep(2)}>
-              Back
+              {tCommon('back')}
             </Button>
             <Button size="sm" disabled={busy} onClick={handleSubmit}>
-              {busy ? 'Submitting…' : 'Submit for review'}
+              {busy ? tCommon('submitting') : t('submitForReview')}
             </Button>
           </div>
         </div>
