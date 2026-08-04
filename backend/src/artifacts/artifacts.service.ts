@@ -371,7 +371,7 @@ export class ArtifactsService {
       // Tìm theo slug exact match trước, fallback title ILIKE.
       const artifact = await this.artifacts.findOne({
         where: [
-          { departmentId: user.departmentId, type: 'runbook', slug: opts.name },
+          { departmentId: user.departmentId, type: 'runbook', slug: opts.name, status: 'published' },
         ],
       }) ?? await this.artifacts
           .createQueryBuilder('a')

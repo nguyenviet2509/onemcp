@@ -43,8 +43,7 @@ export function deleteSaved(id: string) {
 }
 
 // Re-runs the saved search and returns fresh results.
+// Backend uses GET (idempotent, cacheable) — must match the controller decorator.
 export function runSaved(id: string) {
-  return apiFetch<SearchHit[]>(`/saved-searches/${encodeURIComponent(id)}/run`, {
-    method: 'POST',
-  });
+  return apiFetch<SearchHit[]>(`/saved-searches/${encodeURIComponent(id)}/run`);
 }

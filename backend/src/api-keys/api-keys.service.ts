@@ -43,11 +43,21 @@ export class ApiKeysService {
   ) {}
 
   // Create a new API key for userId. Returns the full raw key ONCE.
+  // Shape matches the portal ApiKeyCreated interface (extends ApiKey), so the
+  // portal can prepend the new row to its list without re-fetching.
   async create(
     userId: string,
     label: string | null,
     expiresInDays: number = DEFAULT_EXPIRE_DAYS,
-  ): Promise<{ id: string; prefix: string; key: string; expiresAt: Date }> {
+  ): Promise<{
+    id: string;
+    prefix: string;
+    key: string;
+    label: string | null;
+    lastUsedAt: Date | null;
+    expiresAt: Date;
+    createdAt: Date;
+  }> {
     const days = Math.min(Math.max(expiresInDays, 1), MAX_EXPIRE_DAYS);
 
     const rawBytes = crypto.randomBytes(32);
@@ -63,7 +73,15 @@ export class ApiKeysService {
     const saved = await this.repo.save(row);
 
     this.log.log(`api_key_created userId=${userId} prefix=${prefix}`);
-    return { id: saved.id, prefix, key: rawKey, expiresAt };
+    return {
+      id: saved.id,
+      prefix,
+      key: rawKey,
+      label: saved.label,
+      lastUsedAt: saved.lastUsedAt,
+      expiresAt: saved.expiresAt!,
+      createdAt: saved.createdAt,
+    };
   }
 
   // List keys for a user — never returns hash or full key. Revoked keys are hidden.

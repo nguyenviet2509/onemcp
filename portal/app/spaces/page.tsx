@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  listSpaces, createSpace, deleteSpace, Space,
+  listSpaces, createSpace, deleteSpace, Space, SpaceVisibility,
 } from '@/lib/api/spaces';
 import { ApiError } from '@/lib/api-client';
 import Link from 'next/link';
@@ -24,10 +24,16 @@ interface SpaceFormState {
   name: string;
   slug: string;
   description: string;
-  isPublic: boolean;
+  visibility: SpaceVisibility;
 }
 
-const EMPTY_FORM: SpaceFormState = { name: '', slug: '', description: '', isPublic: true };
+const EMPTY_FORM: SpaceFormState = { name: '', slug: '', description: '', visibility: 'space' };
+
+const VISIBILITY_LABELS: Record<SpaceVisibility, string> = {
+  space: 'space (owner + explicit members)',
+  dept: 'dept (all members of a department)',
+  cross_dept: 'cross-dept (all authenticated users)',
+};
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -80,7 +86,7 @@ export default function SpacesPage() {
         name: form.name.trim(),
         slug: form.slug.trim(),
         description: form.description.trim() || undefined,
-        isPublic: form.isPublic,
+        visibility: form.visibility,
       });
       setSpaces((prev) => [...prev, created]);
       toast.success('Space created');
@@ -151,8 +157,8 @@ export default function SpacesPage() {
                   <td className="px-4 py-3 font-medium">{s.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.slug}</td>
                   <td className="px-4 py-3">
-                    <Badge variant={s.isPublic ? 'secondary' : 'outline'}>
-                      {s.isPublic ? 'public' : 'private'}
+                    <Badge variant={s.visibility === 'cross_dept' ? 'secondary' : 'outline'}>
+                      {s.visibility}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -223,15 +229,19 @@ export default function SpacesPage() {
                 placeholder="Optional"
               />
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.isPublic}
-                onChange={(e) => setField('isPublic', e.target.checked)}
-                className="size-4 rounded border-border"
-              />
-              Public (visible to all authenticated users)
-            </label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="sp-visibility">Visibility</Label>
+              <select
+                id="sp-visibility"
+                value={form.visibility}
+                onChange={(e) => setField('visibility', e.target.value as SpaceVisibility)}
+                className="h-9 rounded-md border border-border bg-transparent px-3 text-sm"
+              >
+                {(Object.keys(VISIBILITY_LABELS) as SpaceVisibility[]).map((v) => (
+                  <option key={v} value={v}>{VISIBILITY_LABELS[v]}</option>
+                ))}
+              </select>
+            </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setCreateOpen(false)}>
                 Cancel

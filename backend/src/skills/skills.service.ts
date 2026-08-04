@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
 import { MetricsService } from '../metrics/metrics.service';
 import { Skill } from './entities/skill.entity';
@@ -38,8 +38,10 @@ export class SkillsService {
   }
 
   async findByName(user: RequestUser, name: string): Promise<Skill> {
+    // Exclude archived — archived skills must not be loadable via MCP `load_skill`.
+    // Deprecated remains loadable (upstream can warn but still fetch).
     const s = await this.skills.findOne({
-      where: { departmentId: user.departmentId, name },
+      where: { departmentId: user.departmentId, name, status: Not('archived') },
     });
     if (!s) throw new NotFoundException(`Skill "${name}" không tồn tại`);
     return s;

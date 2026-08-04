@@ -9,7 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { getSpace, updateSpace, Space } from '@/lib/api/spaces';
+import { getSpace, updateSpace, Space, SpaceVisibility } from '@/lib/api/spaces';
+
+const VISIBILITY_LABELS: Record<SpaceVisibility, string> = {
+  space: 'space (owner + explicit members)',
+  dept: 'dept (all members of a department)',
+  cross_dept: 'cross-dept (all authenticated users)',
+};
 import { ApiError } from '@/lib/api-client';
 
 export default function SpaceEditPage() {
@@ -22,7 +28,7 @@ export default function SpaceEditPage() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
+  const [visibility, setVisibility] = useState<SpaceVisibility>('space');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -33,7 +39,7 @@ export default function SpaceEditPage() {
         setSpace(s);
         setName(s.name);
         setDescription(s.description ?? '');
-        setIsPublic(s.isPublic);
+        setVisibility(s.visibility);
       })
       .catch((e) => {
         setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
@@ -49,7 +55,7 @@ export default function SpaceEditPage() {
       await updateSpace(space.slug, {
         name: name.trim() || undefined,
         description: description.trim() || undefined,
-        isPublic,
+        visibility,
       });
       toast.success('Space updated');
       router.push('/spaces');
@@ -119,15 +125,19 @@ export default function SpaceEditPage() {
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="size-4 rounded border-border"
-            />
-            Public (visible to all authenticated users)
-          </label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-visibility">Visibility</Label>
+            <select
+              id="edit-visibility"
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value as SpaceVisibility)}
+              className="h-9 rounded-md border border-border bg-transparent px-3 text-sm"
+            >
+              {(Object.keys(VISIBILITY_LABELS) as SpaceVisibility[]).map((v) => (
+                <option key={v} value={v}>{VISIBILITY_LABELS[v]}</option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={busy || !name.trim()}>
