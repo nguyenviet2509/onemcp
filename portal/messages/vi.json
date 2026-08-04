@@ -19,14 +19,28 @@
     "back": "Quay lại",
     "next": "Tiếp",
     "previous": "Trước",
+    "continue": "Tiếp tục",
     "required": "Bắt buộc",
     "optional": "Tùy chọn",
     "never": "Chưa bao giờ",
     "empty": "—",
+    "select": "Chọn…",
     "signIn": "Đăng nhập",
     "signOut": "Đăng xuất",
     "notSignedIn": "Chưa đăng nhập",
-    "signedIn": "Đã đăng nhập"
+    "signedIn": "Đã đăng nhập",
+    "reset": "Đặt lại",
+    "apply": "Áp dụng",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "submitting": "Đang gửi…",
+    "submit": "Gửi",
+    "starred": "Đã đánh dấu",
+    "star": "Đánh dấu",
+    "copyLink": "Sao chép link",
+    "linkCopied": "Đã sao chép link",
+    "copyFailed": "Sao chép thất bại — clipboard không khả dụng",
+    "unknownError": "Đã xảy ra lỗi"
   },
   "sidebar": {
     "identity": "Danh tính",
@@ -54,17 +68,98 @@
     "settings": "Cài đặt",
     "onboarding": "Hướng dẫn"
   },
+  "pagination": {
+    "rowsPerPage": "Số dòng/trang",
+    "previous": "‹ Trước",
+    "next": "Sau ›",
+    "pageOf": "Trang {page}/{total}"
+  },
   "pages": {
+    "dashboard": {
+      "greeting": "Chào {name}",
+      "greetingAnon": "Chào bạn",
+      "subtitle": "Tổng quan hệ thống kiến thức",
+      "stats": {
+        "totalKb": "Tổng KB",
+        "totalKbHint": "Trong space",
+        "published": "Đã xuất bản",
+        "publishedHint": "Tài liệu đã duyệt",
+        "pending": "Chờ duyệt",
+        "pendingHint": "Đang chờ approve",
+        "myDrafts": "Bản nháp của tôi",
+        "myDraftsHint": "Do tôi tạo"
+      },
+      "widgets": {
+        "recentActivity": "Hoạt động gần đây",
+        "noRecentActivity": "Chưa có hoạt động nào.",
+        "popularArtifacts": "Tài liệu phổ biến",
+        "topSkills": "Skills hàng đầu",
+        "unauthorized": "Không đủ quyền",
+        "unauthorizedDesc": "Widget này yêu cầu quyền cao hơn."
+      }
+    },
     "search": {
       "title": "Tìm kiếm OneMCP",
       "subtitle": "Hybrid semantic + keyword search",
-      "placeholder": "Tìm theo tên, mô tả, nội dung…"
+      "placeholder": "Tìm theo tên, mô tả, nội dung…",
+      "askAnything": "Hỏi bất kỳ điều gì…",
+      "filters": "Bộ lọc:",
+      "spaceChip": "Space: {slug}",
+      "modeChip": "Chế độ: {mode}",
+      "noResults": "Không có kết quả. Thử từ khóa khác hoặc đổi chế độ.",
+      "resultsCount": "{count, plural, =0 {Không có kết quả} =1 {1 kết quả} other {# kết quả}}",
+      "saveSearch": "Lưu tìm kiếm",
+      "saveDialogTitle": "Lưu tìm kiếm này",
+      "savePlaceholder": "VD: Sự cố Payment webhook",
+      "saveToast": "Đã lưu tìm kiếm",
+      "saveFailed": "Lưu thất bại",
+      "totalSpaces": "{count}+ space",
+      "totalAll": "toàn bộ",
+      "hybridDesc": "Hybrid semantic + keyword search across {scope}"
     },
     "artifacts": {
       "title": "Tài liệu",
       "new": "Tạo mới",
       "empty": "Chưa có tài liệu nào",
-      "confirmDelete": "Xóa tài liệu \"{title}\"? Không thể hoàn tác."
+      "emptyDescription": "Thử điều chỉnh bộ lọc hoặc tạo tài liệu mới.",
+      "confirmDelete": "Xóa tài liệu \"{title}\"? Không thể hoàn tác.",
+      "deletedToast": "Đã xóa \"{title}\"",
+      "deleteFailed": "Xóa thất bại",
+      "submitNew": "Gửi tài liệu mới"
+    },
+    "artifactsNew": {
+      "title": "Tài liệu mới",
+      "steps": {
+        "template": "Mẫu",
+        "details": "Chi tiết",
+        "body": "Nội dung"
+      },
+      "chooseTemplate": "Chọn mẫu để tổ chức tài liệu.",
+      "fillFields": "Điền các trường bắt buộc.",
+      "writeBody": "Viết nội dung tài liệu.",
+      "titleField": "Tiêu đề",
+      "titlePlaceholder": "VD: Postmortem service Payment 2026-Q3",
+      "slugField": "Slug",
+      "slugPlaceholder": "vd: payment-postmortem-2026-q3",
+      "slugHint": "Chỉ chữ thường, số và dấu gạch nối.",
+      "tagsField": "Tag",
+      "tagsPlaceholder": "ops, k8s, payment (ngăn cách bằng dấu phẩy)",
+      "submitForReview": "Gửi duyệt",
+      "submittingToast": "Đã gửi tài liệu chờ duyệt",
+      "submitFailed": "Gửi thất bại"
+    },
+    "artifactsDetail": {
+      "typeLabel": "Loại:",
+      "updatedLabel": "Cập nhật",
+      "noVersion": "Chưa có phiên bản nội dung.",
+      "attachments": "Đính kèm"
+    },
+    "artifactsEdit": {
+      "title": "Sửa: {title}",
+      "note": "Cập nhật sẽ tạo phiên bản pending.",
+      "editingOn": "Đang sửa trên phiên bản {version}. Submit đồng thời → 409 conflict.",
+      "tagsLabel": "Tag (ngăn cách bằng dấu phẩy)",
+      "submitNewVersion": "Gửi phiên bản mới"
     },
     "artifactsReview": {
       "title": "Hàng đợi duyệt",
@@ -87,6 +182,7 @@
       "empty": "Chưa có space nào",
       "emptyDescription": "Tạo space để phân loại tài liệu theo bộ phận hoặc chủ đề.",
       "editTitle": "Sửa space",
+      "adminRequired": "Cần quyền admin để quản lý spaces.",
       "columns": {
         "name": "Tên",
         "slug": "Slug",
@@ -106,6 +202,11 @@
         "createFailed": "Tạo thất bại",
         "deleteFailed": "Xóa thất bại",
         "updateFailed": "Cập nhật thất bại"
+      },
+      "switcher": {
+        "allSpaces": "Tất cả space",
+        "noSpaces": "Chưa có space",
+        "selected": "đã chọn"
       }
     },
     "apiKeys": {
@@ -128,7 +229,39 @@
       "toasts": {
         "revoked": "Đã thu hồi API key",
         "revokeFailed": "Thu hồi thất bại"
+      },
+      "createDialog": {
+        "title": "Tạo API key",
+        "labelField": "Nhãn",
+        "labelPlaceholder": "VD: CI pipeline, local dev",
+        "expiresField": "Hết hạn sau (ngày)",
+        "expiresHint": "Bỏ trống hoặc 0 để không hết hạn. Tối đa 365.",
+        "generating": "Đang tạo…",
+        "generatedTitle": "Key mới của bạn",
+        "storeSecurely": "Sao chép ngay — key sẽ không hiện lại. Lưu trữ an toàn.",
+        "copyClipboard": "Đã sao chép key",
+        "copyManually": "Sao chép thất bại — hãy sao chép thủ công",
+        "copyFirst": "Sao chép key phía trên trước",
+        "closeAfterCopy": "Đã sao chép — đóng"
       }
+    },
+    "profile": {
+      "title": "Hồ sơ",
+      "subtitle": "V1 identity mode (trust header). Full auth deferred post-v1.",
+      "notIdentified": "Chưa identify. Nhập username ở navbar để bắt đầu.",
+      "fields": {
+        "userId": "User ID",
+        "username": "Username",
+        "roles": "Vai trò",
+        "department": "Phòng ban",
+        "status": "Trạng thái",
+        "mode": "Chế độ"
+      }
+    },
+    "onboarding": {
+      "title": "Hướng dẫn",
+      "welcome": "Chào mừng đến với OneMCP",
+      "viewGuide": "Xem hướng dẫn →"
     }
   },
   "form": {
@@ -146,5 +279,20 @@
     "hints": {
       "slugImmutable": "Slug không thể đổi sau khi tạo."
     }
+  },
+  "attachments": {
+    "title": "Đính kèm ({count})",
+    "uploading": "Đang tải lên...",
+    "upload": "+ Tải lên",
+    "confirmDelete": "Xóa đính kèm?",
+    "deletedToast": "Đã xóa đính kèm",
+    "uploadedToast": "Đã tải lên {name}",
+    "empty": "Chưa có đính kèm nào.",
+    "allowed": "Cho phép: pdf, md, txt, png, jpg, docx · tối đa 100MB",
+    "delete": "xóa"
+  },
+  "errors": {
+    "loadSpacesFailed": "Tải danh sách space thất bại",
+    "loadTemplatesFailed": "Tải danh sách template thất bại"
   }
 }

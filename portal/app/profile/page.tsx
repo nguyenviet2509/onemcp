@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { apiFetch, ApiError } from '../../lib/api-client';
 import { getIdentity } from '../../lib/identity';
 
@@ -20,6 +21,9 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [identity, setIdentityLocal] = useState<string | null>(null);
+  const t = useTranslations('pages.profile');
+  const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
 
   useEffect(() => {
     setIdentityLocal(getIdentity());
@@ -33,20 +37,20 @@ export default function ProfilePage() {
     <main className="mx-auto max-w-3xl px-8 py-6">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Profile</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          V1 identity mode (trust header). Full auth deferred post-v1.
+          {t('subtitle')}
         </p>
       </div>
 
       {/* Identity warning */}
       {!identity && (
         <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-          Chưa identify. Nhập username ở navbar để bắt đầu.
+          {t('notIdentified')}
         </div>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+      {loading && <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>}
 
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -60,7 +64,7 @@ export default function ProfilePage() {
             href="/profile/api-keys"
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            API Keys →
+            {tNav('apiKeys')} →
           </Link>
         </div>
       )}
@@ -69,9 +73,9 @@ export default function ProfilePage() {
       {me && (
         <div className="rounded-lg border border-border">
           <dl className="divide-y divide-border text-sm">
-            <ProfileRow label="User ID"   value={<span className="font-mono">{me.id}</span>} />
-            <ProfileRow label="Username"  value={<span className="font-mono">{me.username}</span>} />
-            <ProfileRow label="Roles"     value={
+            <ProfileRow label={t('fields.userId')}   value={<span className="font-mono">{me.id}</span>} />
+            <ProfileRow label={t('fields.username')}  value={<span className="font-mono">{me.username}</span>} />
+            <ProfileRow label={t('fields.roles')}     value={
               <div className="flex flex-wrap gap-1">
                 {me.roles.map((r) => (
                   <span
@@ -83,9 +87,9 @@ export default function ProfilePage() {
                 ))}
               </div>
             } />
-            <ProfileRow label="Department" value={<span className="font-mono">#{me.departmentId}</span>} />
-            <ProfileRow label="Status"     value={<span className="font-mono">{me.status}</span>} />
-            <ProfileRow label="Mode"       value={
+            <ProfileRow label={t('fields.department')} value={<span className="font-mono">#{me.departmentId}</span>} />
+            <ProfileRow label={t('fields.status')}     value={<span className="font-mono">{me.status}</span>} />
+            <ProfileRow label={t('fields.mode')}       value={
               <span className="font-mono text-amber-600 dark:text-amber-400">{me.identityMode}</span>
             } />
           </dl>

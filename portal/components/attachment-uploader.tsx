@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import {
   Attachment,
   deleteAttachment,
@@ -26,6 +27,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations('attachments');
 
   useEffect(() => {
     listAttachments(artifactId)
@@ -41,7 +43,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
     try {
       const att = await uploadAttachment(artifactId, file);
       setItems((prev) => [att, ...prev]);
-      toast.success(`Uploaded ${att.filename}`);
+      toast.success(t('uploadedToast', { name: att.filename }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -53,11 +55,11 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Xóa attachment?')) return;
+    if (!confirm(t('confirmDelete'))) return;
     try {
       await deleteAttachment(id);
       setItems((prev) => prev.filter((a) => a.id !== id));
-      toast.success('Attachment deleted');
+      toast.success(t('deletedToast'));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
@@ -68,10 +70,10 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
   return (
     <section className="mt-6 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Attachments ({items.length})</h2>
+        <h2 className="text-sm font-semibold">{t('title', { count: items.length })}</h2>
         {canWrite && (
           <label className="cursor-pointer rounded border border-foreground bg-foreground px-3 py-1 text-xs text-background hover:opacity-90 transition-opacity">
-            {busy ? 'Uploading...' : '+ Upload'}
+            {busy ? t('uploading') : t('upload')}
             <input
               ref={inputRef}
               type="file"
@@ -89,7 +91,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
         </p>
       )}
       {items.length === 0 ? (
-        <p className="mt-3 text-xs text-muted-foreground">Chưa có attachment nào.</p>
+        <p className="mt-3 text-xs text-muted-foreground">{t('empty')}</p>
       ) : (
         <ul className="mt-3 space-y-1 text-sm">
           {items.map((a) => (
@@ -109,7 +111,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
                   onClick={() => handleDelete(a.id)}
                   className="ml-3 text-xs text-destructive hover:underline"
                 >
-                  delete
+                  {t('delete')}
                 </button>
               )}
             </li>
@@ -117,7 +119,7 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
         </ul>
       )}
       <p className="mt-2 text-xs text-muted-foreground">
-        Allowed: pdf, md, txt, png, jpg, docx · max 100MB
+        {t('allowed')}
       </p>
     </section>
   );

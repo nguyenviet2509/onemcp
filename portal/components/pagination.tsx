@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 // Controlled pagination component — minimal Option A style.
 // Client-side only: no SSR query param sync (acceptable for v1 pilot scale).
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -17,6 +19,8 @@ export function Pagination({ page, pageSize, total, onPageChange, onPageSizeChan
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasPrev = page > 1;
   const hasNext = page < totalPages;
+  const t = useTranslations('pagination');
+  const tSearch = useTranslations('pages.search');
 
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
@@ -25,7 +29,7 @@ export function Pagination({ page, pageSize, total, onPageChange, onPageSizeChan
     <div className="flex flex-wrap items-center justify-between gap-3 py-3 text-[13px] text-muted-foreground">
       {/* Left: count summary */}
       <span className="shrink-0">
-        {total === 0 ? 'No results' : `${from}–${to} of ${total}`}
+        {total === 0 ? tSearch('resultsCount', { count: 0 }) : `${from}–${to} / ${total}`}
       </span>
 
       {/* Right cluster: prev/next + rows-per-page */}
@@ -36,26 +40,26 @@ export function Pagination({ page, pageSize, total, onPageChange, onPageSizeChan
             onClick={() => onPageChange(page - 1)}
             disabled={!hasPrev}
             className="rounded px-2 py-0.5 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
-            aria-label="Previous page"
+            aria-label={t('previous')}
           >
-            ‹ Prev
+            {t('previous')}
           </button>
           <span className="tabular-nums">
-            Page {page} of {totalPages}
+            {t('pageOf', { page, total: totalPages })}
           </span>
           <button
             onClick={() => onPageChange(page + 1)}
             disabled={!hasNext}
             className="rounded px-2 py-0.5 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
-            aria-label="Next page"
+            aria-label={t('next')}
           >
-            Next ›
+            {t('next')}
           </button>
         </div>
 
         {/* Rows per page */}
         <label className="flex items-center gap-1.5 shrink-0">
-          <span>Rows per page:</span>
+          <span>{t('rowsPerPage')}:</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}

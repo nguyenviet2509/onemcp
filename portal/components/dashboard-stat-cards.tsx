@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useCurrentSpace } from '@/lib/space-context';
 import { listArtifacts } from '@/lib/api/artifacts';
 import { DashboardStatCard } from './dashboard-stat-card';
@@ -18,6 +19,7 @@ export function DashboardStatCards() {
   const { space } = useCurrentSpace();
   const [counts, setCounts] = useState<Counts>({ total: null, pending: null, drafts: null });
   const [loading, setLoading] = useState(true);
+  const t = useTranslations('pages.dashboard.stats');
 
   useEffect(() => {
     setLoading(true);
@@ -46,22 +48,22 @@ export function DashboardStatCards() {
     // 3 visible cards (SEARCH HIT RATE hidden) — responsive md:3 col
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <DashboardStatCard
-        label="Total KB (space)"
+        label={t('totalKb')}
         value={counts.total}
-        subtext="Published artifacts"
+        subtext={t('publishedHint')}
         loading={loading}
       />
       <DashboardStatCard
-        label="Pending review"
+        label={t('pending')}
         value={counts.pending}
-        subtext="Awaiting approval"
+        subtext={t('pendingHint')}
         valueColor={counts.pending ? 'text-amber-400' : undefined}
         loading={loading}
       />
       <DashboardStatCard
-        label="My drafts"
+        label={t('myDrafts')}
         value={counts.drafts}
-        subtext="Submitted by me"
+        subtext={t('myDraftsHint')}
         loading={loading}
       />
       {/* SEARCH HIT RATE 7D hidden — backend metric endpoint not available yet */}

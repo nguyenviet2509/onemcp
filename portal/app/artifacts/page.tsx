@@ -43,15 +43,17 @@ function ArtifactRow({
   onToggle: (id: string) => void;
   onDeleted: (id: string) => void;
 }) {
+  const t = useTranslations('pages.artifacts');
+  const tCommon = useTranslations('common');
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
-    if (!confirm(`Xóa artifact "${artifact.title}"? Không thể undo.`)) return;
+    if (!confirm(t('confirmDelete', { title: artifact.title }))) return;
     try {
       await deleteArtifact(artifact.id);
       onDeleted(artifact.id);
-      toast.success(`Deleted "${artifact.title}"`);
+      toast.success(t('deletedToast', { title: artifact.title }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Delete failed');
+      toast.error(err instanceof Error ? err.message : t('deleteFailed'));
     }
   }
   return (
@@ -89,14 +91,14 @@ function ArtifactRow({
           href={`/artifacts/${artifact.id}/edit`}
           className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
         >
-          Edit
+          {tCommon('edit')}
         </Link>
         <button
           type="button"
           onClick={handleDelete}
           className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
         >
-          Delete
+          {tCommon('delete')}
         </button>
       </div>
     </li>
@@ -125,6 +127,7 @@ function ArtifactsContent() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const t = useTranslations('pages.artifacts');
 
   const fetchList = useCallback((f: FilterState) => {
     setLastFilter(f);
@@ -182,11 +185,11 @@ function ArtifactsContent() {
           <LoadingRows />
         ) : items.length === 0 ? (
           <EmptyState
-            title="No artifacts found"
-            description="Try adjusting your filters or submit a new artifact."
+            title={t('empty')}
+            description={t('emptyDescription')}
             cta={
               <Link href="/artifacts/new" className={buttonVariants({ size: 'sm' })}>
-                Submit artifact
+                {t('submitNew')}
               </Link>
             }
           />

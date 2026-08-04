@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { AttachmentUploader } from '../../../components/attachment-uploader';
 import { MarkdownView } from '../../../components/markdown-view';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
@@ -23,12 +24,13 @@ interface Props {
 // Header action cluster — star (local toggle), copy link, edit
 function HeaderActions({ id, title }: { id: string; title: string }) {
   const [starred, setStarred] = useState(false);
+  const tCommon = useTranslations('common');
 
   function copyLink() {
     navigator.clipboard
       .writeText(window.location.href)
-      .then(() => toast.success('Link copied'))
-      .catch(() => toast.error('Copy failed — clipboard unavailable'));
+      .then(() => toast.success(tCommon('linkCopied')))
+      .catch(() => toast.error(tCommon('copyFailed')));
   }
 
   return (
@@ -39,16 +41,16 @@ function HeaderActions({ id, title }: { id: string; title: string }) {
         onClick={() => setStarred((s) => !s)}
         aria-pressed={starred}
       >
-        {starred ? '★' : '☆'} Star
+        {starred ? '★' : '☆'} {tCommon('star')}
       </Button>
       <Button variant="outline" size="sm" onClick={copyLink}>
-        Copy link
+        {tCommon('copyLink')}
       </Button>
       <Link
         href={`/artifacts/${id}/edit`}
         className={buttonVariants({ size: 'sm' })}
       >
-        Edit
+        {tCommon('edit')}
       </Link>
     </div>
   );
@@ -66,12 +68,14 @@ function DetailHeader({
   const updatedAt = artifact.updatedAt
     ? formatDistanceToNow(new Date(artifact.updatedAt), { addSuffix: true })
     : null;
+  const tNav = useTranslations('nav');
+  const tDetail = useTranslations('pages.artifactsDetail');
 
   return (
     <div className="border-b border-border px-8 py-4">
       {/* Breadcrumb */}
       <nav className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Link href="/artifacts" className="hover:text-foreground transition-colors">Artifacts</Link>
+        <Link href="/artifacts" className="hover:text-foreground transition-colors">{tNav('artifacts')}</Link>
         <span>/</span>
         <span>{artifact.type}</span>
         <span>/</span>
@@ -88,11 +92,11 @@ function DetailHeader({
             </Badge>
             {version && <span>v{version.versionNo}</span>}
             {version && <span>·</span>}
-            {updatedAt && <span>Updated {updatedAt}</span>}
+            {updatedAt && <span>{tDetail('updatedLabel')} {updatedAt}</span>}
             {artifact.type && (
               <>
                 <span>·</span>
-                <span>Type: {artifact.type}</span>
+                <span>{tDetail('typeLabel')} {artifact.type}</span>
               </>
             )}
           </div>
@@ -109,6 +113,7 @@ export default function ArtifactDetailPage({ params }: Props) {
   const [detail, setDetail] = useState<ArtifactDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tDetail = useTranslations('pages.artifactsDetail');
 
   const reload = () =>
     getArtifact(id)
@@ -165,12 +170,12 @@ export default function ArtifactDetailPage({ params }: Props) {
               <MarkdownView source={version.body} />
             </article>
           ) : (
-            <p className="text-sm text-muted-foreground">No content version available.</p>
+            <p className="text-sm text-muted-foreground">{tDetail('noVersion')}</p>
           )}
 
           {/* Attachments section below article */}
           <section className="mt-8 border-t border-border pt-6">
-            <h2 className="mb-3 text-sm font-semibold">Attachments</h2>
+            <h2 className="mb-3 text-sm font-semibold">{tDetail('attachments')}</h2>
             <AttachmentUploader artifactId={id} />
           </section>
 

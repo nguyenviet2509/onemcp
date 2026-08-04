@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 // ChevronDown icon removed (icon budget: 0 outside sidebar-nav). Using text indicator.
 import { listSpaces, type Space } from '../lib/api/spaces';
 import { useCurrentSpace } from '../lib/space-context';
@@ -23,14 +24,17 @@ export function SpaceSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations('pages.spaces.switcher');
+  const tErrors = useTranslations('errors');
 
   useEffect(() => {
     listSpaces()
       .then(setSpaces)
       .catch(() => {
         setSpaces([]);
-        toast.error('Failed to load spaces');
+        toast.error(tErrors('loadSpacesFailed'));
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function select(next: Space | null) {
@@ -50,7 +54,7 @@ export function SpaceSwitcher() {
 
   const label = space.slug
     ? (space.name ?? space.slug)
-    : 'All spaces';
+    : t('allSpaces');
 
   return (
     <DropdownMenu>
@@ -71,9 +75,9 @@ export function SpaceSwitcher() {
       <DropdownMenuContent align="start" sideOffset={6} className="min-w-[200px]">
         {/* "All spaces" option */}
         <DropdownMenuItem onSelect={() => select(null)} className="flex items-center justify-between">
-          <span>All spaces</span>
+          <span>{t('allSpaces')}</span>
           {space.slug === null && (
-            <span className="ml-auto text-xs text-primary">selected</span>
+            <span className="ml-auto text-xs text-primary">{t('selected')}</span>
           )}
         </DropdownMenuItem>
 
@@ -90,14 +94,14 @@ export function SpaceSwitcher() {
               {s.slug}
             </span>
             {space.slug === s.slug && (
-              <span className="shrink-0 text-xs text-primary">selected</span>
+              <span className="shrink-0 text-xs text-primary">{t('selected')}</span>
             )}
           </DropdownMenuItem>
         ))}
 
         {spaces.length === 0 && (
           <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-            No spaces yet
+            {t('noSpaces')}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

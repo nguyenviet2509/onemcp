@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 // Icons removed (icon budget: 0 outside sidebar-nav).
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -67,6 +68,7 @@ export function ArtifactFilterPanel({ onChange }: Props) {
 
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const tErrors = useTranslations('errors');
 
   const [local, setLocal] = useState<FilterState>(() => fromSearchParams(searchParams));
 
@@ -82,8 +84,9 @@ export function ArtifactFilterPanel({ onChange }: Props) {
   useEffect(() => {
     // Surface fetch failures so an empty filter panel isn't confused with
     // "no spaces / templates exist".
-    listSpaces().then(setSpaces).catch(() => toast.error('Failed to load spaces'));
-    listTemplates().then(setTemplates).catch(() => toast.error('Failed to load templates'));
+    listSpaces().then(setSpaces).catch(() => toast.error(tErrors('loadSpacesFailed')));
+    listTemplates().then(setTemplates).catch(() => toast.error(tErrors('loadTemplatesFailed')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync space from URL param on change — enables sidebar SpaceSwitcher to

@@ -19,14 +19,28 @@
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
+    "continue": "Continue",
     "required": "Required",
     "optional": "Optional",
     "never": "Never",
     "empty": "—",
+    "select": "Select…",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "notSignedIn": "Not signed in",
-    "signedIn": "Signed in"
+    "signedIn": "Signed in",
+    "reset": "Reset",
+    "apply": "Apply",
+    "copy": "Copy",
+    "copied": "Copied",
+    "submitting": "Submitting…",
+    "submit": "Submit",
+    "starred": "Starred",
+    "star": "Star",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "copyFailed": "Copy failed — clipboard unavailable",
+    "unknownError": "Something went wrong"
   },
   "sidebar": {
     "identity": "Identity",
@@ -54,17 +68,98 @@
     "settings": "Settings",
     "onboarding": "Onboarding"
   },
+  "pagination": {
+    "rowsPerPage": "Rows per page",
+    "previous": "‹ Prev",
+    "next": "Next ›",
+    "pageOf": "Page {page} of {total}"
+  },
   "pages": {
+    "dashboard": {
+      "greeting": "Hi {name}",
+      "greetingAnon": "Hi there",
+      "subtitle": "Knowledge system overview",
+      "stats": {
+        "totalKb": "Total KB",
+        "totalKbHint": "In space",
+        "published": "Published",
+        "publishedHint": "Approved artifacts",
+        "pending": "Pending review",
+        "pendingHint": "Awaiting approval",
+        "myDrafts": "My drafts",
+        "myDraftsHint": "Submitted by me"
+      },
+      "widgets": {
+        "recentActivity": "Recent activity",
+        "noRecentActivity": "No recent activity.",
+        "popularArtifacts": "Popular artifacts",
+        "topSkills": "Top skills",
+        "unauthorized": "Not authorized",
+        "unauthorizedDesc": "This widget requires higher permissions."
+      }
+    },
     "search": {
       "title": "Search OneMCP",
       "subtitle": "Hybrid semantic + keyword search",
-      "placeholder": "Search by name, description, content…"
+      "placeholder": "Search by name, description, content…",
+      "askAnything": "Ask anything…",
+      "filters": "Filters:",
+      "spaceChip": "Space: {slug}",
+      "modeChip": "Mode: {mode}",
+      "noResults": "No results found. Try different terms or switch mode.",
+      "resultsCount": "{count, plural, =0 {No results} =1 {1 result} other {# results}}",
+      "saveSearch": "Save search",
+      "saveDialogTitle": "Save this search",
+      "savePlaceholder": "e.g. Payment webhook issues",
+      "saveToast": "Search saved",
+      "saveFailed": "Failed to save search",
+      "totalSpaces": "{count}+ spaces",
+      "totalAll": "all",
+      "hybridDesc": "Hybrid semantic + keyword search across {scope}"
     },
     "artifacts": {
       "title": "Artifacts",
       "new": "New",
       "empty": "No artifacts yet",
-      "confirmDelete": "Delete artifact \"{title}\"? Cannot undo."
+      "emptyDescription": "Try adjusting your filters or submit a new artifact.",
+      "confirmDelete": "Delete artifact \"{title}\"? Cannot undo.",
+      "deletedToast": "Deleted \"{title}\"",
+      "deleteFailed": "Delete failed",
+      "submitNew": "Submit new"
+    },
+    "artifactsNew": {
+      "title": "New artifact",
+      "steps": {
+        "template": "Template",
+        "details": "Details",
+        "body": "Body"
+      },
+      "chooseTemplate": "Choose a template to structure your artifact.",
+      "fillFields": "Fill in the required fields.",
+      "writeBody": "Write the artifact body.",
+      "titleField": "Title",
+      "titlePlaceholder": "e.g. Payment service postmortem 2026-Q3",
+      "slugField": "Slug",
+      "slugPlaceholder": "e.g. payment-postmortem-2026-q3",
+      "slugHint": "Lowercase letters, numbers and hyphens only.",
+      "tagsField": "Tags",
+      "tagsPlaceholder": "ops, k8s, payment (comma-separated)",
+      "submitForReview": "Submit for review",
+      "submittingToast": "Artifact submitted for review",
+      "submitFailed": "Submit failed"
+    },
+    "artifactsDetail": {
+      "typeLabel": "Type:",
+      "updatedLabel": "Updated",
+      "noVersion": "No content version available.",
+      "attachments": "Attachments"
+    },
+    "artifactsEdit": {
+      "title": "Edit: {title}",
+      "note": "Update creates a pending version.",
+      "editingOn": "Editing on top of version {version}. Concurrent submit → 409 conflict.",
+      "tagsLabel": "Tags (comma-separated)",
+      "submitNewVersion": "Submit new version"
     },
     "artifactsReview": {
       "title": "Review queue",
@@ -87,6 +182,7 @@
       "empty": "No spaces yet",
       "emptyDescription": "Create a space to organise artifacts by department or topic.",
       "editTitle": "Edit space",
+      "adminRequired": "Admin access required to manage spaces.",
       "columns": {
         "name": "Name",
         "slug": "Slug",
@@ -106,6 +202,11 @@
         "createFailed": "Create failed",
         "deleteFailed": "Delete failed",
         "updateFailed": "Update failed"
+      },
+      "switcher": {
+        "allSpaces": "All spaces",
+        "noSpaces": "No spaces yet",
+        "selected": "selected"
       }
     },
     "apiKeys": {
@@ -128,7 +229,39 @@
       "toasts": {
         "revoked": "API key revoked",
         "revokeFailed": "Revoke failed"
+      },
+      "createDialog": {
+        "title": "Generate API key",
+        "labelField": "Label",
+        "labelPlaceholder": "e.g. CI pipeline, local dev",
+        "expiresField": "Expires in (days)",
+        "expiresHint": "Leave blank or 0 for no expiry. Max 365.",
+        "generating": "Generating…",
+        "generatedTitle": "Your new API key",
+        "storeSecurely": "Copy now — this key will not be shown again. Store it securely.",
+        "copyClipboard": "Key copied to clipboard",
+        "copyManually": "Copy failed — please copy manually",
+        "copyFirst": "Copy the key above first",
+        "closeAfterCopy": "I've copied it — close"
       }
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "V1 identity mode (trust header). Full auth deferred post-v1.",
+      "notIdentified": "Not identified. Enter a username in the navbar to start.",
+      "fields": {
+        "userId": "User ID",
+        "username": "Username",
+        "roles": "Roles",
+        "department": "Department",
+        "status": "Status",
+        "mode": "Mode"
+      }
+    },
+    "onboarding": {
+      "title": "Onboarding",
+      "welcome": "Welcome to OneMCP",
+      "viewGuide": "View guide →"
     }
   },
   "form": {
@@ -146,5 +279,20 @@
     "hints": {
       "slugImmutable": "Slug cannot be changed after creation."
     }
+  },
+  "attachments": {
+    "title": "Attachments ({count})",
+    "uploading": "Uploading...",
+    "upload": "+ Upload",
+    "confirmDelete": "Delete attachment?",
+    "deletedToast": "Attachment deleted",
+    "uploadedToast": "Uploaded {name}",
+    "empty": "No attachments yet.",
+    "allowed": "Allowed: pdf, md, txt, png, jpg, docx · max 100MB",
+    "delete": "delete"
+  },
+  "errors": {
+    "loadSpacesFailed": "Failed to load spaces",
+    "loadTemplatesFailed": "Failed to load templates"
   }
 }
