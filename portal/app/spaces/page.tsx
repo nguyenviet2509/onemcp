@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { PageShell } from '@/components/page-shell';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,7 @@ interface SpaceFormState {
 
 const EMPTY_FORM: SpaceFormState = { name: '', slug: '', description: '', visibility: 'space' };
 
-const VISIBILITY_LABELS: Record<SpaceVisibility, string> = {
-  space: 'space (owner + explicit members)',
-  dept: 'dept (all members of a department)',
-  cross_dept: 'cross-dept (all authenticated users)',
-};
+// Note: visibility labels are localized inside the component via useTranslations.
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -52,6 +49,9 @@ export default function SpacesPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<Space | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const t = useTranslations('pages.spaces');
+  const tCommon = useTranslations('common');
+  const tForm = useTranslations('form');
 
   useEffect(() => {
     listSpaces()
@@ -89,11 +89,11 @@ export default function SpacesPage() {
         visibility: form.visibility,
       });
       setSpaces((prev) => [...prev, created]);
-      toast.success('Space created');
+      toast.success(t('toasts.created'));
       setCreateOpen(false);
       setForm(EMPTY_FORM);
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Create failed');
+      toast.error(e instanceof ApiError ? e.message : t('toasts.createFailed'));
     } finally {
       setBusy(false);
     }
@@ -105,21 +105,21 @@ export default function SpacesPage() {
     try {
       await deleteSpace(deleteTarget.slug);
       setSpaces((prev) => prev.filter((s) => s.id !== deleteTarget.id));
-      toast.success('Space deleted');
+      toast.success(t('toasts.deleted'));
       setDeleteTarget(null);
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Delete failed');
+      toast.error(e instanceof ApiError ? e.message : t('toasts.deleteFailed'));
     } finally {
       setDeleting(false);
     }
   }
 
   const actions = (
-    <Button onClick={() => setCreateOpen(true)}>New space</Button>
+    <Button onClick={() => setCreateOpen(true)}>{t('newSpace')}</Button>
   );
 
   return (
-    <PageShell title="Spaces" actions={error ? undefined : actions}>
+    <PageShell title={t('title')} actions={error ? undefined : actions}>
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -134,9 +134,9 @@ export default function SpacesPage() {
 
       {!loading && !error && spaces.length === 0 && (
         <EmptyState
-          title="No spaces yet"
-          description="Create a space to organise artifacts by department or topic."
-          cta={<Button onClick={() => setCreateOpen(true)}>New space</Button>}
+          title={t('empty')}
+          description={t('emptyDescription')}
+          cta={<Button onClick={() => setCreateOpen(true)}>{t('newSpace')}</Button>}
         />
       )}
 
@@ -145,10 +145,10 @@ export default function SpacesPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Slug</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Visibility</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.name')}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.slug')}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.visibility')}</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">{tCommon('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -164,14 +164,14 @@ export default function SpacesPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link href={`/spaces/${s.slug}`}>
-                        <Button variant="outline" size="sm">Edit</Button>
+                        <Button variant="outline" size="sm">{tCommon('edit')}</Button>
                       </Link>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => setDeleteTarget(s)}
                       >
-                        Delete
+                        {tCommon('delete')}
                       </Button>
                     </div>
                   </td>
@@ -196,22 +196,22 @@ export default function SpacesPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New space</DialogTitle>
+            <DialogTitle>{t('newSpace')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sp-name">Name <span aria-hidden className="text-destructive">*</span></Label>
+              <Label htmlFor="sp-name">{tForm('labels.name')} <span aria-hidden className="text-destructive">*</span></Label>
               <Input
                 id="sp-name"
                 value={form.name}
                 onChange={(e) => setField('name', e.target.value)}
-                placeholder="Engineering KB"
+                placeholder={tForm('placeholders.descriptionExample')}
                 required
                 autoFocus
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sp-slug">Slug <span aria-hidden className="text-destructive">*</span></Label>
+              <Label htmlFor="sp-slug">{tForm('labels.slug')} <span aria-hidden className="text-destructive">*</span></Label>
               <Input
                 id="sp-slug"
                 value={form.slug}
@@ -221,33 +221,33 @@ export default function SpacesPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sp-desc">Description</Label>
+              <Label htmlFor="sp-desc">{tForm('labels.description')}</Label>
               <Input
                 id="sp-desc"
                 value={form.description}
                 onChange={(e) => setField('description', e.target.value)}
-                placeholder="Optional"
+                placeholder={tForm('placeholders.optional')}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sp-visibility">Visibility</Label>
+              <Label htmlFor="sp-visibility">{tForm('labels.visibility')}</Label>
               <select
                 id="sp-visibility"
                 value={form.visibility}
                 onChange={(e) => setField('visibility', e.target.value as SpaceVisibility)}
                 className="h-9 rounded-md border border-border bg-transparent px-3 text-sm"
               >
-                {(Object.keys(VISIBILITY_LABELS) as SpaceVisibility[]).map((v) => (
-                  <option key={v} value={v}>{VISIBILITY_LABELS[v]}</option>
+                {(['space', 'dept', 'cross_dept'] as SpaceVisibility[]).map((v) => (
+                  <option key={v} value={v}>{t(`visibilityLabels.${v}`)}</option>
                 ))}
               </select>
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setCreateOpen(false)}>
-                Cancel
+                {tCommon('cancel')}
               </Button>
               <Button type="submit" disabled={busy || !form.name.trim() || !form.slug.trim()}>
-                {busy ? 'Creating…' : 'Create'}
+                {busy ? tCommon('loading') : tCommon('create')}
               </Button>
             </DialogFooter>
           </form>
@@ -258,18 +258,17 @@ export default function SpacesPage() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Delete space?</DialogTitle>
+            <DialogTitle>{t('confirmDelete')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Space <span className="font-medium">"{deleteTarget?.name}"</span> and all its settings
-            will be permanently deleted. Artifacts in this space are NOT deleted.
+            {t('deleteWarning', { name: deleteTarget?.name ?? '' })}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Deleting…' : 'Delete'}
+              {deleting ? tCommon('loading') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

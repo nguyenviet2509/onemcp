@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { LayoutDashboard, FileText, Search, Wrench, ClipboardCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { listArtifacts } from '@/lib/api/artifacts';
@@ -12,20 +13,21 @@ import { listArtifacts } from '@/lib/api/artifacts';
 // Wrench for Skills = MCP tools/utilities (semantic fit; replaces Sparkles decor).
 const NAV_ITEMS: Array<{
   href: string;
-  label: string;
+  key: 'dashboard' | 'artifacts' | 'search' | 'skills' | 'review';
   icon: React.ComponentType<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>;
   showCount?: boolean;
 }> = [
-  { href: '/',                 label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/artifacts',        label: 'Artifacts',    icon: FileText },
-  { href: '/search',           label: 'Search',       icon: Search },
-  { href: '/skills',           label: 'Skills',       icon: Wrench },
-  { href: '/artifacts/review', label: 'Review queue', icon: ClipboardCheck, showCount: true },
+  { href: '/',                 key: 'dashboard', icon: LayoutDashboard },
+  { href: '/artifacts',        key: 'artifacts', icon: FileText },
+  { href: '/search',           key: 'search',    icon: Search },
+  { href: '/skills',           key: 'skills',    icon: Wrench },
+  { href: '/artifacts/review', key: 'review',    icon: ClipboardCheck, showCount: true },
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const t = useTranslations('nav');
 
   useEffect(() => {
     listArtifacts({ status: 'pending' })
@@ -36,7 +38,8 @@ export function SidebarNav() {
   return (
     <nav aria-label="Main navigation" className="px-2 pb-1 pt-1">
       <ul className="space-y-px">
-        {NAV_ITEMS.map(({ href, label, icon: Icon, showCount }) => {
+        {NAV_ITEMS.map(({ href, key, icon: Icon, showCount }) => {
+          const label = t(key);
           const isActive =
             href === '/' ? pathname === '/' : pathname.startsWith(href);
 

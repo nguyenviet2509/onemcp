@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { buttonVariants } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -255,13 +256,19 @@ function ArtifactsContent() {
 }
 
 export default function ArtifactsListPage() {
+  return <ArtifactsListPageInner />;
+}
+
+function ArtifactsListPageInner() {
+  const t = useTranslations('pages.artifacts');
+  const tNav = useTranslations('nav');
   return (
     <PageShell
-      title="Artifacts"
-      breadcrumb={[{ label: 'Artifacts' }]}
+      title={t('title')}
+      breadcrumb={[{ label: tNav('artifacts') }]}
       actions={
         <Link href="/artifacts/new" className={buttonVariants({ size: 'sm' })}>
-          Submit new
+          {t('new')}
         </Link>
       }
     >

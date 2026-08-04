@@ -1,0 +1,150 @@
+{
+  "common": {
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "close": "Đóng",
+    "loading": "Đang tải…",
+    "saving": "Đang lưu…",
+    "deleting": "Đang xóa…",
+    "confirm": "Xác nhận",
+    "search": "Tìm kiếm",
+    "create": "Tạo",
+    "update": "Cập nhật",
+    "revoke": "Thu hồi",
+    "actions": "Hành động",
+    "yes": "Có",
+    "no": "Không",
+    "back": "Quay lại",
+    "next": "Tiếp",
+    "previous": "Trước",
+    "required": "Bắt buộc",
+    "optional": "Tùy chọn",
+    "never": "Chưa bao giờ",
+    "empty": "—",
+    "signIn": "Đăng nhập",
+    "signOut": "Đăng xuất",
+    "notSignedIn": "Chưa đăng nhập",
+    "signedIn": "Đã đăng nhập"
+  },
+  "sidebar": {
+    "identity": "Danh tính",
+    "theme": "Giao diện",
+    "language": "Ngôn ngữ",
+    "themes": {
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Theo hệ thống"
+    },
+    "changeIdentity": "Đổi danh tính…",
+    "clearIdentity": "Xóa danh tính",
+    "searchOrJump": "Tìm hoặc chuyển đến…"
+  },
+  "nav": {
+    "dashboard": "Bảng điều khiển",
+    "artifacts": "Tài liệu",
+    "skills": "Kỹ năng",
+    "spaces": "Space",
+    "search": "Tìm kiếm",
+    "review": "Duyệt",
+    "profile": "Hồ sơ",
+    "apiKeys": "API Keys",
+    "savedSearches": "Đã lưu",
+    "settings": "Cài đặt",
+    "onboarding": "Hướng dẫn"
+  },
+  "pages": {
+    "search": {
+      "title": "Tìm kiếm OneMCP",
+      "subtitle": "Hybrid semantic + keyword search",
+      "placeholder": "Tìm theo tên, mô tả, nội dung…"
+    },
+    "artifacts": {
+      "title": "Tài liệu",
+      "new": "Tạo mới",
+      "empty": "Chưa có tài liệu nào",
+      "confirmDelete": "Xóa tài liệu \"{title}\"? Không thể hoàn tác."
+    },
+    "artifactsReview": {
+      "title": "Hàng đợi duyệt",
+      "description": "Tài liệu đang chờ approve. Click để xem chi tiết + approve/reject.",
+      "emptyQueue": "Hàng đợi trống. Không có tài liệu chờ duyệt.",
+      "review": "Duyệt",
+      "backToAll": "← Tất cả tài liệu"
+    },
+    "skills": {
+      "title": "Kỹ năng",
+      "count": "{count} kỹ năng",
+      "searchPlaceholder": "Tìm theo tên hoặc mô tả...",
+      "filterAll": "tất cả",
+      "noMatch": "Không có kỹ năng khớp",
+      "syncNote": "Kỹ năng đồng bộ tự động từ GitLab qua webhook."
+    },
+    "spaces": {
+      "title": "Spaces",
+      "newSpace": "Space mới",
+      "empty": "Chưa có space nào",
+      "emptyDescription": "Tạo space để phân loại tài liệu theo bộ phận hoặc chủ đề.",
+      "editTitle": "Sửa space",
+      "columns": {
+        "name": "Tên",
+        "slug": "Slug",
+        "visibility": "Hiển thị"
+      },
+      "confirmDelete": "Xóa space?",
+      "deleteWarning": "Space \"{name}\" và các cài đặt sẽ bị xóa vĩnh viễn. Tài liệu trong space KHÔNG bị xóa.",
+      "visibilityLabels": {
+        "space": "space (chủ sở hữu + thành viên)",
+        "dept": "dept (toàn bộ phòng ban)",
+        "cross_dept": "cross-dept (mọi user đã đăng nhập)"
+      },
+      "toasts": {
+        "created": "Đã tạo space",
+        "deleted": "Đã xóa space",
+        "updated": "Đã cập nhật space",
+        "createFailed": "Tạo thất bại",
+        "deleteFailed": "Xóa thất bại",
+        "updateFailed": "Cập nhật thất bại"
+      }
+    },
+    "apiKeys": {
+      "title": "API Keys",
+      "breadcrumbProfile": "Hồ sơ",
+      "generate": "Tạo key",
+      "empty": "Chưa có API key nào",
+      "emptyDescription": "Tạo key để xác thực request API programmatically.",
+      "columns": {
+        "label": "Nhãn",
+        "prefix": "Prefix",
+        "lastUsed": "Dùng lần cuối",
+        "expires": "Hết hạn",
+        "status": "Trạng thái"
+      },
+      "statusActive": "hoạt động",
+      "statusExpired": "hết hạn",
+      "confirmRevoke": "Thu hồi API key?",
+      "revokeWarning": "Key \"{label}\" sẽ bị thu hồi vĩnh viễn. Service đang dùng nó sẽ mất quyền truy cập ngay lập tức.",
+      "toasts": {
+        "revoked": "Đã thu hồi API key",
+        "revokeFailed": "Thu hồi thất bại"
+      }
+    }
+  },
+  "form": {
+    "labels": {
+      "name": "Tên",
+      "slug": "Slug",
+      "description": "Mô tả",
+      "tags": "Tag",
+      "visibility": "Hiển thị"
+    },
+    "placeholders": {
+      "optional": "Tùy chọn",
+      "descriptionExample": "Engineering KB"
+    },
+    "hints": {
+      "slugImmutable": "Slug không thể đổi sau khi tạo."
+    }
+  }
+}

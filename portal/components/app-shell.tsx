@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { SidebarBrand } from './sidebar-brand';
 import { SidebarNav } from './sidebar-nav';
 import { SidebarSecondaryNav } from './sidebar-secondary-nav';
@@ -13,7 +14,8 @@ interface AppShellProps {
 // header for a single consistent style. Icon budget: 5 total, all in SidebarNav.
 // Bottom pill (SidebarUserCard) absorbs identity actions + theme toggle so the
 // footer stays a single row per Option A mockup.
-export function AppShell({ children }: AppShellProps) {
+export async function AppShell({ children }: AppShellProps) {
+  const tSidebar = await getTranslations('sidebar');
   return (
     <div className="flex min-h-screen bg-background">
       {/* aside: 3-zone flex column — top fixed, middle scrollable, bottom fixed */}
@@ -31,7 +33,7 @@ export function AppShell({ children }: AppShellProps) {
               href="/search"
               className="flex items-center justify-between rounded-md border border-sidebar-border/70 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-sidebar-border hover:text-foreground"
             >
-              <span className="truncate">Search or jump to…</span>
+              <span className="truncate">{tSidebar('searchOrJump')}</span>
               <kbd className="ml-2 rounded border border-sidebar-border bg-sidebar px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
                 ⌘K
               </kbd>

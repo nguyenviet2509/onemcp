@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ApiError } from '../../../lib/api-client';
 import { Artifact, listArtifacts } from '../../../lib/api/artifacts';
 import { Badge } from '../../../components/ui/badge';
@@ -16,6 +17,8 @@ export default function ArtifactReviewQueuePage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
+  const t = useTranslations('pages.artifactsReview');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     setLoading(true);
@@ -31,15 +34,15 @@ export default function ArtifactReviewQueuePage() {
     <main className="mx-auto max-w-4xl px-6 py-6">
       <div className="text-sm">
         <Link href="/artifacts" className="text-primary hover:underline">
-          ← All artifacts
+          {t('backToAll')}
         </Link>
       </div>
-      <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">Review queue</h1>
+      <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Artifacts đang chờ approve. Click để xem chi tiết + approve/reject.
+        {t('description')}
       </p>
 
-      {loading && <p className="mt-6 text-muted-foreground">Loading...</p>}
+      {loading && <p className="mt-6 text-muted-foreground">{tCommon('loading')}</p>}
       {error && (
         <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
@@ -47,7 +50,7 @@ export default function ArtifactReviewQueuePage() {
       )}
       {!loading && !error && items.length === 0 && (
         <div className="mt-8 rounded border border-border p-8 text-center text-muted-foreground">
-          Queue trống. Không có pending artifact nào.
+          {t('emptyQueue')}
         </div>
       )}
 
@@ -77,7 +80,7 @@ export default function ArtifactReviewQueuePage() {
                 href={`/artifacts/${a.id}`}
                 className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Review
+                {t('review')}
               </Link>
             </div>
           </li>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ApiError } from '../../lib/api-client';
 import { listSkills, Skill } from '../../lib/api/skills';
 import { Pagination, paginateItems } from '../../components/pagination';
@@ -15,6 +16,7 @@ export default function SkillsListPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<20 | 10 | 50 | 100>(20);
+  const t = useTranslations('pages.skills');
 
   useEffect(() => {
     setLoading(true);
@@ -48,8 +50,8 @@ export default function SkillsListPage() {
     <main className="mx-auto max-w-5xl px-8 py-6">
       {/* Header row */}
       <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Skills</h1>
-        <span className="text-xs text-muted-foreground">{items.length} skill(s)</span>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
+        <span className="text-xs text-muted-foreground">{t('count', { count: items.length })}</span>
       </div>
 
       {/* Search + tag filter */}
@@ -57,7 +59,7 @@ export default function SkillsListPage() {
         <input
           value={query}
           onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-          placeholder="Search name or description..."
+          placeholder={t('searchPlaceholder')}
           className="h-8 flex-1 rounded-md border border-border bg-transparent px-2.5 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/15 focus:border-foreground"
         />
         {allTags.length > 0 && (
@@ -71,7 +73,7 @@ export default function SkillsListPage() {
                   : 'border-border bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
-              all
+              {t('filterAll')}
             </button>
             {allTags.map((t) => (
               <button
@@ -100,9 +102,9 @@ export default function SkillsListPage() {
 
       {!loading && !error && filtered.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-sm font-medium text-foreground">No matching skills</p>
+          <p className="text-sm font-medium text-foreground">{t('noMatch')}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Skills sync automatically from GitLab via webhook.
+            {t('syncNote')}
           </p>
         </div>
       )}

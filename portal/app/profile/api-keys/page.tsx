@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { PageShell } from '@/components/page-shell';
 import { EmptyState } from '@/components/empty-state';
 import { ApiKeyCreateDialog } from '@/components/api-key-create-dialog';
@@ -37,6 +38,8 @@ export default function ApiKeysPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<ApiKey | null>(null);
   const [revoking, setRevoking] = useState(false);
+  const t = useTranslations('pages.apiKeys');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     listMyKeys()
@@ -57,23 +60,23 @@ export default function ApiKeysPage() {
     try {
       await revokeKey(revokeTarget.id);
       setKeys((prev) => prev.filter((k) => k.id !== revokeTarget.id));
-      toast.success('API key revoked');
+      toast.success(t('toasts.revoked'));
       setRevokeTarget(null);
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Revoke failed');
+      toast.error(e instanceof ApiError ? e.message : t('toasts.revokeFailed'));
     } finally {
       setRevoking(false);
     }
   }
 
   const actions = (
-    <Button onClick={() => setCreateOpen(true)}>Generate key</Button>
+    <Button onClick={() => setCreateOpen(true)}>{t('generate')}</Button>
   );
 
   return (
     <PageShell
-      title="API Keys"
-      breadcrumb={[{ label: 'Profile', href: '/profile' }, { label: 'API Keys' }]}
+      title={t('title')}
+      breadcrumb={[{ label: t('breadcrumbProfile'), href: '/profile' }, { label: t('title') }]}
       actions={actions}
     >
       {error && (
@@ -90,9 +93,9 @@ export default function ApiKeysPage() {
 
       {!loading && !error && keys.length === 0 && (
         <EmptyState
-          title="No API keys yet"
-          description="Generate a key to authenticate API requests programmatically."
-          cta={<Button onClick={() => setCreateOpen(true)}>Generate key</Button>}
+          title={t('empty')}
+          description={t('emptyDescription')}
+          cta={<Button onClick={() => setCreateOpen(true)}>{t('generate')}</Button>}
         />
       )}
 
@@ -101,12 +104,12 @@ export default function ApiKeysPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Label</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Prefix</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Last used</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Expires</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.label')}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.prefix')}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.lastUsed')}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.expires')}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('columns.status')}</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">{tCommon('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -126,7 +129,7 @@ export default function ApiKeysPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={expired ? 'destructive' : 'secondary'}>
-                        {expired ? 'expired' : 'active'}
+                        {expired ? t('statusExpired') : t('statusActive')}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -135,7 +138,7 @@ export default function ApiKeysPage() {
                         size="sm"
                         onClick={() => setRevokeTarget(k)}
                       >
-                        Revoke
+                        {tCommon('revoke')}
                       </Button>
                     </td>
                   </tr>
@@ -156,18 +159,17 @@ export default function ApiKeysPage() {
       <Dialog open={!!revokeTarget} onOpenChange={(open) => { if (!open) setRevokeTarget(null); }}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Revoke API key?</DialogTitle>
+            <DialogTitle>{t('confirmRevoke')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Key <span className="font-medium">"{revokeTarget?.label}"</span> will be permanently
-            revoked. Any service using it will lose access immediately.
+            {t('revokeWarning', { label: revokeTarget?.label ?? '' })}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRevokeTarget(null)} disabled={revoking}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleRevoke} disabled={revoking}>
-              {revoking ? 'Revoking…' : 'Revoke'}
+              {revoking ? tCommon('loading') : tCommon('revoke')}
             </Button>
           </DialogFooter>
         </DialogContent>

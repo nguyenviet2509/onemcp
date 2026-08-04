@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useTheme } from 'next-themes';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ApiError, apiFetch } from '@/lib/api-client';
 import { clearIdentity, getIdentity, setIdentity } from '@/lib/identity';
+import { setLocaleCookie } from '@/lib/i18n-actions';
+import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n/config';
 
 // Bottom-of-sidebar user pill: avatar + name + subtitle + ⋯ dropdown.
 // Dropdown consolidates identity actions AND theme toggle (moved out of the
@@ -23,6 +26,10 @@ export function SidebarUserCard() {
   const [verifying, setVerifying] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const locale = useLocale() as Locale;
+  const t = useTranslations('sidebar');
+  const tCommon = useTranslations('common');
+  const [, startLocaleTransition] = useTransition();
 
   useEffect(() => {
     setCurrent(getIdentity());
@@ -87,13 +94,13 @@ export function SidebarUserCard() {
             disabled={verifying}
             className="rounded-md border border-foreground bg-foreground px-2 py-0.5 text-xs text-background transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {verifying ? 'Checking…' : 'Save'}
+            {verifying ? tCommon('loading') : tCommon('save')}
           </button>
           <button
             onClick={() => { setEditing(false); setError(null); }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
         </div>
         {error && <p className="text-xs leading-tight text-destructive">{error}</p>}
@@ -102,8 +109,8 @@ export function SidebarUserCard() {
   }
 
   const initials = current ? current.slice(0, 2).toUpperCase() : '··';
-  const name = current ?? 'Sign in';
-  const subtitle = current ? 'Signed in' : 'Not signed in';
+  const name = current ?? tCommon('signIn');
+  const subtitle = current ? tCommon('signedIn') : tCommon('notSignedIn');
   const currentTheme = (mounted && theme) || 'system';
 
   return (
@@ -129,42 +136,57 @@ export function SidebarUserCard() {
         <DropdownMenuContent align="end" side="top" sideOffset={6} className="w-52">
           {/* Plain div label — base-ui GroupLabel throws if not inside Group */}
           <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Identity
+            {t('identity')}
           </div>
           {current ? (
             <>
               <DropdownMenuItem
                 render={<button type="button" onClick={() => { setDraft(current); setEditing(true); }} />}
               >
-                Change identity…
+                {t('changeIdentity')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
                 render={<button type="button" onClick={onClear} />}
               >
-                Clear identity
+                {t('clearIdentity')}
               </DropdownMenuItem>
             </>
           ) : (
             <DropdownMenuItem
               render={<button type="button" onClick={() => { setDraft(''); setEditing(true); }} />}
             >
-              Sign in…
+              {tCommon('signIn')}
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
           <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Theme
+            {t('theme')}
           </div>
-          {/* render prop → real <button> ensures native onClick fires reliably */}
-          {(['light', 'dark', 'system'] as const).map((t) => (
+          {(['light', 'dark', 'system'] as const).map((th) => (
             <DropdownMenuItem
-              key={t}
+              key={th}
               className="flex items-center justify-between"
-              render={<button type="button" onClick={() => setTheme(t)} />}
+              render={<button type="button" onClick={() => setTheme(th)} />}
             >
-              <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
-              {mounted && currentTheme === t && (
+              <span>{t(`themes.${th}`)}</span>
+              {mounted && currentTheme === th && (
+                <span className="text-xs text-muted-foreground" aria-hidden>✓</span>
+              )}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {t('language')}
+          </div>
+          {LOCALES.map((lc) => (
+            <DropdownMenuItem
+              key={lc}
+              className="flex items-center justify-between"
+              render={<button type="button" onClick={() => startLocaleTransition(() => setLocaleCookie(lc))} />}
+            >
+              <span>{LOCALE_LABELS[lc]}</span>
+              {locale === lc && (
                 <span className="text-xs text-muted-foreground" aria-hidden>✓</span>
               )}
             </DropdownMenuItem>

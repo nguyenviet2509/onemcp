@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -114,6 +115,7 @@ function FilterChips({
 function SearchPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('pages.search');
 
   const [q, setQ] = useState(searchParams.get('q') ?? '');
   const rawMode = searchParams.get('mode');
@@ -199,7 +201,7 @@ function SearchPageInner() {
     <main className="max-w-3xl mx-auto px-6 py-10">
       {/* Center header */}
       <div className="text-center mb-8">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground mb-1">Search OneMCP</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground mb-1">{t('title')}</h1>
         <p className="text-sm text-muted-foreground">
           Hybrid semantic + keyword search across {totalLabel}
         </p>

@@ -1,0 +1,150 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "deleting": "Deleting…",
+    "confirm": "Confirm",
+    "search": "Search",
+    "create": "Create",
+    "update": "Update",
+    "revoke": "Revoke",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "required": "Required",
+    "optional": "Optional",
+    "never": "Never",
+    "empty": "—",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "notSignedIn": "Not signed in",
+    "signedIn": "Signed in"
+  },
+  "sidebar": {
+    "identity": "Identity",
+    "theme": "Theme",
+    "language": "Language",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "changeIdentity": "Change identity…",
+    "clearIdentity": "Clear identity",
+    "searchOrJump": "Search or jump to…"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "artifacts": "Artifacts",
+    "skills": "Skills",
+    "spaces": "Spaces",
+    "search": "Search",
+    "review": "Review",
+    "profile": "Profile",
+    "apiKeys": "API Keys",
+    "savedSearches": "Saved",
+    "settings": "Settings",
+    "onboarding": "Onboarding"
+  },
+  "pages": {
+    "search": {
+      "title": "Search OneMCP",
+      "subtitle": "Hybrid semantic + keyword search",
+      "placeholder": "Search by name, description, content…"
+    },
+    "artifacts": {
+      "title": "Artifacts",
+      "new": "New",
+      "empty": "No artifacts yet",
+      "confirmDelete": "Delete artifact \"{title}\"? Cannot undo."
+    },
+    "artifactsReview": {
+      "title": "Review queue",
+      "description": "Artifacts pending approval. Click to view details + approve/reject.",
+      "emptyQueue": "Queue is empty. No pending artifacts.",
+      "review": "Review",
+      "backToAll": "← All artifacts"
+    },
+    "skills": {
+      "title": "Skills",
+      "count": "{count} skill(s)",
+      "searchPlaceholder": "Search name or description...",
+      "filterAll": "all",
+      "noMatch": "No matching skills",
+      "syncNote": "Skills sync automatically from GitLab via webhook."
+    },
+    "spaces": {
+      "title": "Spaces",
+      "newSpace": "New space",
+      "empty": "No spaces yet",
+      "emptyDescription": "Create a space to organise artifacts by department or topic.",
+      "editTitle": "Edit space",
+      "columns": {
+        "name": "Name",
+        "slug": "Slug",
+        "visibility": "Visibility"
+      },
+      "confirmDelete": "Delete space?",
+      "deleteWarning": "Space \"{name}\" and all its settings will be permanently deleted. Artifacts in this space are NOT deleted.",
+      "visibilityLabels": {
+        "space": "space (owner + explicit members)",
+        "dept": "dept (all members of a department)",
+        "cross_dept": "cross-dept (all authenticated users)"
+      },
+      "toasts": {
+        "created": "Space created",
+        "deleted": "Space deleted",
+        "updated": "Space updated",
+        "createFailed": "Create failed",
+        "deleteFailed": "Delete failed",
+        "updateFailed": "Update failed"
+      }
+    },
+    "apiKeys": {
+      "title": "API Keys",
+      "breadcrumbProfile": "Profile",
+      "generate": "Generate key",
+      "empty": "No API keys yet",
+      "emptyDescription": "Generate a key to authenticate API requests programmatically.",
+      "columns": {
+        "label": "Label",
+        "prefix": "Prefix",
+        "lastUsed": "Last used",
+        "expires": "Expires",
+        "status": "Status"
+      },
+      "statusActive": "active",
+      "statusExpired": "expired",
+      "confirmRevoke": "Revoke API key?",
+      "revokeWarning": "Key \"{label}\" will be permanently revoked. Any service using it will lose access immediately.",
+      "toasts": {
+        "revoked": "API key revoked",
+        "revokeFailed": "Revoke failed"
+      }
+    }
+  },
+  "form": {
+    "labels": {
+      "name": "Name",
+      "slug": "Slug",
+      "description": "Description",
+      "tags": "Tags",
+      "visibility": "Visibility"
+    },
+    "placeholders": {
+      "optional": "Optional",
+      "descriptionExample": "Engineering KB"
+    },
+    "hints": {
+      "slugImmutable": "Slug cannot be changed after creation."
+    }
+  }
+}

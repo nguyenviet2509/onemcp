@@ -2,31 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Key, LayoutGrid, Rocket, User } from 'lucide-react';
 import type React from 'react';
 
 // Icon budget extended for Account section — matches primary nav size-3.5 / stroke-width 1.75.
 const SECONDARY_ITEMS: Array<{
   href: string;
-  label: string;
+  key: 'profile' | 'apiKeys' | 'spaces' | 'onboarding';
   icon: React.ComponentType<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>;
 }> = [
-  { href: '/profile',          label: 'Profile',     icon: User },
-  { href: '/profile/api-keys', label: 'API keys',    icon: Key },
-  { href: '/spaces',           label: 'Spaces',      icon: LayoutGrid },
-  { href: '/onboarding',       label: 'Onboarding',  icon: Rocket },
+  { href: '/profile',          key: 'profile',    icon: User },
+  { href: '/profile/api-keys', key: 'apiKeys',    icon: Key },
+  { href: '/spaces',           key: 'spaces',     icon: LayoutGrid },
+  { href: '/onboarding',       key: 'onboarding', icon: Rocket },
 ];
 
 export function SidebarSecondaryNav() {
   const pathname = usePathname();
+  const t = useTranslations('nav');
 
   return (
     <nav aria-label="Secondary navigation" className="px-2 pb-2">
       <p className="mb-1 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Account
+        {t('settings')}
       </p>
       <ul className="space-y-px">
-        {SECONDARY_ITEMS.map(({ href, label, icon: Icon }) => {
+        {SECONDARY_ITEMS.map(({ href, key, icon: Icon }) => {
+          const label = t(key);
           const isActive = pathname.startsWith(href);
           return (
             <li key={href}>
