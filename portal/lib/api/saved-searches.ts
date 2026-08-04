@@ -2,9 +2,13 @@ import { apiFetch } from '../api-client';
 import type { SearchHit } from './search';
 
 // Saved search — user-owned persisted query + filter set.
+// Shape mirrors backend SavedSearch entity: `mode` lives at top-level, and the
+// filters bag holds spaceId/templateKey/tags/dept only. `lastRunAt` is not
+// tracked server-side.
+export type SavedSearchMode = 'hybrid' | 'fts' | 'semantic';
+
 export interface SavedSearchFilters {
-  mode?: 'hybrid' | 'vector' | 'fts';
-  space?: string;
+  spaceId?: string;
   templateKey?: string;
   tags?: string[];
   dept?: string;
@@ -15,14 +19,15 @@ export interface SavedSearch {
   name: string;
   query: string;
   filters: SavedSearchFilters;
+  mode: SavedSearchMode;
   createdAt: string;
-  lastRunAt: string | null;
 }
 
 export interface CreateSavedSearchPayload {
   name: string;
   query: string;
   filters?: SavedSearchFilters;
+  mode?: SavedSearchMode;
 }
 
 export function listMySaved() {

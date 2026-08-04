@@ -17,8 +17,8 @@ import { ApiError } from '@/lib/api-client';
 function savedToUrl(s: SavedSearch): string {
   const p = new URLSearchParams();
   p.set('q', s.query);
-  if (s.filters.mode) p.set('mode', s.filters.mode);
-  if (s.filters.space) p.set('space', s.filters.space);
+  if (s.mode) p.set('mode', s.mode);
+  if (s.filters.spaceId) p.set('space', s.filters.spaceId);
   if (s.filters.templateKey) p.set('template_key', s.filters.templateKey);
   if (s.filters.tags?.length) p.set('tags', s.filters.tags.join(','));
   if (s.filters.dept) p.set('dept', s.filters.dept);
@@ -77,9 +77,9 @@ export function SavedSearchesList() {
                 title={s.query}
               >
                 <span className="truncate">{s.name}</span>
-                {s.filters.mode && (
+                {s.mode && (
                   <Badge variant="outline" className="shrink-0 font-mono text-[10px] px-1 py-0">
-                    {s.filters.mode}
+                    {s.mode}
                   </Badge>
                 )}
               </button>

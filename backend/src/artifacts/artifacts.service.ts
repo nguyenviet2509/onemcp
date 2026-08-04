@@ -158,7 +158,7 @@ export class ArtifactsService {
           status: 'pending',
         }),
       );
-      this.metrics.artifactSubmits.inc({ type: dto.type, result: 'ok' });
+      this.metrics.artifactSubmits.inc({ type: effectiveType, result: 'ok' });
       return { artifact, version };
     });
   }

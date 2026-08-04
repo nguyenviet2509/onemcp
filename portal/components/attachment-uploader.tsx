@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
   Attachment,
   deleteAttachment,
@@ -40,8 +41,11 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
     try {
       const att = await uploadAttachment(artifactId, file);
       setItems((prev) => [att, ...prev]);
+      toast.success(`Uploaded ${att.filename}`);
     } catch (err) {
-      setError(String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -53,8 +57,11 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
     try {
       await deleteAttachment(id);
       setItems((prev) => prev.filter((a) => a.id !== id));
+      toast.success('Attachment deleted');
     } catch (e) {
-      setError(String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      toast.error(msg);
     }
   }
 

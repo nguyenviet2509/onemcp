@@ -15,8 +15,9 @@ export interface SearchParams {
   q: string;
   kind?: 'all' | 'skill' | 'artifact';
   limit?: number;
-  // Phase 2 hybrid search params
-  mode?: 'hybrid' | 'vector' | 'fts';
+  // Phase 2 hybrid search params. Backend accepts hybrid | fts | semantic
+  // (semantic replaces the legacy "vector" label).
+  mode?: 'hybrid' | 'semantic' | 'fts';
   space?: string;
   templateKey?: string;
   tags?: string[];

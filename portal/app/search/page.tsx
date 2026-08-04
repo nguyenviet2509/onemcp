@@ -18,7 +18,7 @@ import { createSaved } from '@/lib/api/saved-searches';
 import { listSpaces } from '@/lib/api/spaces';
 import { ApiError } from '@/lib/api-client';
 
-type SearchMode = 'hybrid' | 'fts' | 'vector';
+type SearchMode = 'hybrid' | 'fts' | 'semantic';
 
 // Strip unsafe tags — keep <b> <i> <mark> for snippet highlighting
 function sanitizeSnippet(s: string): string {
@@ -118,7 +118,7 @@ function SearchPageInner() {
   const [q, setQ] = useState(searchParams.get('q') ?? '');
   const rawMode = searchParams.get('mode');
   const [mode, setMode] = useState<SearchMode>(
-    rawMode === 'fts' || rawMode === 'vector' ? rawMode : 'hybrid'
+    rawMode === 'fts' || rawMode === 'semantic' ? rawMode : 'hybrid'
   );
   const [space, setSpace] = useState(searchParams.get('space') ?? '');
   const [spaceCount, setSpaceCount] = useState(0);
@@ -176,7 +176,12 @@ function SearchPageInner() {
     if (!saveName.trim() || !q.trim()) return;
     setSaving(true);
     try {
-      await createSaved({ name: saveName.trim(), query: q.trim(), filters: { mode, space: space || undefined } });
+      await createSaved({
+        name: saveName.trim(),
+        query: q.trim(),
+        mode,
+        filters: { spaceId: space || undefined },
+      });
       toast.success('Search saved');
       setSaveOpen(false);
       setSaveName('');
@@ -228,7 +233,7 @@ function SearchPageInner() {
 
       {/* Mode selector — compact text buttons below filter row */}
       <div className="flex items-center gap-1 mt-3 text-xs">
-        {(['hybrid', 'fts', 'vector'] as SearchMode[]).map((m) => (
+        {(['hybrid', 'fts', 'semantic'] as SearchMode[]).map((m) => (
           <button
             key={m}
             type="button"

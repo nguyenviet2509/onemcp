@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { buttonVariants } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -47,8 +48,9 @@ function ArtifactRow({
     try {
       await deleteArtifact(artifact.id);
       onDeleted(artifact.id);
+      toast.success(`Deleted "${artifact.title}"`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Delete failed');
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
   }
   return (
