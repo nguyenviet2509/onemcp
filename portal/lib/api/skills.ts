@@ -6,6 +6,7 @@ export interface Skill {
   departmentId: number;
   repoUrl: string;
   currentVersionId: number | null;
+  ownerId: number | null;
   status: 'active' | 'deprecated' | 'archived';
   description: string | null;
   tags: string[];

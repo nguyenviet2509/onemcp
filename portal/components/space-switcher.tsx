@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { toast } from 'sonner';
 // ChevronDown icon removed (icon budget: 0 outside sidebar-nav). Using text indicator.
 import { listSpaces, type Space } from '../lib/api/spaces';
 import { useCurrentSpace } from '../lib/space-context';
@@ -26,7 +27,10 @@ export function SpaceSwitcher() {
   useEffect(() => {
     listSpaces()
       .then(setSpaces)
-      .catch(() => setSpaces([]));
+      .catch(() => {
+        setSpaces([]);
+        toast.error('Failed to load spaces');
+      });
   }, []);
 
   function select(next: Space | null) {

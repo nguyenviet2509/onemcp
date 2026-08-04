@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
 import { MetricsService } from '../metrics/metrics.service';
 import { buildArtifactEmbedText } from '../embeddings/artifact-embed-text.util';
@@ -116,8 +116,9 @@ export class ArtifactsService {
       throw new ForbiddenException('Không có quyền submit artifact');
     }
 
+    // Exclude archived — archived artifacts should not block re-using the slug.
     const dup = await this.artifacts.findOne({
-      where: { departmentId: user.departmentId, slug: dto.slug },
+      where: { departmentId: user.departmentId, slug: dto.slug, status: Not('archived') },
     });
     if (dup) {
       this.metrics.artifactSubmits.inc({ type: effectiveType, result: 'duplicate' });

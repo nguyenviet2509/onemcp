@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 import { AttachmentUploader } from '../../../components/attachment-uploader';
 import { MarkdownView } from '../../../components/markdown-view';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
@@ -24,7 +25,10 @@ function HeaderActions({ id, title }: { id: string; title: string }) {
   const [starred, setStarred] = useState(false);
 
   function copyLink() {
-    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => toast.success('Link copied'))
+      .catch(() => toast.error('Copy failed — clipboard unavailable'));
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 // Icons removed (icon budget: 0 outside sidebar-nav).
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -79,8 +80,10 @@ export function ArtifactFilterPanel({ onChange }: Props) {
   const mounted = useRef(false);
 
   useEffect(() => {
-    listSpaces().then(setSpaces).catch(() => {});
-    listTemplates().then(setTemplates).catch(() => {});
+    // Surface fetch failures so an empty filter panel isn't confused with
+    // "no spaces / templates exist".
+    listSpaces().then(setSpaces).catch(() => toast.error('Failed to load spaces'));
+    listTemplates().then(setTemplates).catch(() => toast.error('Failed to load templates'));
   }, []);
 
   // Sync space from URL param on change — enables sidebar SpaceSwitcher to
