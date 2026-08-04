@@ -101,7 +101,7 @@ export function IdentifyAsDropdown() {
           )}
         </div>
         {error && (
-          <p className="text-[10px] text-destructive leading-tight">{error}</p>
+          <p className="text-xs text-destructive leading-tight">{error}</p>
         )}
       </div>
     );
@@ -120,14 +120,14 @@ export function IdentifyAsDropdown() {
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={() => { setDraft(current); setEditing(true); }}
-            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             change
           </button>
           <span className="text-muted-foreground/40">·</span>
           <button
             onClick={clear}
-            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors"
           >
             clear
           </button>

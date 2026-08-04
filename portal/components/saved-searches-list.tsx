@@ -78,7 +78,7 @@ export function SavedSearchesList() {
               >
                 <span className="truncate">{s.name}</span>
                 {s.mode && (
-                  <Badge variant="outline" className="shrink-0 font-mono text-[10px] px-1 py-0">
+                  <Badge variant="outline" className="shrink-0 font-mono px-1 py-0">
                     {s.mode}
                   </Badge>
                 )}
@@ -87,7 +87,7 @@ export function SavedSearchesList() {
                 type="button"
                 aria-label={`Delete "${s.name}"`}
                 onClick={() => setDeleteTarget(s)}
-                className="hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:block"
+                className="hidden shrink-0 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:block"
               >
                 del
               </button>

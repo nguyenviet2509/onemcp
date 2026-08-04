@@ -85,18 +85,18 @@ export function SidebarUserCard() {
           <button
             onClick={save}
             disabled={verifying}
-            className="rounded-md border border-foreground bg-foreground px-2 py-0.5 text-[11px] text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="rounded-md border border-foreground bg-foreground px-2 py-0.5 text-xs text-background transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {verifying ? 'Checking…' : 'Save'}
           </button>
           <button
             onClick={() => { setEditing(false); setError(null); }}
-            className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             Cancel
           </button>
         </div>
-        {error && <p className="text-[10px] leading-tight text-destructive">{error}</p>}
+        {error && <p className="text-xs leading-tight text-destructive">{error}</p>}
       </div>
     );
   }
@@ -115,8 +115,8 @@ export function SidebarUserCard() {
         {initials}
       </span>
       <div className="min-w-0 flex-1 leading-tight">
-        <div className="truncate text-[12px] font-medium text-foreground">{name}</div>
-        <div className="truncate text-[11px] text-muted-foreground">{subtitle}</div>
+        <div className="truncate text-xs font-medium text-foreground">{name}</div>
+        <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger

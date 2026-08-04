@@ -29,10 +29,10 @@ export function AppShell({ children }: AppShellProps) {
           <div className="px-2 pt-2">
             <Link
               href="/search"
-              className="flex items-center justify-between rounded-md border border-sidebar-border/70 bg-background/30 px-2.5 py-1.5 text-[12px] text-muted-foreground transition-colors hover:border-sidebar-border hover:text-foreground"
+              className="flex items-center justify-between rounded-md border border-sidebar-border/70 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-sidebar-border hover:text-foreground"
             >
               <span className="truncate">Search or jump to…</span>
-              <kbd className="ml-2 rounded border border-sidebar-border bg-sidebar px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+              <kbd className="ml-2 rounded border border-sidebar-border bg-sidebar px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
                 ⌘K
               </kbd>
             </Link>

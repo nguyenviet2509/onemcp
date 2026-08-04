@@ -113,7 +113,7 @@ export default function SkillDetailPage({ params }: Props) {
 
           {/* Version history */}
           <section className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Version history
             </h2>
             {versions.length === 0 ? (
@@ -123,11 +123,11 @@ export default function SkillDetailPage({ params }: Props) {
                 <table className="w-full text-sm">
                   <thead className="border-b border-border bg-muted/30">
                     <tr>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Version</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Commit</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Status</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Approved at</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Actions</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Version</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Commit</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Status</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Approved at</th>
+                      <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">

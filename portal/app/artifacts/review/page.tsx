@@ -34,7 +34,7 @@ export default function ArtifactReviewQueuePage() {
           ← All artifacts
         </Link>
       </div>
-      <h1 className="mt-4 text-2xl font-bold">Review queue</h1>
+      <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">Review queue</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Artifacts đang chờ approve. Click để xem chi tiết + approve/reject.
       </p>
@@ -64,7 +64,7 @@ export default function ArtifactReviewQueuePage() {
                   <Badge variant={statusVariant(a.status)}>{a.status}</Badge>
                   <Link
                     href={`/artifacts/${a.id}`}
-                    className="text-base font-semibold text-primary hover:underline"
+                    className="text-sm font-medium text-primary hover:underline"
                   >
                     {a.title}
                   </Link>

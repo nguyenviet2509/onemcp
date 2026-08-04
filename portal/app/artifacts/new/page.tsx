@@ -317,7 +317,7 @@ export default function NewArtifactPage() {
             {template && template.fields.filter((f) => f.type !== 'markdown').length > 0 && (
               <>
                 <Separator />
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {template.label} fields
                 </p>
                 {template.fields

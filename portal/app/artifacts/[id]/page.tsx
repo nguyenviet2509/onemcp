@@ -81,7 +81,7 @@ function DetailHeader({
       {/* Title row */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{artifact.title}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">{artifact.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <Badge variant={statusVariant(artifact.status)} className="text-xs">
               {artifact.status}

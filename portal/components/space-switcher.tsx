@@ -62,10 +62,10 @@ export function SpaceSwitcher() {
         <div className="min-w-0 flex-1">
           <span className="block truncate font-medium text-sidebar-foreground">{label}</span>
           {space.slug && (
-            <span className="block font-mono text-[10px] text-muted-foreground">{space.slug}</span>
+            <span className="block font-mono text-xs text-muted-foreground">{space.slug}</span>
           )}
         </div>
-        <span className="shrink-0 text-[10px] text-muted-foreground" aria-hidden>▼</span>
+        <span className="shrink-0 text-xs text-muted-foreground" aria-hidden>▼</span>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" sideOffset={6} className="min-w-[200px]">

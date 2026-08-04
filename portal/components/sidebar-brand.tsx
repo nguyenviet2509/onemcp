@@ -19,7 +19,7 @@ export function SidebarBrand() {
         aria-label="OneMCP home"
       >
         <span className="block text-sm font-semibold text-sidebar-foreground">OneMCP</span>
-        <span className="block text-[11px] text-muted-foreground">{PORTAL_VERSION}</span>
+        <span className="block text-xs text-muted-foreground">{PORTAL_VERSION}</span>
       </Link>
     </div>
   );

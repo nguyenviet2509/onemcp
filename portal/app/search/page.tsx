@@ -199,7 +199,7 @@ function SearchPageInner() {
     <main className="max-w-3xl mx-auto px-6 py-10">
       {/* Center header */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight mb-1">Search OneMCP</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground mb-1">Search OneMCP</h1>
         <p className="text-sm text-muted-foreground">
           Hybrid semantic + keyword search across {totalLabel}
         </p>

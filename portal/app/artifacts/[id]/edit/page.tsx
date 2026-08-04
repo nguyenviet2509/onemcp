@@ -110,7 +110,7 @@ export default function EditArtifactPage({ params }: Props) {
           </p>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <label className="mb-1 block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               Tags (comma-separated)
             </label>
             <input

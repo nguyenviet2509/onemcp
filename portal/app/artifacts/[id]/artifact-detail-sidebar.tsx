@@ -41,7 +41,7 @@ function ActivityFeed({ artifactId }: { artifactId: string }) {
 
 // Right sidebar: TAGS + RELATED placeholder + ACTIVITY
 export function ArtifactDetailSidebar({ artifactId, tags }: Props) {
-  const labelCls = 'text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2';
+  const labelCls = 'text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2';
 
   return (
     <aside className="space-y-5 border-l border-border px-4 py-6">

@@ -62,7 +62,7 @@ export function SidebarNav() {
                 />
                 <span className="flex-1 truncate">{label}</span>
                 {showCount && pendingCount !== null && pendingCount > 0 && (
-                  <Badge variant="secondary" className="tabular-nums px-1.5 text-[10px] font-medium">
+                  <Badge variant="secondary" className="tabular-nums px-1.5">
                     {pendingCount}
                   </Badge>
                 )}
