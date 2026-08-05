@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiError } from '../../../lib/api-client';
-import { Artifact, listArtifacts } from '../../../lib/api/artifacts';
-import { Badge } from '../../../components/ui/badge';
-import { statusVariant } from '../../../lib/status-pill-variants';
-import { Pagination, paginateItems } from '../../../components/pagination';
+import { ApiError } from '@/lib/api-client';
+import { Artifact, listArtifacts } from '@/lib/api/artifacts';
+import { Badge } from '@/components/ui/badge';
+import { statusVariant } from '@/lib/status-pill-variants';
+import { Pagination, paginateItems } from '@/components/pagination';
 
-// Queue cho maintainer — chỉ show pending artifacts.
-// Non-maintainer sẽ chỉ thấy own pending (backend RBAC).
+// Queue cho maintainer â€” chá»‰ show pending artifacts.
+// Non-maintainer sáº½ chá»‰ tháº¥y own pending (backend RBAC).
 export default function ArtifactReviewQueuePage() {
   const [items, setItems] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function ArtifactReviewQueuePage() {
                   </Link>
                 </div>
                 <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  {a.slug} · owner #{a.ownerId} · created {new Date(a.createdAt).toLocaleString()}
+                  {a.slug} Â· owner #{a.ownerId} Â· created {new Date(a.createdAt).toLocaleString()}
                 </p>
               </div>
               <Link

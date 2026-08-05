@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiError } from '../../lib/api-client';
-import { listSkills, Skill } from '../../lib/api/skills';
-import { Pagination, paginateItems } from '../../components/pagination';
+import { ApiError } from '@/lib/api-client';
+import { listSkills, Skill } from '@/lib/api/skills';
+import { Pagination, paginateItems } from '@/components/pagination';
 
 // Option A skills list: px-8 py-6, divide-y row layout, chip tags, no bespoke colors.
 export default function SkillsListPage() {
@@ -110,7 +110,7 @@ export default function SkillsListPage() {
         </div>
       )}
 
-      {/* Skill list — Option A: divide-y, no per-card shadow */}
+      {/* Skill list â€” Option A: divide-y, no per-card shadow */}
       {!loading && filtered.length > 0 && (
         <ul className="divide-y divide-border rounded-lg border border-border">
           {pagedFiltered.map((s) => (
@@ -138,7 +138,7 @@ export default function SkillsListPage() {
                   </div>
                 )}
               </div>
-              {/* Status chip — Option A style, no green/gray hardcoded */}
+              {/* Status chip â€” Option A style, no green/gray hardcoded */}
               <span
                 className={`shrink-0 rounded border px-2 py-px text-[11px] font-medium ${
                   s.status === 'active'

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiError } from '../../../lib/api-client';
+import { ApiError } from '@/lib/api-client';
 import {
   approveSkillVersion,
   getSkill,
@@ -11,7 +11,7 @@ import {
   rejectSkillVersion,
   Skill,
   SkillVersion,
-} from '../../../lib/api/skills';
+} from '@/lib/api/skills';
 
 interface Props {
   params: Promise<{ name: string }>;

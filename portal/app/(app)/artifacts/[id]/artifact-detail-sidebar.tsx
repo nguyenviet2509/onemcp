@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import { Badge } from '../../../components/ui/badge';
-import { ApiError } from '../../../lib/api-client';
-import { ArtifactVersion, listArtifactVersions } from '../../../lib/api/artifacts';
+import { Badge } from '@/components/ui/badge';
+import { ApiError } from '@/lib/api-client';
+import { ArtifactVersion, listArtifactVersions } from '@/lib/api/artifacts';
 
 interface Props {
   artifactId: string;
