@@ -10,6 +10,9 @@ export interface RequestUser {
   departmentId: number;
   status: 'active' | 'disabled';
   claimedFromHeader: true; // Đánh dấu v1 identity — non-cryptographic.
+  // Populated by CookieAuthMiddleware when AUTH_MODE=gitlab-sso.
+  // Enables audit log to record session_id without logging the cookie value.
+  sessionId?: string;
 }
 
 export interface AuthedRequest extends Request {
