@@ -125,7 +125,7 @@ services:
       EMBEDDING_URL: ${EMBEDDING_URL:-http://tei:80}
       # Plan 260727-0843 GitLab SSO (Phase 1). AUTH_MODE=trust-header default keeps v1.5 behavior.
       AUTH_MODE: ${AUTH_MODE:-trust-header}
-      GITLAB_SSO_BASE_URL: ${GITLAB_SSO_BASE_URL:-https://gitlab.inet.vn}
+      GITLAB_SSO_BASE_URL: ${GITLAB_SSO_BASE_URL:-https://gitlabs.inet.vn}
       GITLAB_OAUTH_APP_ID: ${GITLAB_OAUTH_APP_ID:-}
       GITLAB_OAUTH_APP_SECRET: ${GITLAB_OAUTH_APP_SECRET:-}
       GITLAB_OAUTH_REDIRECT_URI: ${GITLAB_OAUTH_REDIRECT_URI:-}
