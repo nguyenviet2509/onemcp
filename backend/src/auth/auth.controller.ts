@@ -181,6 +181,8 @@ export class AuthController {
     return {
       id: req.user.id,
       username: req.user.username,
+      email: req.user.email ?? null,
+      displayName: req.user.displayName ?? null,
       roles: req.user.roles,
       status: req.user.status,
     };
