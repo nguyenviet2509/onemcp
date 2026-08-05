@@ -26,16 +26,51 @@ Internal knowledge platform cho engineering department. Bug-trace KB reuse — d
 ### Ingress
 - **nginx:alpine** — TLS termination (self-signed lab), reverse proxy `/api/*` → backend, `/*` → portal. Resolver + variable-based proxy_pass (chống crash khi upstream chưa ready). SSE-friendly buffers cho MCP.
 
-### Access control (v1 — pre-auth)
+### Access control (v1 — pre-auth + Phase 3 SSO)
+
+#### Auth modes (toggled via `AUTH_MODE` env)
+
+**v1 Trust-header mode (`AUTH_MODE=trust-header`):**
 - **IP CIDR guard** (global) — allow chỉ `USER_ALLOW_CIDR`. `/health /ready /metrics` + `/api/webhooks/*` bypass.
 - **Trust header middleware** — `X-Onemcp-User` regex `^[a-z0-9._-]{2,32}$`. Upsert user by username. Privileged role claim (super-admin/dept-admin/maintainer) chỉ chấp nhận từ `ADMIN_ALLOW_CIDR` (C1/C3 mitigation).
-- **Throttler** — 60 req/min default, per-endpoint override (submit/review 20, sync 5, search 30).
+
+**Phase 3 GitLab SSO mode (`AUTH_MODE=gitlab-sso`):**
+- **Cookie-based session auth** — Redis-backed session store. OAuth2 callback from iNET GitLab.
+- **Middleware chain:**
+  ```
+  Request → nginx (TLS term) → Backend
+                                  ├─ IP whitelist (ACCESS_MODE=open → bypass)
+                                  ├─ API key middleware (X-Onemcp-Key: <key>) ─→ authenticated
+                                  ├─ Cookie auth middleware ─→ session validation vs Redis
+                                  ├─ Trust-header middleware (deprecated, fallback for bridge) ← ignore if session exists
+                                  └─ AuthGuard (401 if no req.user)
+  ```
+- **OAuth flow** (5-step):
+  1. User hits `/` unauthenticated → 302 redirect `/login`
+  2. Click "Sign in with iNET GitLab" → `GET /api/auth/gitlab` generate state nonce → 302 to GitLab
+  3. GitLab consent screen → user authorize → 302 callback `https://202.92.5.113/api/auth/gitlab/callback?code=...&state=...`
+  4. Backend verify state (Redis `oauth_state:{nonce}`) + exchange code → access token → `GET /user` GitLab API → user data
+  5. Backend create session (Redis key `session:{uuid}`, TTL 24h sliding) → 302 redirect `/`
+
+- **Session storage:**
+  - Redis key format: `session:<uuid>` = JSON `{ user_id, email, roles, ... }`
+  - TTL: 24 hours (sliding — resets on every authenticated request)
+  - Cleanup: Redis auto-expire; no manual cleanup needed (optional dedup on emergency rollback)
+
+- **Roles bootstrap** — env `MAINTAINER_USERNAMES`, `ADMIN_USERNAMES` (email-based). Roles NOT synced from GitLab groups (design decision Phase 3).
+
+#### Throttler
+- 60 req/min default, per-endpoint override (submit/review 20, sync 5, search 30).
 
 ### Backend (NestJS 10)
 
 ```
 backend/src/
-├── access/          # IP CIDR + trust user middleware + role assigner
+├── access/          # IP CIDR + trust user + cookie auth middleware + role assigner
+├── auth/            # OAuth2 + session (Phase 3)
+│   ├── gitlab.oauth.service.ts     # Token exchange, user sync
+│   ├── session.service.ts          # Redis session CRUD
+│   └── auth.controller.ts          # /api/auth/gitlab/{login,callback,me,logout}
 ├── audit/           # Audit interceptor + events
 ├── departments/     # Dept lookup + bootstrap
 ├── users/           # Upsert + roles + /me endpoint
