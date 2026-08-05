@@ -1,5 +1,4 @@
 import { apiFetch } from '../api-client';
-import { getIdentity } from '../identity';
 
 export interface Attachment {
   id: string;
@@ -17,17 +16,14 @@ export function listAttachments(artifactId: string) {
   return apiFetch<Attachment[]>(`/artifacts/${encodeURIComponent(artifactId)}/attachments`);
 }
 
-// Custom fetch — multipart cần bỏ Content-Type để browser tự set boundary.
+// Custom fetch — multipart needs no Content-Type so browser sets boundary automatically.
+// Cookie (onemcp_session) auto-attaches via credentials:'same-origin'.
 export async function uploadAttachment(artifactId: string, file: File): Promise<Attachment> {
   const form = new FormData();
   form.append('file', file);
-  const headers = new Headers();
-  const identity = getIdentity();
-  if (identity) headers.set('X-Onemcp-User', identity);
   const res = await fetch(`/api/artifacts/${encodeURIComponent(artifactId)}/attachments`, {
     method: 'POST',
     body: form,
-    headers,
     credentials: 'same-origin',
   });
   if (!res.ok) {

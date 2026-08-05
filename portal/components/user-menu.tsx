@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useCurrentUser } from '@/lib/auth';
 
-// UserMenu — nav bar right-side component for SSO mode (NEXT_PUBLIC_AUTH_MODE=gitlab-sso).
-// Shows authenticated user email + Logout dropdown item.
-// Replaces IdentifyAsDropdown when env flag is set.
+// UserMenu — sidebar bottom pill and nav bar user component.
+// Shows authenticated SSO user (displayName / email) + Logout dropdown item.
+// Always rendered — portal is SSO-only, no env gate.
 export function UserMenu() {
   const user = useCurrentUser();
 

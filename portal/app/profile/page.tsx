@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { apiFetch, ApiError } from '../../lib/api-client';
-import { getIdentity } from '../../lib/identity';
+import { useCurrentUser } from '../../lib/auth';
+import { useEffect, useState } from 'react';
 
 interface Me {
   id: number;
@@ -16,17 +16,17 @@ interface Me {
 }
 
 // Option A profile page: PageShell-style layout, tokens only — no hardcoded colors.
+// Identity sourced from SSO session (/api/auth/me) — no localStorage.
 export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [identity, setIdentityLocal] = useState<string | null>(null);
+  const currentUser = useCurrentUser();
   const t = useTranslations('pages.profile');
   const tCommon = useTranslations('common');
   const tNav = useTranslations('nav');
 
   useEffect(() => {
-    setIdentityLocal(getIdentity());
     apiFetch<Me>('/me')
       .then(setMe)
       .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
@@ -39,16 +39,11 @@ export default function ProfilePage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {t('subtitle')}
+          {currentUser
+            ? (currentUser.displayName ?? currentUser.username ?? currentUser.email ?? '')
+            : t('subtitle')}
         </p>
       </div>
-
-      {/* Identity warning */}
-      {!identity && (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-          {t('notIdentified')}
-        </div>
-      )}
 
       {loading && <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>}
 

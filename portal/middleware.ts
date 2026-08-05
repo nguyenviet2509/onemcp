@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Edge-safe middleware — no Node.js imports (no fs, crypto, etc.).
-// Only active when NEXT_PUBLIC_AUTH_MODE=gitlab-sso.
-// trust-header mode: pass-through, IdentifyAsDropdown handles identity client-side.
+// Auth is always GitLab SSO — cookie check runs on every request.
+// No AUTH_MODE gate: portal is SSO-only, legacy trust-header mode removed.
 
-const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE;
 const SESSION_COOKIE = 'onemcp_session';
 
 // Paths exempt from auth check — regex tested against pathname.
@@ -29,11 +28,6 @@ function sanitiseReturnTo(pathname: string): string {
 }
 
 export function middleware(req: NextRequest) {
-  // Only enforce when SSO mode is active.
-  if (AUTH_MODE !== 'gitlab-sso') {
-    return NextResponse.next();
-  }
-
   const { pathname } = req.nextUrl;
 
   // Exempt public paths and static assets.

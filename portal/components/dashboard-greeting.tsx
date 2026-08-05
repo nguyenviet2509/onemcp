@@ -1,30 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { buttonVariants } from '@/components/ui/button';
 import { useCurrentSpace } from '@/lib/space-context';
-import { getIdentity } from '@/lib/identity';
+import { useCurrentUser } from '@/lib/auth';
 
 // Option A dashboard greeting: text-xl tracking-tight, muted subtext, inverted primary CTA.
+// Name sourced from SSO session (/api/auth/me) — no localStorage identity.
 export function DashboardGreeting() {
   const { space } = useCurrentSpace();
-  const [identity, setIdentity] = useState<string | null>(null);
+  const currentUser = useCurrentUser();
   const t = useTranslations('pages.dashboard');
   const tSpaces = useTranslations('pages.spaces.switcher');
   const tArtifacts = useTranslations('pages.artifacts');
 
-  useEffect(() => {
-    setIdentity(getIdentity());
-  }, []);
+  // Prefer displayName, fall back to username, then email prefix.
+  const name = currentUser?.displayName
+    ?? currentUser?.username
+    ?? currentUser?.email?.split('@')[0]
+    ?? null;
 
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
       {/* Left: greeting + space context */}
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          {identity ? t('greeting', { name: identity }) : t('greetingAnon')}
+          {name ? t('greeting', { name }) : t('greetingAnon')}
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {space.slug ? (
