@@ -123,15 +123,6 @@ services:
       PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-true}
       # Phase 2B: TEI embedding service — internal docker network, not exposed to host.
       EMBEDDING_URL: ${EMBEDDING_URL:-http://tei:80}
-      # Plan 260727-0843 GitLab SSO (Phase 1). AUTH_MODE=trust-header default keeps v1.5 behavior.
-      AUTH_MODE: ${AUTH_MODE:-trust-header}
-      GITLAB_SSO_BASE_URL: ${GITLAB_SSO_BASE_URL:-https://gitlab.inet.vn}
-      GITLAB_OAUTH_APP_ID: ${GITLAB_OAUTH_APP_ID:-}
-      GITLAB_OAUTH_APP_SECRET: ${GITLAB_OAUTH_APP_SECRET:-}
-      GITLAB_OAUTH_REDIRECT_URI: ${GITLAB_OAUTH_REDIRECT_URI:-}
-      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-onemcp_session}
-      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-86400}
-      OAUTH_STATE_TTL_SECONDS: ${OAUTH_STATE_TTL_SECONDS:-300}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
