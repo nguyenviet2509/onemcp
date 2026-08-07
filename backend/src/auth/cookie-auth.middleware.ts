@@ -49,8 +49,6 @@ export class CookieAuthMiddleware implements NestMiddleware {
         status: 'active',
         claimedFromHeader: true, // required by RequestUser interface (v1 compat shape)
         sessionId: session.sessionId,
-        email: session.email,
-        displayName: session.displayName,
       };
 
       this.log.debug(`cookie_session_authed username=${session.username}`);

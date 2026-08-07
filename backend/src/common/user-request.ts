@@ -13,9 +13,6 @@ export interface RequestUser {
   // Populated by CookieAuthMiddleware when AUTH_MODE=gitlab-sso.
   // Enables audit log to record session_id without logging the cookie value.
   sessionId?: string;
-  // SSO-populated (null in trust-header mode). Portal consumes via /api/auth/me.
-  email?: string | null;
-  displayName?: string | null;
 }
 
 export interface AuthedRequest extends Request {

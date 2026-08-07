@@ -5,10 +5,6 @@ import { SidebarBrand } from './sidebar-brand';
 import { SidebarNav } from './sidebar-nav';
 import { SidebarSecondaryNav } from './sidebar-secondary-nav';
 import { SidebarUserCard } from './sidebar-user-card';
-import { AuthChip } from './auth-chip';
-
-// Auth mode read at server render time — controls sidebar bottom pill.
-const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE;
 
 interface AppShellProps {
   children: ReactNode;
@@ -59,11 +55,9 @@ export async function AppShell({ children }: AppShellProps) {
           </div>
         </div>
 
-        {/* Bottom zone — always visible user pill.
-            SSO mode: UserMenu (email + logout).
-            trust-header (legacy): SidebarUserCard (identity + theme + locale). */}
+        {/* Bottom zone — always visible user pill */}
         <div className="shrink-0">
-          {AUTH_MODE === 'gitlab-sso' ? <AuthChip /> : <SidebarUserCard />}
+          <SidebarUserCard />
         </div>
       </aside>
 
