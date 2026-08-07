@@ -9,17 +9,13 @@ import { normalizeIp } from './cidr-parser';
 // V1 identity: đọc X-Onemcp-User header → upsert user → attach req.user.
 // Post-pivot 2026-07-27: BỎ CIDR check cho privileged role claim.
 // Roles cấp thuần theo env `ADMIN_USERNAMES` / `MAINTAINER_USERNAMES` username match.
-//
-// AUTH_MODE=gitlab-sso: trust-header is bridge fallback only (OpenWebUI → API key in Phase 3).
-// In SSO mode, missing header falls through (next()) instead of 400 — AuthGuard enforces 401.
-// In trust-header mode (legacy): missing header still throws 400 (unchanged v1 behavior).
+// Sẽ được thay hoàn toàn bằng SSO cookie auth ở plan 260727-0843.
 const USERNAME_RE = /^[a-z0-9._-]{2,32}$/;
 
 @Injectable()
 export class TrustUserMiddleware implements NestMiddleware {
   private readonly log = new Logger(TrustUserMiddleware.name);
   private readonly headerName: string;
-  private readonly authMode: string;
 
   constructor(
     private readonly config: ConfigService,
@@ -27,7 +23,6 @@ export class TrustUserMiddleware implements NestMiddleware {
     private readonly roles: RoleAssignerService,
   ) {
     this.headerName = (this.config.get<string>('TRUST_USER_HEADER') || 'X-Onemcp-User').toLowerCase();
-    this.authMode = this.config.get<string>('AUTH_MODE', 'trust-header');
   }
 
   async use(req: AuthedRequest, _res: Response, next: NextFunction): Promise<void> {
@@ -41,13 +36,8 @@ export class TrustUserMiddleware implements NestMiddleware {
       next();
       return;
     }
-    // Auth routes are public — bypass identity requirement.
-    if (path.startsWith('/api/auth/')) {
-      next();
-      return;
-    }
 
-    // If a preceding middleware (CookieAuth or ApiKey) already authenticated, skip.
+    // If ApiKeyMiddleware already authenticated this request, skip trust-header processing.
     if (req.user) {
       next();
       return;
@@ -56,13 +46,6 @@ export class TrustUserMiddleware implements NestMiddleware {
     const raw = req.headers[this.headerName];
     const claim = Array.isArray(raw) ? raw[0] : raw;
     if (!claim) {
-      if (this.authMode === 'gitlab-sso') {
-        // SSO mode: no header is normal for browser requests (cookie path handles those).
-        // Fall through — AuthGuard will enforce 401 if req.user still unset.
-        next();
-        return;
-      }
-      // Legacy trust-header mode: header required (v1 unchanged behavior).
       throw new BadRequestException(`Missing identity header ${this.headerName}`);
     }
 
@@ -73,7 +56,8 @@ export class TrustUserMiddleware implements NestMiddleware {
 
     const assigned = this.roles.rolesFor(username);
 
-    // Set clientIp for downstream audit log.
+    // Set clientIp cho downstream (audit log). KHÔNG CIDR check role claim nữa
+    // (post-pivot 260727: bỏ ADMIN_ALLOW_CIDR).
     req.clientIp = normalizeIp(req.ip ?? req.socket.remoteAddress ?? '');
 
     const user = await this.users.upsertByUsername(username);

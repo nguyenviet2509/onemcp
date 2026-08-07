@@ -19,32 +19,14 @@ export const envSchema = z.object({
   ATTACHMENT_MAX_MB: z.coerce.number().default(100),
 
   // Access control (v1 defer auth)
-  // USER_ALLOW_CIDR / ADMIN_ALLOW_CIDR deprecated post-pivot 2026-07-27 (kept for rollback).
-  USER_ALLOW_CIDR: z.string().optional(),
-  ADMIN_ALLOW_CIDR: z.string().optional(),
-  // TRUSTED_PROXY_CIDR deprecated post-pivot; kept for rollback only.
+  USER_ALLOW_CIDR: z.string().min(1),
+  ADMIN_ALLOW_CIDR: z.string().min(1),
   TRUSTED_PROXY_CIDR: z.string().default('127.0.0.1/32'),
   TRUST_USER_HEADER: z.string().default('X-Onemcp-User'),
   DEFAULT_ROLE: z.enum(['viewer', 'contributor', 'maintainer', 'dept-admin', 'super-admin']).default('contributor'),
   MAINTAINER_USERNAMES: z.string().default(''),
   ADMIN_USERNAMES: z.string().default(''),
   EMERGENCY_LOCKDOWN: z.coerce.boolean().default(false),
-
-  // --- Auth mode (SSO pivot 2026-07-27) ---
-  // 'trust-header' = legacy v1 behavior (default, safe rollback).
-  // 'gitlab-sso'   = OAuth2 + session cookie; trust-header path disabled for non-CIDR sources.
-  AUTH_MODE: z.enum(['trust-header', 'gitlab-sso']).default('trust-header'),
-
-  // --- GitLab OAuth2 (required only when AUTH_MODE=gitlab-sso) ---
-  GITLAB_SSO_BASE_URL: z.string().default('https://gitlab.inet.vn'),
-  GITLAB_OAUTH_APP_ID: z.string().optional(),
-  GITLAB_OAUTH_APP_SECRET: z.string().optional(),
-  GITLAB_OAUTH_REDIRECT_URI: z.string().default('https://202.92.5.113/api/auth/gitlab/callback'),
-
-  // --- Session cookie ---
-  SESSION_COOKIE_NAME: z.string().default('onemcp_session'),
-  SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(86400),
-  OAUTH_STATE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 
   // Storage paths
   GIT_MIRROR_ROOT: z.string().default('/var/lib/onemcp/mirrors'),
