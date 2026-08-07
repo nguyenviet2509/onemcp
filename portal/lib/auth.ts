@@ -12,8 +12,8 @@ export interface CurrentUser {
   status: 'active' | 'disabled';
 }
 
-// Fetch /api/auth/me once on mount. On 401, hard-redirect to /login so stale-cookie
-// users don't get stuck seeing a broken UI. Portal is SSO-only — no env gate.
+// Fetch /api/auth/me once on mount. On 401 in SSO mode, hard-redirect to /login
+// so stale-cookie users don't get stuck seeing a broken UI.
 // Skip on /login itself to prevent redirect loop.
 export function useCurrentUser(): CurrentUser | null {
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -21,11 +21,12 @@ export function useCurrentUser(): CurrentUser | null {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.pathname === '/login') return;
 
+    const ssoMode = process.env.NEXT_PUBLIC_AUTH_MODE === 'gitlab-sso';
     let cancelled = false;
     fetch('/api/auth/me', { credentials: 'same-origin' })
       .then((res) => {
-        if (res.status === 401) {
-          // Stale/missing session — redirect to login with returnTo.
+        if (res.status === 401 && ssoMode) {
+          // Stale/missing session in SSO mode — redirect to login with returnTo.
           const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
           window.location.href = `/login?returnTo=${returnTo}`;
           return null;

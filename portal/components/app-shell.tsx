@@ -4,7 +4,11 @@ import { getTranslations } from 'next-intl/server';
 import { SidebarBrand } from './sidebar-brand';
 import { SidebarNav } from './sidebar-nav';
 import { SidebarSecondaryNav } from './sidebar-secondary-nav';
-import { UserMenu } from './user-menu';
+import { SidebarUserCard } from './sidebar-user-card';
+import { AuthChip } from './auth-chip';
+
+// Auth mode read at server render time — controls sidebar bottom pill.
+const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE;
 
 interface AppShellProps {
   children: ReactNode;
@@ -12,7 +16,8 @@ interface AppShellProps {
 
 // Root shell — 240px sidebar + flex main. Sections share the same small-caps
 // header for a single consistent style. Icon budget: 5 total, all in SidebarNav.
-// Bottom zone: always UserMenu (SSO-only — legacy SidebarUserCard removed).
+// Bottom pill (SidebarUserCard) absorbs identity actions + theme toggle so the
+// footer stays a single row per Option A mockup.
 export async function AppShell({ children }: AppShellProps) {
   const tSidebar = await getTranslations('sidebar');
   return (
@@ -54,9 +59,11 @@ export async function AppShell({ children }: AppShellProps) {
           </div>
         </div>
 
-        {/* Bottom zone — SSO user pill, always visible. */}
+        {/* Bottom zone — always visible user pill.
+            SSO mode: UserMenu (email + logout).
+            trust-header (legacy): SidebarUserCard (identity + theme + locale). */}
         <div className="shrink-0">
-          <UserMenu />
+          {AUTH_MODE === 'gitlab-sso' ? <AuthChip /> : <SidebarUserCard />}
         </div>
       </aside>
 

@@ -2,13 +2,16 @@
 
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { IdentifyAsDropdown } from './identify-as-dropdown';
 import { UserMenu } from './user-menu';
 import { SpaceSwitcher } from './space-switcher';
 import { SavedSearchesList } from './saved-searches-list';
 
 // Legacy top nav — replaced by sidebar-nav in current layout. Kept for fallback.
 // Option A tokens: border-border, bg-background, text-foreground/muted-foreground.
-// Auth: always SSO — UserMenu unconditional (legacy IdentifyAsDropdown removed).
+// Auth section: env-gated — gitlab-sso → UserMenu, trust-header (default) → IdentifyAsDropdown.
+const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE;
+
 export function Nav() {
   return (
     <header className="border-b border-border bg-background">
@@ -28,7 +31,7 @@ export function Nav() {
         </div>
         <div className="flex items-center gap-3">
           <Suspense fallback={null}><SpaceSwitcher /></Suspense>
-          <UserMenu />
+          {AUTH_MODE === 'gitlab-sso' ? <UserMenu /> : <IdentifyAsDropdown />}
         </div>
       </div>
       <div className="border-t border-border">

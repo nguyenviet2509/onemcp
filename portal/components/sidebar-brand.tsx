@@ -3,7 +3,7 @@ import Link from 'next/link';
 const PORTAL_VERSION = 'v1.5';
 
 // Brand block: small square mark + wordmark + version.
-// User identity pill rendered by UserMenu at bottom of sidebar.
+// Identity moved to SidebarUserCard at bottom to avoid duplication.
 export function SidebarBrand() {
   return (
     <div className="flex items-center gap-2.5 border-b border-sidebar-border px-3.5 py-3.5">
