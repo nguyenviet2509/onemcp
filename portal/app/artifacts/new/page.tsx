@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { TemplatePicker } from '@/components/template-picker';
-import { MarkdownEditor, MarkdownEditorDark } from '@/components/markdown-editor';
-import { PageShell } from '@/components/page-shell';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { ApiError } from '@/lib/api-client';
-import { submitArtifact, ArtifactType } from '@/lib/api/artifacts';
-import { getTemplate, Template, TemplateField } from '@/lib/api/templates';
+import { TemplatePicker } from '../../../components/template-picker';
+import { MarkdownEditor, MarkdownEditorDark } from '../../../components/markdown-editor';
+import { PageShell } from '../../../components/page-shell';
+import { Button, buttonVariants } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Alert, AlertDescription } from '../../../components/ui/alert';
+import { Separator } from '../../../components/ui/separator';
+import { ApiError } from '../../../lib/api-client';
+import { submitArtifact, ArtifactType } from '../../../lib/api/artifacts';
+import { getTemplate, Template, TemplateField } from '../../../lib/api/templates';
 
 // Draft persisted to localStorage so the user doesn't lose work on refresh.
 const DRAFT_KEY = 'onemcp:new-artifact:draft';
@@ -50,7 +50,7 @@ function saveDraft(d: DraftState) {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
   } catch {
-    // Storage quota exceeded â€” ignore silently.
+    // Storage quota exceeded — ignore silently.
   }
 }
 
@@ -87,7 +87,7 @@ function TemplateFieldInput({
         required={field.required}
         className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30"
       >
-        <option value="">Selectâ€¦</option>
+        <option value="">Select…</option>
         {field.options.map((o) => (
           <option key={o} value={o}>{o}</option>
         ))}
@@ -248,7 +248,7 @@ export default function NewArtifactPage() {
         </Alert>
       )}
 
-      {/* â”€â”€ Step 1: Template picker â”€â”€ */}
+      {/* ── Step 1: Template picker ── */}
       {step === 1 && (
         <div className="space-y-6">
           <p className="text-sm text-muted-foreground">
@@ -273,7 +273,7 @@ export default function NewArtifactPage() {
         </div>
       )}
 
-      {/* â”€â”€ Step 2: Metadata form â”€â”€ */}
+      {/* ── Step 2: Metadata form ── */}
       {step === 2 && (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">
@@ -293,7 +293,7 @@ export default function NewArtifactPage() {
               />
             </label>
 
-            {/* Slug â€” auto-generated but editable */}
+            {/* Slug — auto-generated but editable */}
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium">{t('slugField')} <span className="text-destructive">*</span></span>
               <Input
@@ -358,7 +358,7 @@ export default function NewArtifactPage() {
         </div>
       )}
 
-      {/* â”€â”€ Step 3: Markdown body editor â”€â”€ */}
+      {/* ── Step 3: Markdown body editor ── */}
       {step === 3 && (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">

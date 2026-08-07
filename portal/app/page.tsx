@@ -1,10 +1,10 @@
 'use client';
 
 import { Suspense } from 'react';
-import { DashboardGreeting } from '@/components/dashboard-greeting';
-import { DashboardStatCards } from '@/components/dashboard-stat-cards';
-import { WidgetSkeleton, RecentActivityWidget } from '@/components/dashboard-widgets';
-import { TopViewedWidget, TopTagsWidget } from '@/components/dashboard-widgets-extra';
+import { DashboardGreeting } from '../components/dashboard-greeting';
+import { DashboardStatCards } from '../components/dashboard-stat-cards';
+import { WidgetSkeleton, RecentActivityWidget } from '../components/dashboard-widgets';
+import { TopViewedWidget, TopTagsWidget } from '../components/dashboard-widgets-extra';
 
 // Dashboard home — Option A: px-8 py-6, space-y-6 between sections.
 export default function DashboardPage() {

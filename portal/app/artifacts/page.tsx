@@ -4,18 +4,18 @@ import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { buttonVariants } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PageShell } from '@/components/page-shell';
-import { EmptyState } from '@/components/empty-state';
-import { ArtifactFilterPanel, FilterState } from '@/components/artifact-filter-panel';
-import { ArtifactBulkActions } from '@/components/artifact-bulk-actions';
-import { Artifact, ArtifactStatus, deleteArtifact, listArtifacts } from '@/lib/api/artifacts';
-import { statusVariant } from '@/lib/status-pill-variants';
-import { Pagination, paginateItems } from '@/components/pagination';
+import { buttonVariants } from '../../components/ui/button';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Badge } from '../../components/ui/badge';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { PageShell } from '../../components/page-shell';
+import { EmptyState } from '../../components/empty-state';
+import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filter-panel';
+import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
+import { Artifact, ArtifactStatus, deleteArtifact, listArtifacts } from '../../lib/api/artifacts';
+import { statusVariant } from '../../lib/status-pill-variants';
+import { Pagination, paginateItems } from '../../components/pagination';
 
 function filterToParams(f: FilterState) {
   return {
@@ -159,8 +159,8 @@ function ArtifactsContent() {
     }
   }
 
-  // Sort theo updatedAt; sortOrder Ä‘á»•i hÆ°á»›ng. Sort trÆ°á»›c rá»“i má»›i phÃ¢n trang
-  // Ä‘á»ƒ page 1 luÃ´n lÃ  báº£n má»›i/cÅ© nháº¥t tuá»³ chá»n cá»§a user.
+  // Sort theo updatedAt; sortOrder đổi hướng. Sort trước rồi mới phân trang
+  // để page 1 luôn là bản mới/cũ nhất tuỳ chọn của user.
   const sortedItems = [...items].sort((a, b) => {
     const ta = new Date(a.updatedAt).getTime();
     const tb = new Date(b.updatedAt).getTime();
@@ -219,13 +219,13 @@ function ArtifactsContent() {
                   }}
                   className="h-7 rounded-md border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 >
-                  <option value="newest">Má»›i nháº¥t</option>
-                  <option value="oldest">CÅ© nháº¥t</option>
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
                 </select>
               </div>
             </div>
 
-            {/* Artifact list â€” Option A: divide-y, no per-row card */}
+            {/* Artifact list — Option A: divide-y, no per-row card */}
             <ul className="divide-y divide-border rounded-lg border border-border">
               {pagedItems.map((a) => (
                 <ArtifactRow

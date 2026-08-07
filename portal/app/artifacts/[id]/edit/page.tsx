@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { StructuredEditor } from '@/components/structured-editor';
-import { ApiError } from '@/lib/api-client';
-import { ArtifactType, getArtifact, updateArtifact } from '@/lib/api/artifacts';
-import { getTemplate, Template } from '@/lib/api/templates';
+import { StructuredEditor } from '../../../../components/structured-editor';
+import { ApiError } from '../../../../lib/api-client';
+import { ArtifactType, getArtifact, updateArtifact } from '../../../../lib/api/artifacts';
+import { getTemplate, Template } from '../../../../lib/api/templates';
 
 interface Props {
   params: Promise<{ id: string }>;

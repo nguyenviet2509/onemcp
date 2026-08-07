@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { apiFetch, ApiError } from '@/lib/api-client';
-import { useCurrentUser } from '@/lib/auth';
+import { apiFetch, ApiError } from '../../lib/api-client';
+import { useCurrentUser } from '../../lib/auth';
 import { useEffect, useState } from 'react';
 
 interface Me {
@@ -15,8 +15,8 @@ interface Me {
   identityMode: string;
 }
 
-// Option A profile page: PageShell-style layout, tokens only â€” no hardcoded colors.
-// Identity sourced from SSO session (/api/auth/me) â€” no localStorage.
+// Option A profile page: PageShell-style layout, tokens only — no hardcoded colors.
+// Identity sourced from SSO session (/api/auth/me) — no localStorage.
 export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,12 +59,12 @@ export default function ProfilePage() {
             href="/profile/api-keys"
             className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            {tNav('apiKeys')} â†’
+            {tNav('apiKeys')} →
           </Link>
         </div>
       )}
 
-      {/* Profile detail â€” Option A: clean dl table, border-border, no card shadow */}
+      {/* Profile detail — Option A: clean dl table, border-border, no card shadow */}
       {me && (
         <div className="rounded-lg border border-border">
           <dl className="divide-y divide-border text-sm">
