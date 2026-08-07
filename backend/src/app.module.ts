@@ -25,6 +25,8 @@ import { StorageModule } from './storage/storage.module';
 import { TemplatesModule } from './templates/templates.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { CryptoModule } from './common/crypto/crypto.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -75,6 +77,8 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     SavedSearchesModule,
     WebhooksModule,
     McpModule,
+    CryptoModule,
+    ProjectsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
