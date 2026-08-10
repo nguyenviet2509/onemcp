@@ -20,6 +20,7 @@
     "seed:sample-ops": "ts-node -r tsconfig-paths/register src/scripts/seed-sample-artifacts-ops.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@nestjs/bullmq": "^10.2.0",
     "@nestjs/common": "^10.4.0",
     "@nestjs/config": "^3.2.3",

@@ -41,6 +41,9 @@ export const envSchema = z.object({
   SKILL_SYNC_CRON: z.string().default('*/15 * * * *'),
   SKILL_APPROVE_RATE_LIMIT: z.coerce.number().default(20),
 
+  // MCP transport selection: 'jsonrpc' = legacy plain POST (default), 'streamable' = SDK Streamable HTTP.
+  MCP_TRANSPORT: z.enum(['jsonrpc', 'streamable']).default('jsonrpc'),
+
   // Observability
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
 });
