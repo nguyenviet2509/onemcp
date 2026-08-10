@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>OneMCP · Onboarding cho phòng Kỹ thuật</title>
+<title>OneMCP · AI Connector Hub cho toàn công ty</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <style>
-  html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+  html { scroll-behavior: smooth; scroll-padding-top: 20px; }
   body {
     background: #0b1220;
     color: #e2e8f0;
@@ -32,146 +32,391 @@
   pre.code .c { color: #64748b; font-style: italic; }
   .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 1.5rem; }
   .chip { display: inline-block; font-size: 0.7rem; letter-spacing: .08em; text-transform: uppercase; background: #1e293b; color: #93c5fd; padding: 3px 10px; border-radius: 999px; border: 1px solid #334155; }
+  .chip-live { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+  .chip-next { background: #422006; color: #fdba74; border-color: #78350f; }
+  .chip-plan { background: #1e1b4b; color: #c7d2fe; border-color: #4338ca; }
   .mermaid { background: #0f172a; border-radius: 12px; padding: 1.5rem; border: 1px solid #1e293b; }
   table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   table.tbl th, table.tbl td { border: 1px solid #334155; padding: 10px 14px; text-align: left; vertical-align: top; }
   table.tbl th { background: #1e293b; color: #cbd5e1; font-weight: 600; }
   table.tbl code { color: #fbbf24; font-family: ui-monospace, monospace; font-size: 0.85rem; }
   .ascii { font-family: ui-monospace, monospace; font-size: 0.82rem; line-height: 1.4; white-space: pre; color: #cbd5e1; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 1.5rem; overflow-x: auto; }
-  section { scroll-margin-top: 80px; }
-  .nav-link { color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; transition: all 150ms; }
+  section { scroll-margin-top: 20px; }
+  .nav-link { color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; transition: all 150ms; display: flex; align-items: center; gap: 8px; }
   .nav-link:hover { color: #e2e8f0; background: #1e293b; }
   .nav-link.active { color: #a5b4fc; background: #1e1b4b; }
   h1, h2, h3 { letter-spacing: -0.015em; }
   .gradient-text { background: linear-gradient(90deg, #a5b4fc, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .step-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: #312e81; color: #c7d2fe; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+  /* Sidebar layout */
+  .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 260px; background: #0a1020; border-right: 1px solid #1e293b; overflow-y: auto; z-index: 40; padding: 20px 16px; }
+  .main { margin-left: 260px; }
+  @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; } }
+  .sidebar-group { margin-top: 18px; }
+  .sidebar-group-title { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; padding: 4px 8px; margin-bottom: 4px; }
+  .sidebar .tag { font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.06em; font-weight: 600; }
+  .tag-v1 { background: #064e3b; color: #6ee7b7; }
+  .tag-v2 { background: #422006; color: #fdba74; }
+  .tag-both { background: #1e1b4b; color: #c7d2fe; }
+  .filter-btns { display: flex; gap: 4px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 3px; margin-top: 12px; }
+  .filter-btn { flex: 1; text-align: center; padding: 6px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: #94a3b8; cursor: pointer; transition: all 150ms; }
+  .filter-btn:hover { color: #e2e8f0; }
+  .filter-btn.active { color: #f1f5f9; }
+  .filter-btn.active[data-filter="v1"] { background: #064e3b; color: #6ee7b7; }
+  .filter-btn.active[data-filter="v2"] { background: #422006; color: #fdba74; }
+  .filter-btn.active[data-filter="all"] { background: #1e293b; color: #e2e8f0; }
+  body.filter-v1 [data-version="v2"] { display: none; }
+  body.filter-v2 [data-version="v1"] { display: none; }
+  .section-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.65rem; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+  .badge-v1 { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+  .badge-v2 { background: #422006; color: #fdba74; border: 1px solid #78350f; }
+  .badge-both { background: #1e1b4b; color: #c7d2fe; border: 1px solid #4338ca; }
 </style>
 </head>
 <body>
 
-<!-- ============ Sticky nav ============ -->
-<nav class="sticky top-0 z-40 backdrop-blur bg-slate-950/80 border-b border-slate-800">
-  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-    <a href="#hero" class="text-white font-bold text-lg">One<span class="text-indigo-400">MCP</span></a>
-    <div class="hidden md:flex gap-1">
-      <a href="#why" class="nav-link">Tại sao</a>
-      <a href="#architecture" class="nav-link">Kiến trúc</a>
-      <a href="#tools" class="nav-link">7 tools</a>
-      <a href="#setup" class="nav-link">Cài đặt</a>
-      <a href="#workflow" class="nav-link">Workflow</a>
-      <a href="#faq" class="nav-link">FAQ</a>
+<!-- ============ Sidebar ============ -->
+<aside class="sidebar">
+  <a href="#hero" class="text-white font-bold text-xl">One<span class="text-indigo-400">MCP</span></a>
+  <div class="text-slate-500 text-xs mt-1">AI Connector Hub</div>
+
+  <!-- Version filter -->
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">Xem theo phiên bản</div>
+    <div class="filter-btns" id="version-filter">
+      <div class="filter-btn active" data-filter="all">Tất cả</div>
+      <div class="filter-btn" data-filter="v1">v1 LIVE</div>
+      <div class="filter-btn" data-filter="v2">v2 DEV</div>
     </div>
-    <span class="chip">v1 pilot</span>
   </div>
-</nav>
+
+  <!-- TOC -->
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">Giới thiệu</div>
+    <a href="#why" class="nav-link"><span class="tag tag-both">BOTH</span> Vision</a>
+    <a href="#fundamentals" class="nav-link"><span class="tag tag-both">BOTH</span> AI Connector là gì</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">v1 (LIVE pilot)</div>
+    <a href="#architecture" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Kiến trúc</a>
+    <a href="#capabilities" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Capabilities</a>
+    <a href="#setup-v1" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Kết nối (header)</a>
+    <a href="#publish-v1" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Push skills/KB</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">v2 (in dev · blocked)</div>
+    <a href="#architecture-v2" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Kiến trúc mới</a>
+    <a href="#setup-v2" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Kết nối (OAuth)</a>
+    <a href="#projects" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Multi-project</a>
+    <a href="#publish-v2" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Push v2</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">Chung</div>
+    <a href="#workflow" class="nav-link"><span class="tag tag-both">BOTH</span> Workflow debug</a>
+    <a href="#rbac" class="nav-link"><span class="tag tag-both">BOTH</span> RBAC</a>
+    <a href="#faq" class="nav-link"><span class="tag tag-both">BOTH</span> FAQ</a>
+  </div>
+
+  <div class="sidebar-group border-t border-slate-800 pt-4 mt-6">
+    <div class="text-xs text-slate-500">
+      Plan tracking:<br>
+      <code class="text-amber-300 text-xs">260805-0852-onemcp-ai-connector-hub</code>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
 
 <!-- ============ Hero ============ -->
-<section id="hero" class="max-w-6xl mx-auto px-6 pt-24 pb-20">
-  <div class="chip mb-6">Phòng Kỹ thuật · Internal INET · 2026-07</div>
+<section id="hero" data-version="both" class="max-w-6xl mx-auto px-6 pt-24 pb-20">
+  <div class="flex gap-2 mb-6">
+    <span class="chip chip-live">v1 pilot LIVE</span>
+    <span class="chip chip-next">v2 AI Connector · in dev</span>
+    <span class="chip">2026-08</span>
+  </div>
   <h1 class="text-6xl md:text-7xl font-extrabold mb-6 text-white leading-tight">
     One<span class="gradient-text">MCP</span>
   </h1>
   <p class="text-2xl md:text-3xl text-slate-300 mb-6 max-w-3xl">
-    MCP server nội bộ. Biến mỗi lần fix bug thành tài sản dùng chung.
+    AI Connector Hub — gateway kết nối mọi AI client với knowledge & tools của toàn công ty.
   </p>
-  <p class="text-lg text-slate-400 max-w-2xl mb-10 leading-relaxed">
-    Dev A fix bug → capture KB tự động → Dev B tuần sau gặp lại → agent search → apply fix trong phút.
-    Không còn tri thức bay mất sau mỗi sprint.
+  <p class="text-lg text-slate-400 max-w-3xl mb-10 leading-relaxed">
+    Claude Desktop, ChatGPT, Cursor cắm 1 lần qua Remote MCP Connector chuẩn.
+    Mỗi dự án tự đẩy skills + KB lên registry. Auth qua Zitadel SSO (Zimbra email), OAuth 2.1 chuẩn cho AI client.
   </p>
   <div class="flex flex-wrap gap-4">
-    <a href="#setup" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg font-medium transition">Cài đặt trong 3 phút</a>
+    <a href="#setup" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg font-medium transition">Kết nối AI client</a>
+    <a href="#projects" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg font-medium transition border border-slate-700">Đăng ký dự án</a>
     <a href="#workflow" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg font-medium transition border border-slate-700">Xem workflow</a>
   </div>
 
   <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-    <div class="card"><div class="text-3xl font-bold text-indigo-300">7</div><div class="text-sm text-slate-400 mt-1">MCP tools</div></div>
-    <div class="card"><div class="text-3xl font-bold text-indigo-300">3</div><div class="text-sm text-slate-400 mt-1">Loại artifact</div></div>
-    <div class="card"><div class="text-3xl font-bold text-indigo-300">15+</div><div class="text-sm text-slate-400 mt-1">Backend modules</div></div>
-    <div class="card"><div class="text-3xl font-bold text-emerald-300">100%</div><div class="text-sm text-slate-400 mt-1">Pilot-ready</div></div>
+    <div class="card"><div class="text-3xl font-bold text-indigo-300">3+</div><div class="text-sm text-slate-400 mt-1">AI clients hỗ trợ</div></div>
+    <div class="card"><div class="text-3xl font-bold text-indigo-300">N</div><div class="text-sm text-slate-400 mt-1">Projects đẩy skills</div></div>
+    <div class="card"><div class="text-3xl font-bold text-indigo-300">OAuth 2.1</div><div class="text-sm text-slate-400 mt-1">Chuẩn spec 2025</div></div>
+    <div class="card"><div class="text-3xl font-bold text-emerald-300">SSO</div><div class="text-sm text-slate-400 mt-1">Zimbra email</div></div>
+  </div>
+
+  <div class="mt-8 card border-amber-800/50">
+    <div class="flex gap-3">
+      <span class="chip chip-next">Status</span>
+      <p class="text-slate-300 text-sm">
+        <b class="text-amber-300">v1 pilot LIVE</b> cho phòng Kỹ thuật (7 tools + 3 artifact types + header trust auth).
+        <b class="text-fuchsia-300">v2 AI Connector Hub</b> đang cook — OAuth 2.1 AS + multi-project registry, dự kiến ship sau khi
+        <code class="text-amber-300">260805-1409 zitadel-migrate</code> hoàn tất.
+      </p>
+    </div>
   </div>
 </section>
 
 <!-- ============ Why ============ -->
-<section id="why" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <div class="chip mb-3">Vấn đề</div>
-  <h2 class="text-4xl font-bold text-white mb-4">Kiến thức fix bug bay mất sau mỗi sprint</h2>
+<section id="why" data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-both">Áp dụng cả v1 & v2</span>
+  <div class="chip mb-3">Tại sao AI Connector Hub</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Từ MCP silo → Gateway chuẩn cho mọi AI client</h2>
   <p class="text-slate-400 max-w-3xl mb-10">
-    Dev đã fix bug rồi commit, tuần sau đồng nghiệp gặp lại lỗi tương tự, mất 2-4 giờ debug lại từ đầu.
-    KB rải rác Slack/Confluence/head. Search không hiểu tiếng Việt bỏ dấu.
+    Mỗi dự án làm MCP riêng → dev phải cấu hình N server, N auth, N URL trong AI client. OneMCP làm 1 endpoint duy nhất, aggregate skills từ mọi dự án, auth 1 lần qua Zimbra SSO.
   </p>
   <div class="grid md:grid-cols-2 gap-6">
     <div class="card">
       <h3 class="text-lg font-semibold text-red-400 mb-3">❌ Không có OneMCP</h3>
       <ul class="space-y-2 text-slate-300 text-sm">
-        <li>• Dev A fix bug xong → commit → quên</li>
-        <li>• 3 tuần sau Dev B gặp lại lỗi tương tự</li>
-        <li>• Debug lại từ đầu, mất 2-4 giờ</li>
-        <li>• KB rải rác nhiều nơi, không tìm được</li>
-        <li>• Search không unaccent, thiếu ngữ cảnh</li>
+        <li>• Mỗi project 1 MCP endpoint, config riêng trong Claude Desktop</li>
+        <li>• N credentials phải lưu, dev quên xoay vòng</li>
+        <li>• Tri thức bay mất sau mỗi sprint (không có nơi lưu)</li>
+        <li>• Không share tools/skills giữa các phòng ban</li>
+        <li>• Không audit được ai gọi tool gì, khi nào</li>
       </ul>
     </div>
     <div class="card border-emerald-800/50">
-      <h3 class="text-lg font-semibold text-emerald-400 mb-3">✅ Với OneMCP</h3>
+      <h3 class="text-lg font-semibold text-emerald-400 mb-3">✅ Với OneMCP AI Connector</h3>
       <ul class="space-y-2 text-slate-300 text-sm">
-        <li>• Dev A fix → agent tự submit KB có template</li>
-        <li>• KB có structure chuẩn (problem/solution/related)</li>
-        <li>• Dev B paste error → agent search → hit</li>
-        <li>• Apply fix trong 5-10 phút</li>
-        <li>• FTS unaccent-aware + fuzzy title match</li>
+        <li>• 1 endpoint <code class="text-amber-300">mcp.inet.vn</code> cho mọi AI client</li>
+        <li>• Login 1 lần qua Zimbra email (Zitadel SSO)</li>
+        <li>• AI client tự lấy OAuth token qua Dynamic Client Registration</li>
+        <li>• Skills từ N dự án aggregate về 1 registry</li>
+        <li>• Audit log per tool call, per skill load</li>
+        <li>• RBAC 3-layer: project scope + skill visibility + user role</li>
       </ul>
     </div>
   </div>
 
   <h3 class="text-2xl font-semibold text-white mt-16 mb-4">Vòng lặp giá trị</h3>
   <div class="ascii">
-   ┌─────────────┐   fix bug     ┌──────────────┐   submit_artifact    ┌──────────────┐
-   │   Dev A     │──────────────▶│ Claude Code  │────────────────────▶ │   OneMCP     │
-   │  (debug)    │               │  + agent     │                      │ PG + MinIO   │
-   └─────────────┘               └──────────────┘                      └──────┬───────┘
-                                                                              │
-                                                                    KB pending│ review
-                                                                              ▼
-                                                                       ┌──────────────┐
-                                                                       │ Maintainer   │
-                                                                       │  approve     │
-                                                                       └──────┬───────┘
-                                                                              │
-                                                                              ▼
-   ┌─────────────┐  paste error  ┌──────────────┐    search "..."      ┌──────────────┐
-   │   Dev B     │──────────────▶│ Claude Code  │────────────────────▶ │  Hit KB #42  │
-   │ (bug lại)   │◀──────────────│  + agent     │◀──────────────────── │  apply fix   │
-   └─────────────┘               └──────────────┘                      └──────────────┘
+   Project A (KT)                                Project B (marketing)
+     │ push skills                                 │ push skills
+     └───────────┐                     ┌───────────┘
+                 ▼                     ▼
+         ┌──────────────────────────────────┐
+         │      OneMCP AI Connector Hub     │
+         │  · OAuth 2.1 AS (Zitadel SSO)    │
+         │  · Skills Registry (multi-repo)  │
+         │  · MCP Streamable HTTP           │
+         └──────────────────────────────────┘
+                 ▲             ▲             ▲
+     ┌───────────┘             │             └───────────┐
+     │                         │                         │
+Claude Desktop          ChatGPT/Cursor              mcp-remote proxy
+(office user)          (office user)                (custom scripts)
   </div>
 </section>
 
-<!-- ============ Architecture ============ -->
-<section id="architecture" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <div class="chip mb-3">Kiến trúc</div>
-  <h2 class="text-4xl font-bold text-white mb-4">Stack tổng quan</h2>
-  <p class="text-slate-400 max-w-3xl mb-8">
-    NestJS backend + Next.js portal + PostgreSQL (FTS) + MinIO (attachments) + Redis (queue). Nginx TLS + IP CIDR guard.
+<!-- ============ Fundamentals ============ -->
+<section id="fundamentals" data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-both">Áp dụng cả v1 & v2</span>
+  <div class="chip mb-3">Fundamentals</div>
+  <h2 class="text-4xl font-bold text-white mb-4">AI Connector là gì, hoạt động ra sao</h2>
+  <p class="text-slate-400 max-w-3xl mb-10">
+    Nếu chưa quen với khái niệm MCP / Remote Connector, đọc phần này trước. Ai đã dùng Claude Desktop connectors rồi có thể skip xuống <a href="#architecture" class="text-indigo-400 underline">Kiến trúc</a>.
+  </p>
+
+  <!-- Analogy -->
+  <div class="card mb-10">
+    <h3 class="text-2xl font-semibold text-white mb-3">🔌 Analogy — USB cho AI</h3>
+    <p class="text-slate-300 mb-4">
+      Trước khi có USB, mỗi thiết bị ngoại vi (chuột, bàn phím, máy in…) dùng cổng riêng.
+      Nhà sản xuất phải làm N driver, người dùng phải cắm N cổng. USB làm chuẩn hoá: 1 giao thức, mọi thiết bị.
+    </p>
+    <p class="text-slate-300">
+      <b class="text-indigo-300">MCP (Model Context Protocol)</b> = USB cho AI. Trước đây mỗi AI app tự implement cách gọi tool/API riêng.
+      MCP làm chuẩn hoá — server (như OneMCP) expose tools + resources theo giao thức chuẩn,
+      mọi AI client (Claude Desktop, ChatGPT, Cursor) đều cắm được không cần viết integration riêng.
+    </p>
+    <p class="text-slate-400 text-sm mt-4">
+      <b class="text-fuchsia-300">Remote MCP Connector</b> là biến thể chạy qua HTTP (thay vì stdio local), có thêm OAuth 2.1 để authenticate user + phân quyền.
+      OneMCP v2 là Remote MCP Connector cho phòng KT.
+    </p>
+  </div>
+
+  <!-- Concepts -->
+  <h3 class="text-2xl font-semibold text-white mb-6">Khái niệm cốt lõi</h3>
+  <div class="grid md:grid-cols-2 gap-6 mb-10">
+    <div class="card">
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">MCP Server</h4>
+      <p class="text-slate-300 text-sm mb-3">Backend expose <b>tools</b> (functions callable), <b>resources</b> (data readable), <b>prompts</b> (templates) qua giao thức MCP.</p>
+      <p class="text-slate-400 text-xs">OneMCP = MCP server. Expose <code class="text-amber-300">list_skills</code>, <code class="text-amber-300">search</code>, <code class="text-amber-300">submit_artifact</code>…</p>
+    </div>
+    <div class="card">
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">MCP Client</h4>
+      <p class="text-slate-300 text-sm mb-3">AI app / IDE / agent gọi tool trên MCP server. Tự động discover tools list, feed vào context của LLM.</p>
+      <p class="text-slate-400 text-xs">Claude Desktop, ChatGPT app, Cursor IDE, custom scripts qua <code class="text-amber-300">mcp-remote</code>.</p>
+    </div>
+    <div class="card">
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">Transport</h4>
+      <p class="text-slate-300 text-sm mb-3">Cách client & server nói chuyện. 2 loại: <code class="text-amber-300">stdio</code> (local process) và <code class="text-amber-300">Streamable HTTP</code> (remote qua HTTP + SSE).</p>
+      <p class="text-slate-400 text-xs">OneMCP dùng Streamable HTTP (spec 2025). Endpoint <code class="text-amber-300">/mcp</code>, header <code class="text-amber-300">Mcp-Session-Id</code>.</p>
+    </div>
+    <div class="card">
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">JSON-RPC 2.0</h4>
+      <p class="text-slate-300 text-sm mb-3">Format wire chuẩn: <code class="text-amber-300">{ jsonrpc, method, params, id }</code>. Method như <code class="text-amber-300">tools/list</code>, <code class="text-amber-300">tools/call</code>.</p>
+      <p class="text-slate-400 text-xs">Streaming response qua SSE cho long-running tools.</p>
+    </div>
+    <div class="card">
+      <h4 class="text-lg font-semibold text-fuchsia-300 mb-2">OAuth 2.1 + DCR</h4>
+      <p class="text-slate-300 text-sm mb-3">Chuẩn auth cho Remote Connector. <b>Dynamic Client Registration</b> (RFC 7591) = AI client tự đăng ký OAuth client với server, không cần cấp secret thủ công.</p>
+      <p class="text-slate-400 text-xs">Server expose <code class="text-amber-300">.well-known/oauth-authorization-server</code> metadata. Client tự phát hiện endpoints.</p>
+    </div>
+    <div class="card">
+      <h4 class="text-lg font-semibold text-fuchsia-300 mb-2">Consent screen</h4>
+      <p class="text-slate-300 text-sm mb-3">User login → thấy màn xin quyền: "OneMCP muốn truy cập tools + skills của bạn". Allow → nhận access token.</p>
+      <p class="text-slate-400 text-xs">OneMCP: coarse consent (1 lần cho toàn bộ tools) trong v2. Fine-grained per-tool defer.</p>
+    </div>
+  </div>
+
+  <!-- Flow -->
+  <h3 class="text-2xl font-semibold text-white mb-6">Flow chi tiết — Claude Desktop kết nối OneMCP lần đầu</h3>
+
+  <div class="mermaid mb-6">
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant CD as Claude Desktop
+  participant OM as OneMCP<br/>(OAuth AS + MCP server)
+  participant ZT as Zitadel<br/>(Zimbra SSO)
+
+  U->>CD: Add Connector, paste https://mcp.inet.vn/mcp
+  CD->>OM: GET /.well-known/oauth-authorization-server
+  OM-->>CD: metadata (authorize_endpoint, token_endpoint, DCR endpoint)
+  CD->>OM: POST /register (Dynamic Client Registration)
+  OM-->>CD: client_id + client_secret (per-Claude Desktop instance)
+  CD->>U: Mở browser → authorize URL
+  U->>OM: GET /authorize (browser popup)
+  OM->>ZT: redirect Zitadel login
+  U->>ZT: Email Zimbra + password + MFA
+  ZT-->>OM: OIDC token (user identity)
+  OM->>U: Consent screen "Allow OneMCP truy cập?"
+  U->>OM: Allow
+  OM-->>CD: authorization code (redirect callback)
+  CD->>OM: POST /token (exchange code → access_token + refresh_token)
+  OM-->>CD: tokens (access TTL 1h, refresh rotate)
+  CD->>OM: POST /mcp (JSON-RPC) Authorization: Bearer &lt;access_token&gt;
+  Note over CD,OM: Tools/list, tools/call flow qua đây
+  OM-->>CD: SSE stream response
+  </div>
+
+  <!-- Well-known example -->
+  <h3 class="text-2xl font-semibold text-white mb-4">Ví dụ <code class="text-amber-300">.well-known</code> metadata</h3>
+  <p class="text-slate-400 text-sm mb-3">AI client fetch endpoint này trước để biết OAuth flow của OneMCP:</p>
+<pre class="code"><span class="c"># GET https://mcp.inet.vn/.well-known/oauth-authorization-server</span>
+<span class="k">{</span>
+  <span class="s">"issuer"</span>: <span class="s">"https://mcp.inet.vn"</span>,
+  <span class="s">"authorization_endpoint"</span>: <span class="s">"https://mcp.inet.vn/oauth/authorize"</span>,
+  <span class="s">"token_endpoint"</span>: <span class="s">"https://mcp.inet.vn/oauth/token"</span>,
+  <span class="s">"registration_endpoint"</span>: <span class="s">"https://mcp.inet.vn/oauth/register"</span>,      <span class="c">// DCR</span>
+  <span class="s">"scopes_supported"</span>: [<span class="s">"mcp:tools"</span>, <span class="s">"mcp:resources"</span>],
+  <span class="s">"response_types_supported"</span>: [<span class="s">"code"</span>],
+  <span class="s">"grant_types_supported"</span>: [<span class="s">"authorization_code"</span>, <span class="s">"refresh_token"</span>],
+  <span class="s">"token_endpoint_auth_methods_supported"</span>: [<span class="s">"client_secret_basic"</span>],
+  <span class="s">"code_challenge_methods_supported"</span>: [<span class="s">"S256"</span>]                     <span class="c">// PKCE</span>
+<span class="k">}</span></pre>
+
+  <!-- MCP call example -->
+  <h3 class="text-2xl font-semibold text-white mt-10 mb-4">Ví dụ MCP call (sau khi có token)</h3>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      <p class="text-slate-400 text-xs mb-2">Client gọi <code class="text-amber-300">tools/list</code>:</p>
+<pre class="code"><span class="c"># POST /mcp</span>
+<span class="c"># Authorization: Bearer &lt;access_token&gt;</span>
+<span class="c"># Mcp-Session-Id: &lt;session-uuid&gt;</span>
+<span class="k">{</span>
+  <span class="s">"jsonrpc"</span>: <span class="s">"2.0"</span>,
+  <span class="s">"method"</span>: <span class="s">"tools/list"</span>,
+  <span class="s">"id"</span>: 1
+<span class="k">}</span></pre>
+    </div>
+    <div>
+      <p class="text-slate-400 text-xs mb-2">Server trả tools available theo scope user:</p>
+<pre class="code"><span class="k">{</span>
+  <span class="s">"jsonrpc"</span>: <span class="s">"2.0"</span>,
+  <span class="s">"id"</span>: 1,
+  <span class="s">"result"</span>: <span class="k">{</span>
+    <span class="s">"tools"</span>: [
+      <span class="k">{</span>
+        <span class="s">"name"</span>: <span class="s">"search"</span>,
+        <span class="s">"description"</span>: <span class="s">"FTS across skills + artifacts"</span>,
+        <span class="s">"inputSchema"</span>: <span class="k">{</span> <span class="c">/* JSON Schema */</span> <span class="k">}</span>
+      <span class="k">}</span>,
+      <span class="k">{</span> <span class="s">"name"</span>: <span class="s">"load_skill"</span>, <span class="s">"..."</span>: <span class="s">"..."</span> <span class="k">}</span>
+    ]
+  <span class="k">}</span>
+<span class="k">}</span></pre>
+    </div>
+  </div>
+
+  <!-- Why matters -->
+  <div class="card mt-10 border-indigo-800/50">
+    <h3 class="text-2xl font-semibold text-white mb-3">Tại sao chuẩn hoá quan trọng</h3>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+      <div>
+        <b class="text-indigo-300 block mb-1">🔌 Zero-friction cắm client</b>
+        <p class="text-slate-400">User chỉ paste URL, không cần config secret thủ công. DCR + OAuth flow tự động.</p>
+      </div>
+      <div>
+        <b class="text-indigo-300 block mb-1">🔐 Auth chuẩn</b>
+        <p class="text-slate-400">OAuth 2.1 = same standard toàn ngành. Không phải reinvent auth mỗi lần. Có refresh token rotation, PKCE, revoke chuẩn.</p>
+      </div>
+      <div>
+        <b class="text-indigo-300 block mb-1">🌐 Ecosystem lock-out-free</b>
+        <p class="text-slate-400">Đổi AI client (Claude → ChatGPT → Cursor) không cần build lại integration. Server không đổi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Architecture v1 ============ -->
+<section id="architecture" data-version="v1" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v1">v1 · LIVE pilot</span>
+  <div class="chip mb-3">Kiến trúc v1</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Stack hiện tại (đang chạy)</h2>
+  <p class="text-slate-400 max-w-3xl mb-6">
+    NestJS backend + Next.js portal + PostgreSQL 16 (FTS + pgvector) + MinIO + Redis (BullMQ) + Nginx TLS + IP CIDR guard.
+    Auth: header trust <code class="text-amber-300">X-Onemcp-User</code>. Skills sync qua 1 mono-repo <code class="text-amber-300">skills-kythuat</code>. Artifacts qua spaces model.
   </p>
 
   <div class="mermaid mb-8">
 flowchart LR
-  subgraph Client
-    CC["Claude Code<br/>+ MCP config"]
+  subgraph "Client"
+    CC["Claude Code<br/>MCP config với X-Onemcp-User"]
   end
-  subgraph Edge
+  subgraph "Edge"
     NG["Nginx<br/>TLS + IP CIDR"]
   end
-  subgraph App
-    API["NestJS backend<br/>REST + MCP JSON-RPC"]
-    WEB["Next.js portal<br/>skills / artifacts / search"]
+  subgraph "OneMCP v1"
+    API["NestJS backend<br/>/api/mcp JSON-RPC + REST"]
+    WEB["Next.js portal<br/>skills · artifacts · search"]
+    SYNC["skill-sync<br/>cron 15min + manual"]
   end
-  subgraph Data
+  subgraph "Data"
     PG[("PostgreSQL 16<br/>FTS + pgvector")]
     MN[("MinIO<br/>attachments")]
     RD[("Redis<br/>BullMQ queue")]
   end
-  subgraph Ops
-    PM["Prometheus<br/>/metrics"]
-    BK["Daily backup<br/>pg_dump + mc mirror"]
+  subgraph "External"
+    GL["GitLab<br/>skills-kythuat mono-repo"]
   end
   CC -->|HTTP JSON-RPC| NG
   NG --> API
@@ -179,34 +424,99 @@ flowchart LR
   API --> PG
   API --> MN
   API --> RD
-  API --> PM
-  PG --> BK
-  MN --> BK
+  SYNC --> GL
+  SYNC --> PG
   </div>
 
-  <div class="grid md:grid-cols-3 gap-4">
-    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Access</h4><p class="text-slate-400 text-sm">IP CIDR + trust header <code class="text-amber-300">X-Onemcp-User</code>. Admin CIDR riêng cho privileged role.</p></div>
-    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">MCP surface</h4><p class="text-slate-400 text-sm">POST <code class="text-amber-300">/api/mcp</code> JSON-RPC 2.0. 7 tools, dept-scoped tự động.</p></div>
+  <div class="grid md:grid-cols-3 gap-4 mb-10">
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Access</h4><p class="text-slate-400 text-sm">IP CIDR whitelist + header <code class="text-amber-300">X-Onemcp-User</code> (Zimbra email). Admin CIDR riêng cho privileged role.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">MCP surface</h4><p class="text-slate-400 text-sm">POST <code class="text-amber-300">/api/mcp</code> JSON-RPC 2.0. 8 tools built-in, dept-scoped tự động.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Skills sync</h4><p class="text-slate-400 text-sm">1 repo <code class="text-amber-300">skills-kythuat</code>, cron 15min pull, manual trigger cho maintainer.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Artifacts model</h4><p class="text-slate-400 text-sm">Spaces (workspace per dept/topic). Visibility: space · dept · cross_dept.</p></div>
     <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Observability</h4><p class="text-slate-400 text-sm"><code class="text-amber-300">/metrics</code> Prometheus, <code class="text-amber-300">/ready</code> deep check, pino structured logs.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Deployment</h4><p class="text-slate-400 text-sm">onemcp-vps (public IP 202.92.5.113). Docker compose. Daily pg_dump + MinIO mirror.</p></div>
   </div>
 </section>
 
-<!-- ============ 7 Tools ============ -->
-<section id="tools" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <div class="chip mb-3">Interface</div>
-  <h2 class="text-4xl font-bold text-white mb-4">7 MCP tools cho AI agent</h2>
+<!-- ============ Architecture v2 ============ -->
+<section id="architecture-v2" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <div class="chip mb-3">Kiến trúc v2</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Stack target — AI Connector Hub</h2>
   <p class="text-slate-400 max-w-3xl mb-8">
-    Agent gọi tool phù hợp dựa vào intent của bạn. Dev chỉ cần chat tự nhiên với Claude Code.
+    NestJS backend (MCP + OAuth AS + Registry) + Next.js portal + PostgreSQL + MinIO + Redis + BullMQ.
+    Edge Traefik + IAP oauth2-proxy → Zitadel SSO. AI clients cắm qua Remote MCP Connector với OAuth 2.1 flow chuẩn.
   </p>
-  <table class="tbl">
+
+  <div class="mermaid mb-8">
+flowchart LR
+  subgraph "AI Clients"
+    CD["Claude Desktop"]
+    CH["ChatGPT / Cursor"]
+    MR["mcp-remote proxy"]
+  end
+  subgraph "Auth (Zitadel via authway)"
+    ZT["Zitadel v4<br/>OIDC IdP"]
+    LDAP["Zimbra LDAP<br/>(source of truth)"]
+  end
+  subgraph "OneMCP Gateway"
+    OAUTH["OAuth 2.1 AS<br/>DCR + consent"]
+    MCP["MCP Streamable HTTP<br/>SSE + Mcp-Session-Id"]
+    REG["Skills Registry<br/>multi-project git sync"]
+    PORT["Portal<br/>onboarding + admin"]
+  end
+  subgraph "Data"
+    PG[("PostgreSQL 16<br/>FTS + pgvector")]
+    MN[("MinIO<br/>attachments")]
+    RD[("Redis<br/>BullMQ per-project")]
+  end
+  subgraph "Project sources"
+    G1["Project A<br/>skills git repo"]
+    G2["Project B<br/>skills git repo"]
+    GN["Project N…"]
+  end
+  CD & CH & MR -->|Remote MCP Connector| MCP
+  MCP --> OAUTH
+  OAUTH --> ZT
+  ZT --> LDAP
+  REG --> G1 & G2 & GN
+  REG --> RD
+  MCP --> PG
+  MCP --> MN
+  PORT --> REG
+  PORT --> OAUTH
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Identity</h4><p class="text-slate-400 text-sm">Zimbra email → Zitadel OIDC → OneMCP session. Không còn <code class="text-amber-300">X-Onemcp-User</code> header trust (deprecated v1).</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">MCP transport</h4><p class="text-slate-400 text-sm">Streamable HTTP chuẩn spec 2025 (POST + SSE). Endpoint <code class="text-amber-300">/mcp</code>. Support Claude Desktop native connector.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">OAuth 2.1</h4><p class="text-slate-400 text-sm">Authorization Server + Dynamic Client Registration (RFC 7591). AI client tự đăng ký, không cần cấp secret thủ công.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Skills Registry</h4><p class="text-slate-400 text-sm">Multi-project: mỗi project 1 git repo + deploy token + scope (public/dept/private). Sync qua BullMQ per-project queue.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">RBAC 3-layer</h4><p class="text-slate-400 text-sm">Project scope + skill visibility flag (default/restricted) + user role. Enforce ở service layer.</p></div>
+    <div class="card"><h4 class="text-indigo-300 font-semibold mb-1">Observability</h4><p class="text-slate-400 text-sm">Audit log per tool call + per skill load. <code class="text-amber-300">/metrics</code> Prometheus, pino structured logs.</p></div>
+  </div>
+</section>
+
+<!-- ============ Capabilities ============ -->
+<section id="capabilities" data-version="v1" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v1">v1 · LIVE pilot</span>
+  <div class="chip mb-3">Capabilities</div>
+  <h2 class="text-4xl font-bold text-white mb-4">MCP tools + Skills + Artifacts</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    Core tools ship sẵn. Skills từ mỗi project mở rộng khả năng agent. Artifacts lưu KB dùng chung.
+  </p>
+
+  <h3 class="text-2xl font-semibold text-white mb-4">Core MCP tools (built-in)</h3>
+  <table class="tbl mb-10">
     <thead><tr><th style="width:22%">Tool</th><th>Mục đích</th><th style="width:22%">Khi nào dùng</th></tr></thead>
     <tbody>
-      <tr><td><code>list_skills</code></td><td>Liệt kê skills khả dụng, filter tag/query</td><td>Trước load_skill</td></tr>
+      <tr><td><code>list_skills</code></td><td>Liệt kê skills khả dụng (filter project/tag/query)</td><td>Trước load_skill</td></tr>
       <tr><td><code>load_skill</code></td><td>Tải <code>SKILL.md</code> vào context agent</td><td>Cần guide/protocol</td></tr>
-      <tr><td><code>list_artifacts</code></td><td>Liệt kê report/research/kb theo dept</td><td>Explore knowledge</td></tr>
-      <tr><td><code>get_artifact</code></td><td>Đọc chi tiết 1 artifact (body + metadata)</td><td>Xem KB cụ thể</td></tr>
-      <tr><td><code>get_artifact_template</code></td><td>Trả về schema (sections required) cho type</td><td>TRƯỚC submit</td></tr>
-      <tr><td><code>search</code></td><td>FTS keyword + fuzzy qua skills + artifacts</td><td>Tìm KB tương tự</td></tr>
+      <tr><td><code>search_tools</code></td><td>Tìm tool phù hợp intent (lazy load để tránh context bloat)</td><td>Nhiều tools</td></tr>
+      <tr><td><code>list_artifacts</code></td><td>Liệt kê KB/report/research theo scope</td><td>Explore knowledge</td></tr>
+      <tr><td><code>get_artifact</code></td><td>Đọc chi tiết 1 artifact</td><td>Xem KB cụ thể</td></tr>
+      <tr><td><code>get_artifact_template</code></td><td>Trả schema (sections required) cho type</td><td>TRƯỚC submit</td></tr>
+      <tr><td><code>search</code></td><td>FTS keyword + fuzzy qua skills + artifacts (unaccent, tiếng Việt)</td><td>Tìm KB tương tự</td></tr>
       <tr><td><code>submit_artifact</code></td><td>Nộp KB/report/research (status=pending)</td><td>Cuối session</td></tr>
     </tbody>
   </table>
@@ -214,106 +524,515 @@ flowchart LR
   <h3 class="text-2xl font-semibold text-white mt-16 mb-6">Skills vs Artifacts — phân biệt</h3>
   <div class="grid md:grid-cols-2 gap-6">
     <div class="card">
-      <h4 class="text-xl font-semibold text-indigo-300 mb-3">📘 Skills</h4>
-      <p class="text-slate-300 text-sm mb-3"><b>Static protocol / guide / SOP</b> — do maintainer viết.</p>
+      <h4 class="text-xl font-semibold text-indigo-300 mb-3">📘 Skills (per-project)</h4>
+      <p class="text-slate-300 text-sm mb-3"><b>Static protocol / guide / SOP</b> — do project maintainer viết trong git repo của project.</p>
       <ul class="text-slate-400 text-sm space-y-1">
-        <li>• Source: GitLab mono-repo <code class="text-amber-300">skills-kythuat</code></li>
-        <li>• Sync tự động (webhook + cron)</li>
+        <li>• Source: <b>1 git repo per project</b> (isolation, deploy token riêng)</li>
+        <li>• Sync tự động (webhook + BullMQ per-project queue)</li>
         <li>• Format: <code class="text-amber-300">manifest.json</code> + <code class="text-amber-300">SKILL.md</code></li>
-        <li>• Ví dụ: <code class="text-amber-300">debug-guide</code>, <code class="text-amber-300">session-wrapup</code></li>
+        <li>• Scope: <code class="text-amber-300">public</code> (all users) · <code class="text-amber-300">dept</code> · <code class="text-amber-300">private</code></li>
+        <li>• Visibility flag: <code class="text-amber-300">default</code> (list_skills show) · <code class="text-amber-300">restricted</code> (chỉ khi search hit)</li>
+        <li>• Ví dụ: <code class="text-amber-300">debug-guide</code>, <code class="text-amber-300">session-wrapup</code>, <code class="text-amber-300">deploy-onelog-vps</code></li>
       </ul>
     </div>
     <div class="card">
-      <h4 class="text-xl font-semibold text-emerald-300 mb-3">📄 Artifacts</h4>
-      <p class="text-slate-300 text-sm mb-3"><b>User-generated knowledge</b> — dev submit qua MCP hoặc portal.</p>
+      <h4 class="text-xl font-semibold text-emerald-300 mb-3">📄 Artifacts (user-generated)</h4>
+      <p class="text-slate-300 text-sm mb-3"><b>Runtime knowledge</b> — dev submit qua MCP hoặc portal.</p>
       <ul class="text-slate-400 text-sm space-y-1">
         <li>• 3 loại: <code class="text-amber-300">report</code> · <code class="text-amber-300">research</code> · <code class="text-amber-300">kb</code></li>
         <li>• Template validate structure</li>
         <li>• Versioning (append-only)</li>
         <li>• Review flow: pending → published</li>
-        <li>• Attachments PDF/PNG… ≤100MB</li>
+        <li>• Attachments PDF/PNG… ≤100MB (MinIO)</li>
+        <li>• Scope theo project + dept của người submit</li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- ============ Setup ============ -->
-<section id="setup" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <div class="chip mb-3">Cài đặt</div>
-  <h2 class="text-4xl font-bold text-white mb-4">Kết nối Claude Code với OneMCP</h2>
-  <p class="text-slate-400 max-w-3xl mb-8">3 phút cài đặt. Yêu cầu: đăng ký username với maintainer trước.</p>
+<!-- ============ Setup v1 ============ -->
+<section id="setup-v1" data-version="v1" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v1">v1 · LIVE pilot</span>
+  <div class="chip mb-3">Kết nối AI client (v1)</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Cắm AI client — header trust</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    v1 mode: dev config MCP server bằng URL + header <code class="text-amber-300">X-Onemcp-User</code> (Zimbra email). IP CIDR whitelist bảo vệ endpoint.
+  </p>
 
-  <div class="space-y-6">
-    <div>
-      <div class="flex items-center gap-3 mb-3">
-        <div class="step-num">1</div>
-        <h3 class="text-xl font-semibold text-white">Thêm MCP server vào Claude Code</h3>
-      </div>
-      <p class="text-slate-400 text-sm mb-2 ml-14">Mở file <code class="text-amber-300">~/.claude/settings.json</code> và thêm:</p>
-      <div class="ml-14">
+  <div class="card border-emerald-800/50">
+    <p class="text-slate-400 text-sm mb-4">Cần: <b>đăng ký username với maintainer trước</b>. Maintainer thêm user + role vào PG.</p>
+    <div class="space-y-6">
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="step-num">1</div>
+          <h3 class="text-xl font-semibold text-white">Thêm MCP server vào Claude Code</h3>
+        </div>
+        <p class="text-slate-400 text-sm mb-2 ml-14">Mở file <code class="text-amber-300">~/.claude/settings.json</code> và thêm:</p>
+        <div class="ml-14">
 <pre class="code"><span class="k">{</span>
   <span class="s">"mcpServers"</span>: <span class="k">{</span>
     <span class="s">"onemcp"</span>: <span class="k">{</span>
       <span class="s">"type"</span>: <span class="s">"http"</span>,
       <span class="s">"url"</span>: <span class="s">"https://onemcp.local/api/mcp"</span>,
-      <span class="s">"headers"</span>: <span class="k">{</span> <span class="s">"X-Onemcp-User"</span>: <span class="s">"your-username"</span> <span class="k">}</span>
+      <span class="s">"headers"</span>: <span class="k">{</span> <span class="s">"X-Onemcp-User"</span>: <span class="s">"your-zimbra-email"</span> <span class="k">}</span>
     <span class="k">}</span>
   <span class="k">}</span>
 <span class="k">}</span></pre>
+        </div>
       </div>
-    </div>
 
-    <div>
-      <div class="flex items-center gap-3 mb-3">
-        <div class="step-num">2</div>
-        <h3 class="text-xl font-semibold text-white">Verify kết nối</h3>
-      </div>
-      <p class="text-slate-400 text-sm mb-2 ml-14">Trong Claude Code chat, hỏi:</p>
-      <div class="ml-14">
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="step-num">2</div>
+          <h3 class="text-xl font-semibold text-white">Verify kết nối</h3>
+        </div>
+        <p class="text-slate-400 text-sm mb-2 ml-14">Trong Claude Code chat, hỏi:</p>
+        <div class="ml-14">
 <pre class="code"><span class="c"># hỏi agent</span>
 liệt kê skills khả dụng trong onemcp
 
-<span class="c"># agent sẽ tự gọi list_skills và trả về danh sách skills của phòng</span></pre>
+<span class="c"># agent sẽ tự gọi list_skills và trả về danh sách</span></pre>
+        </div>
       </div>
-    </div>
 
-    <div>
-      <div class="flex items-center gap-3 mb-3">
-        <div class="step-num">3</div>
-        <h3 class="text-xl font-semibold text-white">Cài PreCompact hook (khuyến nghị)</h3>
-      </div>
-      <p class="text-slate-400 text-sm mb-2 ml-14">Nhắc bạn submit KB trước khi session compact:</p>
-      <div class="ml-14">
-<pre class="code"><span class="c"># download hook script</span>
-mkdir -p ~/.claude/hooks
-curl -o ~/.claude/hooks/onemcp-wrapup-check.py \
-  https://onemcp.local/hooks/onemcp-wrapup-check.py
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="step-num">3</div>
+          <h3 class="text-xl font-semibold text-white">PreCompact hook (optional)</h3>
+        </div>
+        <p class="text-slate-400 text-sm mb-2 ml-14">Nhắc submit KB trước khi session compact:</p>
+        <div class="ml-14">
+<pre class="code"><span class="c"># download hook + set env</span>
+curl -o ~/.claude/hooks/onemcp-wrapup-check.py https://onemcp.local/hooks/onemcp-wrapup-check.py
 chmod +x ~/.claude/hooks/onemcp-wrapup-check.py
-
-<span class="c"># env vars (~/.bashrc hoặc ~/.zshrc)</span>
 export ONEMCP_BASE_URL=<span class="s">"https://onemcp.local"</span>
-export ONEMCP_USER=<span class="s">"your-username"</span>
-
-<span class="c"># register hook trong ~/.claude/settings.json → hooks.PreCompact</span></pre>
+export ONEMCP_USER=<span class="s">"your-zimbra-email"</span></pre>
+        </div>
+        <p class="text-slate-500 text-xs mt-2 ml-14">Default: advisory (chỉ nhắc). <code class="text-amber-300">ONEMCP_HOOK_STRICT=1</code> để block compact nếu chưa submit.</p>
       </div>
-      <p class="text-slate-500 text-xs mt-2 ml-14">Default: advisory (chỉ nhắc). <code class="text-amber-300">ONEMCP_HOOK_STRICT=1</code> để block compact nếu chưa submit.</p>
     </div>
   </div>
 </section>
 
+<!-- ============ Setup v2 ============ -->
+<section id="setup-v2" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <div class="chip mb-3">Kết nối AI client (v2)</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Cắm AI client — Remote MCP Connector (OAuth 2.1)</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    v2 target: user không cần lưu API key. AI client tự đăng ký OAuth client (DCR), user login Zimbra qua Zitadel, allow consent → dùng ngay.
+  </p>
+
+  <div class="card border-fuchsia-800/50">
+    <p class="text-slate-400 text-sm mb-4">
+      Kết nối 1 lần, refresh token tự động rotate. Session mọi AI client (Claude Desktop, ChatGPT, Cursor…) đồng bộ qua Zitadel session.
+    </p>
+
+    <div class="space-y-6">
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="step-num">1</div>
+          <h4 class="text-lg font-semibold text-white">Claude Desktop → Settings → Connectors → Add</h4>
+        </div>
+        <div class="ml-14">
+          <p class="text-slate-400 text-sm mb-2">URL:</p>
+<pre class="code">https://mcp.inet.vn/mcp</pre>
+          <p class="text-slate-500 text-xs mt-2">Claude Desktop tự discovery qua <code class="text-amber-300">.well-known/oauth-authorization-server</code> + DCR.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="step-num">2</div>
+          <h4 class="text-lg font-semibold text-white">Login Zimbra qua Zitadel</h4>
+        </div>
+        <p class="text-slate-400 text-sm ml-14">Browser mở popup consent → login email Zimbra → allow OneMCP → callback về Claude Desktop.</p>
+      </div>
+
+      <div>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="step-num">3</div>
+          <h4 class="text-lg font-semibold text-white">Hỏi agent bất kỳ</h4>
+        </div>
+        <div class="ml-14">
+<pre class="code"><span class="c"># chat với Claude Desktop</span>
+liệt kê skills onemcp có gì
+
+<span class="c"># agent tự gọi list_skills qua OneMCP, trả về skills tất cả project user có quyền</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 grid md:grid-cols-3 gap-3">
+      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">Claude Desktop</h5><p class="text-slate-400 text-xs">Native Remote Connector, support DCR</p></div>
+      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">ChatGPT / Cursor</h5><p class="text-slate-400 text-xs">Test matrix Phase 5, fallback proxy nếu SDK cũ</p></div>
+      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">mcp-remote proxy</h5><p class="text-slate-400 text-xs">Cho client cũ không support Streamable HTTP</p></div>
+    </div>
+  </div>
+
+
+</section>
+
+<!-- ============ Multi-project onboarding ============ -->
+<section id="projects" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <div class="chip mb-3">Multi-project</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Đăng ký dự án đẩy skills lên OneMCP</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    Mọi dự án phòng KT (OneLog, OneMCP, authway, các vibecode app…) đều đẩy skills + KB qua OneMCP. Onboarding qua portal, dept-admin approve.
+  </p>
+
+  <div class="grid md:grid-cols-2 gap-6 mb-10">
+    <div class="card">
+      <h3 class="text-xl font-semibold text-indigo-300 mb-3">1 · Dev đăng ký project</h3>
+      <ol class="text-slate-300 text-sm space-y-2 list-decimal ml-4">
+        <li>Login portal <code class="text-amber-300">mcp.inet.vn</code> qua Zimbra SSO</li>
+        <li>New Project → điền: name, git repo URL, scope (public/dept/private)</li>
+        <li>Portal generate deploy token + webhook URL</li>
+        <li>Dev add webhook + token vào GitLab/GitHub repo settings</li>
+        <li>Push commit đầu tiên → webhook trigger sync</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3 class="text-xl font-semibold text-emerald-300 mb-3">2 · Dept-admin approve</h3>
+      <ol class="text-slate-300 text-sm space-y-2 list-decimal ml-4">
+        <li>Portal → Pending Projects list</li>
+        <li>Review scope + git repo hợp lệ không</li>
+        <li>Approve → BullMQ queue kick off first full sync</li>
+        <li>Reject với reason → dev sửa và resubmit</li>
+        <li>Approved project auto-sync mỗi khi push</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3 class="text-2xl font-semibold text-white mb-4">Skills repo layout chuẩn</h3>
+<pre class="code"><span class="c"># git repo structure của project</span>
+skills-projectname/
+├── debug-guide/
+│   ├── manifest.json      <span class="c"># { name, description, scope, visibility, tags }</span>
+│   └── SKILL.md           <span class="c"># protocol markdown</span>
+├── deploy-runbook/
+│   ├── manifest.json
+│   └── SKILL.md
+└── README.md              <span class="c"># project intro (optional)</span></pre>
+
+  <h3 class="text-2xl font-semibold text-white mt-10 mb-4">manifest.json ví dụ</h3>
+<pre class="code"><span class="k">{</span>
+  <span class="s">"name"</span>: <span class="s">"debug-guide"</span>,
+  <span class="s">"description"</span>: <span class="s">"6-step debug protocol cho OneLog services"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"scope"</span>: <span class="s">"public"</span>,        <span class="c">// public | dept | private</span>
+  <span class="s">"visibility"</span>: <span class="s">"default"</span>,   <span class="c">// default (show in list_skills) | restricted (search-only)</span>
+  <span class="s">"tags"</span>: [<span class="s">"debug"</span>, <span class="s">"protocol"</span>, <span class="s">"onelog"</span>],
+  <span class="s">"maintainer"</span>: <span class="s">"chuongdt@inet.vn"</span>
+<span class="k">}</span></pre>
+</section>
+
+<!-- ============ Publish flow v1 ============ -->
+<section id="publish-v1" data-version="v1" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v1">v1 · LIVE pilot</span>
+  <div class="chip mb-3">Push content (v1)</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Đẩy skills & artifacts lên OneMCP</h2>
+  <p class="text-slate-400 max-w-3xl mb-6">
+    2 loại content, 2 workflow khác nhau. <b class="text-indigo-300">Skills</b> = git-based (single mono-repo v1, multi-repo v2), <b class="text-emerald-300">Artifacts</b> = MCP tool <code class="text-amber-300">submit_artifact</code> hoặc Portal form.
+  </p>
+
+  <div class="card mb-10 border-amber-800/50">
+    <div class="flex gap-3">
+      <span class="chip chip-live">v1 hiện tại</span>
+      <p class="text-slate-300 text-sm">
+        Backend v1 đang chạy: <b class="text-indigo-300">1 mono-repo skills-kythuat</b> (GitLab) + <b class="text-emerald-300">spaces model</b> cho artifacts (space = workspace per dept, VD <code class="text-amber-300">ops-runbook</code>, <code class="text-amber-300">ops-oncall</code>).
+        v2 AI Connector Hub (blocked) sẽ mở multi-project repo — <a href="#projects" class="text-indigo-400 underline">xem section Multi-project</a>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Where local -->
+  <div class="card mb-10">
+    <h3 class="text-2xl font-semibold text-white mb-4">📁 Local user lưu skills/artifacts ở đâu?</h3>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div>
+        <h4 class="text-lg font-semibold text-indigo-300 mb-2">Skills — git repo (bắt buộc)</h4>
+        <p class="text-slate-300 text-sm mb-3">
+          <b>v1:</b> single repo <code class="text-amber-300">skills-kythuat</code> trên GitLab nội bộ (do dept KT sở hữu, deploy token cấu hình sẵn trong OneMCP backend).
+          <b>v2:</b> mỗi project 1 repo riêng, đăng ký qua portal.
+        </p>
+        <ul class="text-slate-400 text-sm space-y-1">
+          <li>• <b class="text-slate-200">Contributor:</b> clone <code class="text-amber-300">skills-kythuat</code>, tạo MR</li>
+          <li>• <b class="text-slate-200">Maintainer:</b> review MR, merge vào master</li>
+          <li>• <b class="text-slate-200">Personal <code class="text-amber-300">~/.claude/skills/</code></b>: Claude Code load local, <u>KHÔNG</u> auto-đẩy OneMCP. Muốn share → tạo MR sang <code class="text-amber-300">skills-kythuat</code></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-lg font-semibold text-emerald-300 mb-2">Artifacts — không lưu local</h4>
+        <p class="text-slate-300 text-sm mb-3">
+          Artifacts là <b>runtime knowledge</b> — submit thẳng lên OneMCP không qua git. Mỗi artifact gắn với 1 <b class="text-emerald-300">space</b> (workspace theo dept/topic).
+        </p>
+        <ul class="text-slate-400 text-sm space-y-1">
+          <li>• <b class="text-slate-200">AI session</b>: agent gọi <code class="text-amber-300">submit_artifact</code> MCP tool khi wrap-up</li>
+          <li>• <b class="text-slate-200">Portal web form</b>: dev điền form trên portal, chọn space + type + fill structured fields</li>
+          <li>• <b class="text-slate-200">Attachments</b>: upload trong lúc submit, lưu MinIO</li>
+          <li>• <b class="text-slate-200">Draft local (optional)</b>: dev có thể draft trong file text/Notion trước — source of truth là OneMCP DB</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills push flow -->
+  <h3 class="text-2xl font-semibold text-white mb-4">🔧 Push Skills — git-based flow (v1 actual)</h3>
+  <p class="text-slate-400 text-sm mb-4">Contributor tạo MR trong <code class="text-amber-300">skills-kythuat</code> → maintainer merge → OneMCP sync <b>qua cron 15min hoặc manual trigger</b> (không webhook v1). Portal có nút "Trigger sync" cho maintainer.</p>
+
+  <div class="mermaid mb-6">
+sequenceDiagram
+  autonumber
+  participant D as Contributor
+  participant M as Maintainer
+  participant G as GitLab<br/>skills-kythuat repo
+  participant OM as OneMCP<br/>(git-mirror + BullMQ)
+  participant P as Portal
+  participant AI as AI Agent
+
+  D->>G: git clone skills-kythuat + branch + edit
+  D->>G: Push MR
+  M->>G: Review MR → merge master
+  Note over OM: Trigger sync (v1):<br/>cron 15min HOẶC manual
+  OM->>G: git fetch (deploy token)
+  OM->>OM: Parse manifest.json + validate<br/>Create pending version trong DB
+  M->>P: Login portal → Skills → Pending versions
+  M->>P: Approve version (per-skill)
+  P->>OM: POST /skills/:name/versions/:id/approve
+  OM->>OM: Skill version = published, index FTS
+  AI->>OM: list_skills (session sau)
+  OM-->>AI: Skill hiện trong danh sách theo dept
+  </div>
+
+  <h4 class="text-lg font-semibold text-white mb-3">5 bước cụ thể (v1)</h4>
+  <div class="space-y-3 mb-8">
+    <div class="card flex gap-4"><div class="step-num">1</div>
+      <div><b class="text-white block mb-1">Clone skills-kythuat</b>
+        <div class="text-slate-300 text-sm">
+<pre class="code" style="margin-top:6px">git clone git@gitlabs.inet.vn:kt/skills-kythuat.git
+cd skills-kythuat
+git checkout -b feat/add-deploy-runbook</pre>
+        </div>
+      </div>
+    </div>
+    <div class="card flex gap-4"><div class="step-num">2</div>
+      <div><b class="text-white block mb-1">Tạo skill folder</b>
+        <div class="text-slate-300 text-sm">
+<pre class="code" style="margin-top:6px">mkdir -p deploy-runbook
+cat &gt; deploy-runbook/manifest.json &lt;&lt; 'EOF'
+{
+  "name": "deploy-runbook",
+  "description": "OneLog VPS deploy 6-step runbook",
+  "version": "1.0.0",
+  "tags": ["deploy", "onelog", "runbook"],
+  "maintainer": "chuongdt@inet.vn"
+}
+EOF
+$EDITOR deploy-runbook/SKILL.md   <span class="c"># viết protocol markdown</span></pre>
+          <p class="text-slate-500 text-xs mt-2">Manifest schema validated bởi backend <code class="text-amber-300">manifest-schema.ts</code>. Fields v2 (<code>scope</code>, <code>visibility</code>) chưa dùng trong v1.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card flex gap-4"><div class="step-num">3</div>
+      <div><b class="text-white block mb-1">Push MR + code review</b>
+        <div class="text-slate-300 text-sm">
+<pre class="code" style="margin-top:6px">git add deploy-runbook/
+git commit -m "feat: add deploy-runbook skill"
+git push -u origin feat/add-deploy-runbook
+<span class="c"># Tạo MR trên GitLab → assign maintainer review</span></pre>
+        </div>
+      </div>
+    </div>
+    <div class="card flex gap-4"><div class="step-num">4</div>
+      <div><b class="text-white block mb-1">Maintainer merge → sync</b>
+        <div class="text-slate-400 text-sm">
+          Sau khi MR merge master, sync tự động qua <b>cron 15 phút</b> (fallback). Muốn nhanh: maintainer login portal → nút "Trigger sync" (POST <code class="text-amber-300">/api/skills/sync</code>, rate limit 5/min, chỉ maintainer/admin).
+          <p class="text-slate-500 text-xs mt-2">Backend: <code class="text-amber-300">git-mirror.service.ts</code> pull qua deploy token, <code class="text-amber-300">skill-sync.processor.ts</code> parse + upsert version = pending.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card flex gap-4 border-emerald-800/50"><div class="step-num" style="background:#065f46;color:#a7f3d0">✓</div>
+      <div><b class="text-emerald-300 block mb-1">Approve version → published</b>
+        <div class="text-slate-300 text-sm">
+          Portal → Skills → chọn <code class="text-amber-300">deploy-runbook</code> → Pending versions → Approve.
+          Endpoint <code class="text-amber-300">POST /api/skills/:name/versions/:id/approve</code>. Approve xong → session AI sau <code class="text-amber-300">list_skills</code> hit skill mới.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Artifacts push flow -->
+  <h3 class="text-2xl font-semibold text-white mt-16 mb-4">📄 Push Artifacts — spaces model (v1 actual)</h3>
+  <p class="text-slate-400 text-sm mb-4">
+    Artifact gắn với 1 <b>space</b>. Space = workspace theo dept/topic (VD <code class="text-amber-300">ops-runbook</code>, <code class="text-amber-300">ops-oncall</code>).
+    Visibility <code class="text-amber-300">space</code> (chỉ members) · <code class="text-amber-300">dept</code> (toàn dept) · <code class="text-amber-300">cross_dept</code> (mọi dept). Access check ở service layer.
+  </p>
+
+  <div class="grid md:grid-cols-3 gap-4 mb-8">
+    <div class="card">
+      <div class="chip chip-live mb-2">Kênh 1</div>
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">Từ AI session (recommended)</h4>
+      <p class="text-slate-300 text-sm mb-3">Agent tự đề xuất khi kết thúc session. User confirm → agent gọi <code class="text-amber-300">submit_artifact</code> qua MCP.</p>
+      <p class="text-slate-400 text-xs">Ưu điểm: có context đầy đủ, template auto-fill qua <code class="text-amber-300">get_artifact_template</code>. Ít friction nhất.</p>
+    </div>
+    <div class="card">
+      <div class="chip chip-live mb-2">Kênh 2</div>
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">Portal web form</h4>
+      <p class="text-slate-300 text-sm mb-3">Portal <code class="text-amber-300">/artifacts/new</code> → chọn space + type → fill structured form theo template → upload attachments → submit.</p>
+      <p class="text-slate-400 text-xs">Ưu điểm: dev draft chậm, review preview trước submit, upload attachments dễ.</p>
+    </div>
+    <div class="card">
+      <div class="chip mb-2">Kênh 3</div>
+      <h4 class="text-lg font-semibold text-indigo-300 mb-2">REST API (advanced)</h4>
+      <p class="text-slate-300 text-sm mb-3">POST <code class="text-amber-300">/api/artifacts</code> với header <code class="text-amber-300">X-Onemcp-User</code> (v1) hoặc Bearer token (v2). Dùng cho CI/CD, script.</p>
+      <p class="text-slate-400 text-xs">Ưu điểm: batch import, auto-generate KB từ postmortem tool.</p>
+    </div>
+  </div>
+
+  <div class="mermaid mb-6">
+sequenceDiagram
+  autonumber
+  participant D as Dev
+  participant AI as AI Agent
+  participant OM as OneMCP<br/>(artifacts + spaces + PG + MinIO)
+  participant M as Maintainer
+
+  Note over D,AI: Kênh 1 — từ session
+  D->>AI: "wrap-up session, submit KB fix bug X"
+  AI->>OM: get_artifact_template(type=kb)
+  OM-->>AI: schema (required fields per template)
+  AI->>D: propose payload (fill từ session context)
+  D->>AI: confirm space slug + edit nếu cần
+  AI->>OM: submit_artifact(type=kb, space="ops-runbook", ...)
+  OM->>OM: Validate Zod schema<br/>Resolve space slug → space_id<br/>Access check user dept vs space
+  OM->>OM: Insert PG (status=pending, v1)<br/>+ MinIO (attachments)
+  OM-->>AI: artifact_id + preview URL
+  Note over M,OM: Review flow
+  M->>OM: Portal → space → pending artifacts
+  M->>OM: POST /artifacts/:id/review (approve/reject)
+  OM->>OM: FTS index update
+  Note over D,OM: KB available cho search theo space + user dept
+  </div>
+
+  <h4 class="text-lg font-semibold text-white mb-3">Ví dụ payload submit_artifact (v1)</h4>
+<pre class="code"><span class="c"># qua MCP tool call (JSON-RPC)</span>
+<span class="k">{</span>
+  <span class="s">"jsonrpc"</span>: <span class="s">"2.0"</span>,
+  <span class="s">"method"</span>: <span class="s">"tools/call"</span>,
+  <span class="s">"params"</span>: <span class="k">{</span>
+    <span class="s">"name"</span>: <span class="s">"submit_artifact"</span>,
+    <span class="s">"arguments"</span>: <span class="k">{</span>
+      <span class="s">"type"</span>: <span class="s">"kb"</span>,
+      <span class="s">"space"</span>: <span class="s">"ops-runbook"</span>,          <span class="c">// v1: space slug (không phải project)</span>
+      <span class="s">"template_key"</span>: <span class="s">"kb-default"</span>,      <span class="c">// resolve template validation</span>
+      <span class="s">"title"</span>: <span class="s">"Fix: Zitadel v4.15 SSR strip Host header"</span>,
+      <span class="s">"slug"</span>: <span class="s">"kb-zitadel-ssr-host-header"</span>,
+      <span class="s">"structured"</span>: <span class="k">{</span>
+        <span class="s">"problem"</span>: <span class="s">"Login sidecar Node undici strip Host header..."</span>,
+        <span class="s">"solution"</span>: <span class="s">"Set ZITADEL_INSTANCEHOSTHEADERS + upgrade v4.16.1"</span>,
+        <span class="s">"related"</span>: <span class="s">"Refs zitadel/zitadel#12125, PR #12144"</span>
+      <span class="k">}</span>,
+      <span class="s">"tags"</span>: [<span class="s">"zitadel"</span>, <span class="s">"ldap"</span>, <span class="s">"authway"</span>]
+    <span class="k">}</span>
+  <span class="k">}</span>,
+  <span class="s">"id"</span>: 42
+<span class="k">}</span></pre>
+  <p class="text-slate-500 text-xs mt-2">Backend handler: <code class="text-amber-300">mcp/tools/submit-artifact-tool-handler.ts</code>. Validation: Zod schema từ <code class="text-amber-300">artifacts/dto/submit-artifact.dto.ts</code>. Access check: user dept vs space's <code>department_id</code> + visibility.</p>
+
+  <!-- Comparison table -->
+  <h3 class="text-2xl font-semibold text-white mt-12 mb-4">So sánh Skills vs Artifacts (v1 actual)</h3>
+  <table class="tbl">
+    <thead>
+      <tr><th style="width:22%">Aspect</th><th>Skills</th><th>Artifacts</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>Local storage</b></td><td>Git repo <code>skills-kythuat</code> (mono, v1)</td><td>Không lưu local (draft optional)</td></tr>
+      <tr><td><b>Push mechanism</b></td><td>Git MR + merge, sync qua cron/manual</td><td>MCP tool / Portal form / REST API</td></tr>
+      <tr><td><b>Version control</b></td><td>Git commit history + version row DB</td><td>Append-only versioning trong DB</td></tr>
+      <tr><td><b>Review</b></td><td>MR review + version approve trong portal</td><td>Space maintainer review pending → published</td></tr>
+      <tr><td><b>Scope model</b></td><td>Toàn dept KT (v1 single repo)</td><td>Space (workspace) → dept/cross_dept/space-scoped</td></tr>
+      <tr><td><b>Sync trigger</b></td><td>Cron 15min + manual POST <code>/skills/sync</code></td><td>Real-time (API call trực tiếp)</td></tr>
+      <tr><td><b>Update tần suất</b></td><td>Ít (protocol ổn định)</td><td>Nhiều (mỗi bug fix = 1 KB)</td></tr>
+      <tr><td><b>Ai viết</b></td><td>Maintainer / senior dev (qua MR)</td><td>Bất kỳ contributor</td></tr>
+      <tr><td><b>Attachments</b></td><td>Trong git repo (MD/PNG inline)</td><td>Upload MinIO (PDF/log/screenshot)</td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- Best practices -->
+  <div class="card mt-8 border-indigo-800/50">
+    <h3 class="text-2xl font-semibold text-white mb-3">💡 Best practices</h3>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div>
+        <b class="text-indigo-300 block mb-1">Skills</b>
+        <ul class="text-slate-400 space-y-1">
+          <li>• 1 skill = 1 protocol/SOP rõ ràng, không quá 300 dòng MD</li>
+          <li>• Review qua MR trước merge (senior dev)</li>
+          <li>• Tag rõ ràng (project, tech stack, use case) để search hit</li>
+          <li>• Bump version khi thay đổi breaking</li>
+          <li>• Test local qua <code class="text-amber-300">~/.claude/skills/</code> trước khi tạo MR</li>
+        </ul>
+      </div>
+      <div>
+        <b class="text-emerald-300 block mb-1">Artifacts</b>
+        <ul class="text-slate-400 space-y-1">
+          <li>• Submit ngay khi wrap-up session (đừng để nguội)</li>
+          <li>• Chọn đúng space theo topic (ops-runbook, ops-oncall…)</li>
+          <li>• Fill đủ structured fields theo template</li>
+          <li>• Attach screenshot/log nếu có (post-v2.1 sẽ có OCR search)</li>
+          <li>• Đừng duplicate — search trước, submit version mới nếu extend KB cũ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Publish flow v2 ============ -->
+<section id="publish-v2" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <div class="chip mb-3">Push content (v2)</div>
+  <h2 class="text-4xl font-bold text-white mb-4">Push flow trong v2 AI Connector Hub</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">
+    v2 giữ concept skills (git) + artifacts (spaces) nhưng mở rộng multi-project + real-time sync + OAuth auth.
+  </p>
+
+  <div class="card border-fuchsia-800/50">
+    <h3 class="text-2xl font-semibold text-white mb-4">Thay đổi so với v1</h3>
+    <ul class="text-slate-300 text-sm space-y-2">
+      <li>• <b>Skills registry:</b> mono-repo <code class="text-amber-300">skills-kythuat</code> → <b>N repo per-project</b> (mỗi project 1 git repo riêng, deploy token cấp riêng). Đăng ký qua portal onboarding wizard.</li>
+      <li>• <b>Sync trigger:</b> cron 15min / manual → <b>webhook GitLab/GitHub real-time</b>, BullMQ per-project queue tránh race giữa các project push cùng lúc.</li>
+      <li>• <b>Manifest fields:</b> thêm 2 fields dùng thực tế — <code class="text-amber-300">scope</code> (public/dept/private) và <code class="text-amber-300">visibility</code> (default/restricted). v1 có schema nhưng chưa dùng.</li>
+      <li>• <b>Artifacts:</b> giữ spaces model, thêm <b>project dimension</b> (artifact có thể gắn project + space đồng thời). Filter search theo project.</li>
+      <li>• <b>Auth:</b> header trust <code class="text-amber-300">X-Onemcp-User</code> → <b>OAuth 2.1 Bearer token</b> (Zitadel-issued, TTL 1h + refresh rotation).</li>
+      <li>• <b>Approval flow:</b> giữ nguyên (maintainer review pending → published), thêm role dept-admin duyệt project mới.</li>
+    </ul>
+    <p class="text-slate-500 text-xs mt-4">
+      Plan tracking: <code class="text-amber-300">plans/260805-0852-onemcp-ai-connector-hub/</code>.
+      Blocked bởi Zitadel SSO migrate <code class="text-amber-300">260805-1409</code>. Effort 14-18 ngày dev sau khi unblock.
+    </p>
+  </div>
+
+  <p class="text-slate-500 text-sm mt-6">
+    Chi tiết flow đăng ký project + sync qua webhook: xem <a href="#projects" class="text-indigo-400 underline">Multi-project onboarding</a>.
+  </p>
+</section>
+
 <!-- ============ Workflow ============ -->
-<section id="workflow" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+<section id="workflow" data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-both">Áp dụng cả v1 & v2</span>
   <div class="chip mb-3">Workflow điển hình</div>
   <h2 class="text-4xl font-bold text-white mb-4">Debug bug end-to-end</h2>
-  <p class="text-slate-400 max-w-3xl mb-8">6 bước từ khi gặp error đến khi KB dùng chung được cho dev khác.</p>
+  <p class="text-slate-400 max-w-3xl mb-8">6 bước từ khi gặp error đến khi KB dùng chung được cho toàn công ty.</p>
 
   <div class="space-y-4">
     <div class="card flex gap-4"><div class="step-num">1</div>
       <div><b class="text-white block mb-1">Gặp error</b>
-        <span class="text-slate-300 text-sm">Paste stacktrace/log vào Claude Code chat, mô tả context (endpoint gọi, khi nào xảy ra).</span></div></div>
+        <span class="text-slate-300 text-sm">Paste stacktrace/log vào Claude Desktop chat, mô tả context (endpoint gọi, khi nào xảy ra).</span></div></div>
     <div class="card flex gap-4"><div class="step-num">2</div>
-      <div><b class="text-white block mb-1">Agent search</b>
-        <span class="text-slate-300 text-sm">Agent tự động gọi <code class="text-amber-300">search</code> với keywords từ error. Nếu hit KB → apply thẳng, skip debug.</span></div></div>
+      <div><b class="text-white block mb-1">Agent search qua OneMCP</b>
+        <span class="text-slate-300 text-sm">Agent tự động gọi <code class="text-amber-300">search</code> với keywords → hit KB từ project A/B/C bất kỳ user có quyền. Nếu hit → apply thẳng, skip debug.</span></div></div>
     <div class="card flex gap-4"><div class="step-num">3</div>
       <div><b class="text-white block mb-1">Load guide nếu cần</b>
         <span class="text-slate-300 text-sm">Nếu chưa có KB, agent gọi <code class="text-amber-300">load_skill debug-guide</code> để lấy protocol 6-step: stabilize → gather → reproduce → isolate → fix → wrap-up.</span></div></div>
@@ -325,20 +1044,20 @@ export ONEMCP_USER=<span class="s">"your-username"</span>
         <span class="text-slate-300 text-sm">Trước khi close session, agent gọi <code class="text-amber-300">get_artifact_template kb</code> → điền <code>problem</code>/<code>solution</code>/<code>related</code> → <code class="text-amber-300">submit_artifact</code>.</span></div></div>
     <div class="card flex gap-4 border-emerald-800/50"><div class="step-num" style="background:#065f46;color:#a7f3d0">✓</div>
       <div><b class="text-emerald-300 block mb-1">Maintainer review → Published</b>
-        <span class="text-slate-300 text-sm">Trong ngày, maintainer approve. KB dept-wide visible qua <code class="text-amber-300">search</code>. Dev khác dùng ngay.</span></div></div>
+        <span class="text-slate-300 text-sm">Trong ngày, maintainer approve. KB scope theo project visible qua <code class="text-amber-300">search</code>. Dev khác dùng ngay.</span></div></div>
   </div>
 
   <h3 class="text-2xl font-semibold text-white mt-16 mb-4">Template KB — ví dụ payload</h3>
 <pre class="code"><span class="k">{</span>
   <span class="s">"type"</span>: <span class="s">"kb"</span>,
-  <span class="s">"title"</span>: <span class="s">"Fix: BullMQ worker OOM khi Redis maxmemory-policy=allkeys-lru"</span>,
-  <span class="s">"slug"</span>: <span class="s">"kb-bullmq-oom-redis-eviction"</span>,
+  <span class="s">"title"</span>: <span class="s">"Fix: Zitadel v4.15 SSR fetch strip Host header"</span>,
+  <span class="s">"slug"</span>: <span class="s">"kb-zitadel-ssr-host-header-strip"</span>,
   <span class="s">"structured"</span>: <span class="k">{</span>
-    <span class="s">"problem"</span>: <span class="s">"Worker BullMQ crash sau 30 phút, log OOM. Redis INFO memory hiện evicted_keys tăng liên tục."</span>,
-    <span class="s">"solution"</span>: <span class="s">"Redis config maxmemory-policy phải là noeviction cho BullMQ. allkeys-lru evict job data → worker đọc key null → retry loop → OOM. Fix trong docker-compose.yml redis command."</span>,
-    <span class="s">"related"</span>: <span class="s">"BullMQ docs khuyến nghị. Check /health/redis memory metric để phát hiện sớm."</span>
+    <span class="s">"problem"</span>: <span class="s">"Login v2 sidecar SSR fetch dùng Node undici strip Host header → Zitadel không resolve được instance → 404."</span>,
+    <span class="s">"solution"</span>: <span class="s">"Set ZITADEL_INSTANCEHOSTHEADERS + PUBLICHOSTHEADERS include x-forwarded-host. Login sidecar CUSTOM_REQUEST_HEADERS thêm X-Forwarded-Host. Upgrade v4.16.1."</span>,
+    <span class="s">"related"</span>: <span class="s">"Refs zitadel/zitadel issue #12125. PR #12144 chỉ fix proxy path, không fix SSR."</span>
   <span class="k">}</span>,
-  <span class="s">"tags"</span>: [<span class="s">"bullmq"</span>, <span class="s">"redis"</span>, <span class="s">"infra"</span>]
+  <span class="s">"tags"</span>: [<span class="s">"zitadel"</span>, <span class="s">"ldap"</span>, <span class="s">"host-header"</span>, <span class="s">"authway"</span>]
 <span class="k">}</span></pre>
 
   <h3 class="text-2xl font-semibold text-white mt-16 mb-4">Search tips</h3>
@@ -349,7 +1068,7 @@ export ONEMCP_USER=<span class="s">"your-username"</span>
         <li>• Dùng error message thật (unaccent auto)</li>
         <li>• 3-6 từ khoá cốt lõi</li>
         <li>• Có thể bỏ dấu (<code class="text-amber-300">huong dan</code> = <code class="text-amber-300">hướng dẫn</code>)</li>
-        <li>• Filter <code class="text-amber-300">kind=artifact</code> nếu chỉ tìm KB</li>
+        <li>• Filter <code class="text-amber-300">project=onelog</code> để scope hẹp</li>
       </ul>
     </div>
     <div class="card">
@@ -358,27 +1077,44 @@ export ONEMCP_USER=<span class="s">"your-username"</span>
         <li>• Câu hỏi dài dạng chat</li>
         <li>• Từ stop-word không thông tin</li>
         <li>• Search 1 từ generic (<code class="text-amber-300">error</code>)</li>
-        <li>• Kỳ vọng semantic (v1 keyword-based, v2 sẽ có)</li>
+        <li>• Kỳ vọng semantic (v1 keyword-based, v2.1 sẽ có pgvector)</li>
       </ul>
     </div>
   </div>
 </section>
 
 <!-- ============ RBAC ============ -->
-<section id="rbac" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+<section id="rbac" data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-both">Áp dụng cả v1 & v2</span>
   <div class="chip mb-3">Governance</div>
-  <h2 class="text-4xl font-bold text-white mb-4">Vai trò & Review flow</h2>
-  <p class="text-slate-400 max-w-3xl mb-8">5 roles, mỗi role kế thừa quyền role trước. Multi-tenant enforce ở service layer — không leak cross-dept.</p>
-  <table class="tbl mb-8">
-    <thead><tr><th style="width:22%">Role</th><th>Quyền chính</th></tr></thead>
+  <h2 class="text-4xl font-bold text-white mb-4">RBAC 3-layer</h2>
+  <p class="text-slate-400 max-w-3xl mb-8">Quyền truy cập skill/artifact = AND của 3 lớp: project scope + skill visibility + user role.</p>
+
+  <table class="tbl mb-10">
+    <thead><tr><th style="width:22%">Layer</th><th>Giá trị</th><th>Ý nghĩa</th></tr></thead>
     <tbody>
-      <tr><td><b class="text-slate-200">viewer</b></td><td>Đọc published skills/artifacts (trong dept)</td></tr>
-      <tr><td><b class="text-slate-200">contributor</b></td><td>+ submit artifact (pending), sửa artifact của mình (optimistic lock)</td></tr>
-      <tr><td><b class="text-emerald-300">maintainer</b></td><td>+ approve/reject pending, publish version</td></tr>
-      <tr><td><b class="text-amber-300">dept-admin</b></td><td>+ quản lý user role trong dept</td></tr>
-      <tr><td><b class="text-red-300">super-admin</b></td><td>+ cross-dept operations, config hệ thống, admin CIDR</td></tr>
+      <tr>
+        <td rowspan="3"><b class="text-indigo-300">Project scope</b></td>
+        <td><code>public</code></td><td>Mọi user auth được thấy skill/artifact của project</td>
+      </tr>
+      <tr><td><code>dept</code></td><td>Chỉ user cùng dept với project</td></tr>
+      <tr><td><code>private</code></td><td>Chỉ maintainer + explicit-grant users</td></tr>
+      <tr>
+        <td rowspan="2"><b class="text-emerald-300">Skill visibility</b></td>
+        <td><code>default</code></td><td>Hiện trong <code>list_skills</code> (agent thấy ngay)</td>
+      </tr>
+      <tr><td><code>restricted</code></td><td>Chỉ khi <code>search</code> hit (giảm context bloat)</td></tr>
+      <tr>
+        <td rowspan="5"><b class="text-amber-300">User role</b></td>
+        <td><b class="text-slate-200">viewer</b></td><td>Đọc published skills/artifacts (theo project scope)</td>
+      </tr>
+      <tr><td><b class="text-slate-200">contributor</b></td><td>+ submit artifact (pending)</td></tr>
+      <tr><td><b class="text-emerald-300">maintainer</b></td><td>+ approve/reject pending, publish, quản lý project skills repo</td></tr>
+      <tr><td><b class="text-amber-300">dept-admin</b></td><td>+ approve project mới, quản lý user role trong dept</td></tr>
+      <tr><td><b class="text-red-300">super-admin</b></td><td>+ cross-dept ops, OAuth client management, revoke token</td></tr>
     </tbody>
   </table>
+
   <div class="ascii">
    contributor: submit_artifact ──▶ status=pending, v1
                                          │
@@ -387,65 +1123,84 @@ export ONEMCP_USER=<span class="s">"your-username"</span>
                                     ▼            ▼
                               published       rejected
                               (searchable)   (feedback)
+                                    │
+                              scope filter (project + user dept)
+                                    │
+                                    ▼
+                           dev khác search + apply
   </div>
 </section>
 
 <!-- ============ FAQ ============ -->
-<section id="faq" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+<section id="faq" data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+  <span class="section-badge badge-both">Áp dụng cả v1 & v2</span>
   <div class="chip mb-3">FAQ</div>
   <h2 class="text-4xl font-bold text-white mb-8">Câu hỏi thường gặp</h2>
   <div class="space-y-4">
     <details class="card group">
-      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Data có leak sang phòng ban khác không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">Không. Mọi query filter <code class="text-amber-300">department_id</code> theo user identity. Multi-tenant enforce ở service layer.</p>
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Khi nào v2 OAuth Connector ship? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Sau khi plan <code class="text-amber-300">260805-1409 onemcp-migrate-gitlab-to-zitadel</code> hoàn tất (Zitadel SSO thay GitLab SSO). Plan <code class="text-amber-300">260805-0852 ai-connector-hub</code> ở trạng thái BLOCKED chờ. Effort ~14-18 ngày dev sau khi unblock.</p>
     </details>
     <details class="card group">
-      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Nhỡ submit sai thì sao? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Đang dùng v1 header trust, cần làm gì khi v2 ship? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">v1 & v2 song song 1 khoảng transition. v2 ship xong, dev tự chuyển AI client sang Remote Connector (login lại 1 lần qua Zimbra), remove <code class="text-amber-300">X-Onemcp-User</code> header. v1 endpoint sẽ deprecated sau 4 tuần.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Data có leak sang phòng ban khác không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Không. RBAC 3-layer enforce ở service layer. Project scope <code class="text-amber-300">dept</code>/<code class="text-amber-300">private</code> filter theo user's Zitadel identity + Zimbra department mapping.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Project mới đẩy skills mất bao lâu approve? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Dept-admin review trong ngày. Sau khi approve, first-sync qua BullMQ trong vài giây. Push commits sau đó auto-sync qua webhook.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Nhỡ submit artifact sai thì sao? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
       <p class="text-slate-300 text-sm mt-3">Artifact là append-only versioning. Edit tạo version mới, maintainer có thể publish version cũ nếu cần rollback.</p>
     </details>
     <details class="card group">
-      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">MCP dùng được với tool khác ngoài Claude Code? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">Được — bất kỳ MCP client nào (Cursor, Continue, custom). JSON-RPC 2.0 chuẩn, chỉ cần config header <code class="text-amber-300">X-Onemcp-User</code>.</p>
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">AI client nào hỗ trợ v2 OAuth Connector? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Claude Desktop native (primary target). ChatGPT + Cursor test matrix trong Phase 5. Client cũ không support Streamable HTTP → dùng <code class="text-amber-300">mcp-remote</code> proxy fallback.</p>
     </details>
     <details class="card group">
-      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Search không thấy KB tôi mới submit? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">KB pending không xuất hiện với user khác. Bạn thấy KB của mình. Đợi maintainer approve để dept-wide visible.</p>
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">MCP tool aggregator từ project khác có không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">v2 KHÔNG có (out-of-scope, xem non-goals plan). Trigger mở lại: ≥ 2 project confirm cần share tool giữa các phòng. v2 focus: skills registry + KB share qua artifacts.</p>
     </details>
     <details class="card group">
       <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Khi nào có semantic search? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">P4.2 roadmap — cần chọn embedding infra (Ollama local? cloud?). Feedback pilot sẽ quyết định ưu tiên.</p>
+      <p class="text-slate-300 text-sm mt-3">v2.1 roadmap — pgvector đã enable, cần chọn embedding infra (Ollama local? cloud?). Feedback pilot v2 sẽ quyết định ưu tiên.</p>
+    </details>
+    <details class="card group">
+      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Nếu OneMCP down thì AI client còn dùng được không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
+      <p class="text-slate-300 text-sm mt-3">Có. AI client core (Claude Desktop) hoạt động bình thường, chỉ không gọi được tools OneMCP cho tới khi service back up. Emergency rollback: <code class="text-amber-300">AI_CONNECTOR_MODE=off</code> disable OAuth endpoint, portal vẫn work qua session cookie.</p>
     </details>
     <details class="card group">
       <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Backup có tự động không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">Có. Daily pg_dump + MinIO mirror, retention 14 ngày. Off-site mirror (NAS/S3) đang manual — sẽ auto hoá post-v1.</p>
-    </details>
-    <details class="card group">
-      <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">Nếu OneMCP down thì Claude Code còn dùng được không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">Có. MCP tools chỉ là extension. Claude Code core hoạt động bình thường, chỉ không gọi được 7 tools OneMCP cho tới khi service back up.</p>
+      <p class="text-slate-300 text-sm mt-3">Có. Daily pg_dump + MinIO mirror, retention 14 ngày. Off-site mirror (NAS/S3) auto hoá sau v2 rollout.</p>
     </details>
   </div>
 </section>
 
 <!-- ============ CTA ============ -->
-<section class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
+<section data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
   <div class="card p-10 md:p-14 text-center" style="background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 100%);border-color:#4338ca">
     <div class="chip mb-4">Bắt đầu</div>
     <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Sẵn sàng cook?</h2>
-    <p class="text-slate-300 max-w-2xl mx-auto mb-8">Cài MCP config, submit KB đầu tiên, thấy sức mạnh của knowledge reuse.</p>
+    <p class="text-slate-300 max-w-2xl mx-auto mb-8">v1 pilot đang chạy (header trust). v2 Remote Connector ship sau Zitadel SSO. Đăng ký project của bạn qua portal khi v2 live.</p>
     <div class="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
       <div class="card">
-        <div class="text-indigo-300 font-semibold mb-1">Portal</div>
+        <div class="text-indigo-300 font-semibold mb-1">Portal (v1 hiện tại)</div>
         <a class="text-slate-300 underline" href="https://onemcp.local">https://onemcp.local</a>
         <div class="text-slate-500 text-xs mt-1">skills · artifacts · search · review</div>
       </div>
       <div class="card">
-        <div class="text-indigo-300 font-semibold mb-1">MCP endpoint</div>
-        <code class="text-amber-300 text-sm">https://onemcp.local/api/mcp</code>
-        <div class="text-slate-500 text-xs mt-1">JSON-RPC 2.0 · header X-Onemcp-User</div>
+        <div class="text-fuchsia-300 font-semibold mb-1">MCP endpoint (v2 target)</div>
+        <code class="text-amber-300 text-sm">https://mcp.inet.vn/mcp</code>
+        <div class="text-slate-500 text-xs mt-1">OAuth 2.1 + DCR · Remote Connector</div>
       </div>
       <div class="card">
         <div class="text-indigo-300 font-semibold mb-1">Docs</div>
         <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/system-architecture.md</code></div>
+        <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/sso-guide.md</code></div>
         <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/client-session-wrapup.md</code></div>
       </div>
       <div class="card">
@@ -454,11 +1209,14 @@ export ONEMCP_USER=<span class="s">"your-username"</span>
         <div class="text-slate-300 text-sm">Issue: <code class="text-amber-300">onemcp/backend</code></div>
       </div>
     </div>
+    <div class="mt-8 text-slate-400 text-xs">
+      Plan tracking: <code class="text-amber-300">plans/260805-0852-onemcp-ai-connector-hub/</code> · Blocker: <code class="text-amber-300">plans/260805-1409-onemcp-migrate-gitlab-to-zitadel/</code>
+    </div>
   </div>
 </section>
 
 <footer class="max-w-6xl mx-auto px-6 py-10 border-t border-slate-800 text-slate-500 text-sm flex justify-between">
-  <div>OneMCP v1 · pilot Kỹ thuật · Internal INET</div>
+  <div>OneMCP · AI Connector Hub · Internal INET</div>
   <div>Không phân phối ngoài</div>
 </footer>
 
@@ -477,7 +1235,28 @@ export ONEMCP_USER=<span class="s">"your-username"</span>
     });
   }, { rootMargin: '-30% 0px -60% 0px' });
   sections.forEach(s => io.observe(s));
+
+  // Version filter toggle
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const body = document.body;
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.filter;
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      body.classList.remove('filter-v1', 'filter-v2');
+      if (f === 'v1') body.classList.add('filter-v1');
+      if (f === 'v2') body.classList.add('filter-v2');
+      // Hide TOC entries for filtered-out version
+      document.querySelectorAll('[data-toc-version]').forEach(a => {
+        const v = a.dataset.tocVersion;
+        if (f === 'all') a.style.display = '';
+        else a.style.display = (v === f) ? '' : 'none';
+      });
+    });
+  });
 </script>
 
+</div><!-- end .main -->
 </body>
 </html>
