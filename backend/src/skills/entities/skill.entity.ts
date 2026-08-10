@@ -9,12 +9,15 @@ import {
   Unique,
 } from 'typeorm';
 import { Department } from '../../departments/entities/department.entity';
+import { Project } from '../../projects/entities/project.entity';
 import { SkillVersion } from './skill-version.entity';
 
 export type SkillStatus = 'active' | 'deprecated' | 'archived';
 
 // Skill = static content (SKILL.md + resources) — v1 KHÔNG execute code (C1 mitigation).
 // Nguồn thật ở GitLab repo, metadata + version pointer lưu ở DB.
+// projectId=null → legacy mono-repo (skills-kythuat), scoped by departmentId.
+// projectId=<fk> → multi-project registry (P5+), scoped by projectId.
 @Entity({ name: 'skills' })
 @Unique(['departmentId', 'name'])
 export class Skill {
@@ -31,6 +34,16 @@ export class Skill {
 
   @Column({ name: 'department_id' })
   departmentId!: number;
+
+  // nullable FK → projects.id. NULL = legacy mono-repo skill.
+  // Partial unique index (project_id, name) WHERE project_id IS NOT NULL enforced via migration.
+  @ManyToOne(() => Project, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'project_id' })
+  project!: Project | null;
+
+  @Index()
+  @Column({ name: 'project_id', type: 'int', nullable: true })
+  projectId!: number | null;
 
   @Column({ type: 'varchar', length: 500 })
   repoUrl!: string;
