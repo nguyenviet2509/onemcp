@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
+import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 
-// Controller added in P6 (approve/reject/CRUD endpoints).
 @Module({
   imports: [TypeOrmModule.forFeature([Project])],
   providers: [ProjectsService],
+  controllers: [ProjectsController],
   exports: [ProjectsService],
 })
 export class ProjectsModule {}
