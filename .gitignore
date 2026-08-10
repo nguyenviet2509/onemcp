@@ -49,3 +49,6 @@ ops/models/*/tokenizer.json
 *.pem
 *.key
 !ops/nginx/*.example.key
+
+# oauth2-proxy — contains client_secret + cookie_secret, deploy via scp
+ops/oauth2-proxy/oauth2-proxy.cfg
