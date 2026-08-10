@@ -23,7 +23,9 @@ export class SkillSyncProcessor extends WorkerHost {
       after: { trigger: job.data.trigger, ref: job.data.ref, commitSha: job.data.commitSha },
     });
     try {
-      const summary = await this.sync.syncAll();
+      const summary = projectId
+        ? await this.sync.syncProject(projectId)
+        : await this.sync.syncAll();
       this.log.log(
         `job=${job.id} done head=${summary.headSha.slice(0, 8)} newVer=${summary.newVersions} err=${summary.errors.length}`,
       );

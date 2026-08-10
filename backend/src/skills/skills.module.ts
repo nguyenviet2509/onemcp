@@ -2,6 +2,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Department } from '../departments/entities/department.entity';
+import { Project } from '../projects/entities/project.entity';
+import { ProjectsModule } from '../projects/projects.module';
 import { Skill } from './entities/skill.entity';
 import { SkillLoadEvent } from './entities/skill-load-event.entity';
 import { SkillVersion } from './entities/skill-version.entity';
@@ -17,8 +19,9 @@ import { SkillSyncService } from './sync/skill-sync.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Skill, SkillVersion, SkillLoadEvent, Department]),
+    TypeOrmModule.forFeature([Skill, SkillVersion, SkillLoadEvent, Department, Project]),
     BullModule.registerQueue({ name: SKILL_SYNC_QUEUE }),
+    ProjectsModule,
   ],
   providers: [
     SkillsService,
