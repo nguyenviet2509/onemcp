@@ -21,12 +21,33 @@ export class SkillsService {
     private readonly metrics: MetricsService,
   ) {}
 
-  // List skills user có thể xem — scope theo dept của user (multi-tenant ready).
+  // List skills user có thể xem — RBAC × project scope filter (P10).
+  //   Legacy (projectId=null): dept-scoped by skill.department_id
+  //   Multi (projectId set):    project.scope drives visibility
+  //     - public: anyone authenticated
+  //     - dept:   same department OR admin
+  //     - private: owner OR admin
   async list(user: RequestUser, filter: SkillListFilter = {}) {
+    const isAdmin = user.roles.some((r) => r === 'super-admin' || r === 'dept-admin');
+
     const qb = this.skills
       .createQueryBuilder('s')
-      .where('s.department_id = :dept', { dept: user.departmentId })
+      .leftJoin('projects', 'p', 'p.id = s.project_id')
       .andWhere("s.status <> 'archived'");
+
+    if (isAdmin) {
+      // Admin sees all non-archived. No further scope filter.
+    } else {
+      qb.andWhere(
+        `(
+          (s.project_id IS NULL AND s.department_id = :dept)
+          OR (p.scope = 'public')
+          OR (p.scope = 'dept' AND p.department_id = :dept)
+          OR (p.scope = 'private' AND p.owner_id = :uid)
+        )`,
+        { dept: user.departmentId, uid: user.id },
+      );
+    }
 
     if (filter.tag) {
       qb.andWhere(':tag = ANY(s.tags)', { tag: filter.tag });
