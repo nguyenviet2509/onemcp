@@ -218,12 +218,11 @@ services:
     volumes:
       - ./ops/oauth2-proxy/oauth2-proxy.cfg:/etc/oauth2-proxy.cfg:ro
     # Not exposed to host — nginx reaches it via docker network on port 4180
+    # oauth2-proxy image is distroless (no shell/wget/curl available inside container).
+    # Healthcheck disabled — nginx upstream handles unavailability gracefully on connect fail.
+    # To check manually: docker exec onemcp-nginx-1 wget -qO- http://oauth2-proxy:4180/ping
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4180/ping"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      disable: true
 
   nginx:
     image: nginx:alpine
