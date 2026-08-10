@@ -45,12 +45,12 @@ export const envSchema = z.object({
   MCP_TRANSPORT: z.enum(['jsonrpc', 'streamable']).default('jsonrpc'),
 
   // OAuth 2.1 AS metadata (RFC 8414) + protected resource metadata (RFC 9728).
-  // Placeholder defaults until Zitadel prod endpoints wired (P2 parent plan).
-  OAUTH_ISSUER: z.string().default('https://onemcp.local/oauth/placeholder'),
-  OAUTH_AUTH_URL: z.string().default('https://onemcp.local/oauth/placeholder/authorize'),
-  OAUTH_TOKEN_URL: z.string().default('https://onemcp.local/oauth/placeholder/token'),
-  OAUTH_REGISTRATION_URL: z.string().default('https://onemcp.local/oauth/placeholder/register'),
-  OAUTH_RESOURCE_URL: z.string().default('https://onemcp.local/api/mcp'),
+  // OAUTH_ISSUER = the external URL where AS lives. Endpoints derived from it.
+  // Set to real domain when TLS + DNS ready. For IP-only pilot: http://<vps-ip>.
+  OAUTH_ISSUER: z.string().default('http://10.200.0.44'),
+  OAUTH_RESOURCE_URL: z.string().default('http://10.200.0.44/api/mcp'),
+  // Portal base for consent screen redirect. Empty = same-origin (nginx routes portal at /).
+  PORTAL_BASE_URL: z.string().default(''),
 
   // Observability
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),

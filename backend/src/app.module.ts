@@ -27,6 +27,7 @@ import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { ProjectsModule } from './projects/projects.module';
+import { OAuthModule } from './oauth/oauth.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { ProjectsModule } from './projects/projects.module';
     McpModule,
     CryptoModule,
     ProjectsModule,
+    OAuthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

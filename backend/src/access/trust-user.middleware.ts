@@ -41,6 +41,17 @@ export class TrustUserMiddleware implements NestMiddleware {
       next();
       return;
     }
+    // OAuth 2.1 AS public endpoints — DCR/token/revoke/client-info have no session.
+    // /oauth/authorize + /oauth/authorize/consent DO need session — not bypassed.
+    if (
+      path.startsWith('/api/oauth/register') ||
+      path.startsWith('/api/oauth/token') ||
+      path.startsWith('/api/oauth/revoke') ||
+      path.startsWith('/api/oauth/client-info')
+    ) {
+      next();
+      return;
+    }
 
     // If ApiKeyMiddleware already authenticated this request, skip trust-header processing.
     if (req.user) {

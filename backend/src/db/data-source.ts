@@ -18,13 +18,15 @@ import { Space } from '../spaces/space.entity';
 import { Template } from '../templates/template.entity';
 import { ApiKey } from '../api-keys/api-key.entity';
 import { Project } from '../projects/entities/project.entity';
+import { OAuthClient } from '../oauth/entities/oauth-client.entity';
+import { OAuthConsent } from '../oauth/entities/oauth-consent.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.POSTGRES_URL,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding, Space, Template, ApiKey, Project],
+  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding, Space, Template, ApiKey, Project, OAuthClient, OAuthConsent],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsRun: false,
 };
