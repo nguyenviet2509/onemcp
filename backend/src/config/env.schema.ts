@@ -44,6 +44,9 @@ export const envSchema = z.object({
   // MCP transport selection: 'jsonrpc' = legacy plain POST (default), 'streamable' = SDK Streamable HTTP.
   MCP_TRANSPORT: z.enum(['jsonrpc', 'streamable']).default('jsonrpc'),
 
+  // Bearer auth mode for MCP endpoints. See BearerAuthMiddleware.
+  MCP_AUTH_MODE: z.enum(['off', 'optional', 'required']).default('off'),
+
   // OAuth 2.1 AS metadata (RFC 8414) + protected resource metadata (RFC 9728).
   // OAUTH_ISSUER = the external URL where AS lives. Endpoints derived from it.
   // Set to real domain when TLS + DNS ready. For IP-only pilot: http://<vps-ip>.

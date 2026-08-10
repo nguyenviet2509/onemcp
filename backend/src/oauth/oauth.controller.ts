@@ -11,7 +11,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
+import { Response } from 'express';
 import { CurrentUser } from '../access/current-user.decorator';
 import { AuthedRequest, RequestUser } from '../common/user-request';
 import { AuthorizeParams, OAuthService, RegisterClientDto } from './oauth.service';
@@ -33,6 +34,8 @@ export class OAuthController {
     private readonly config: ConfigService,
   ) {}
 
+  // RFC 7591 DCR — 5 registrations per hour per IP.
+  @Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
   @Post('register')
   @HttpCode(201)
   async register(
@@ -116,6 +119,8 @@ export class OAuthController {
     return { redirect: url.toString() };
   }
 
+  // Token endpoint — 30 requests / minute / IP. Client_id-level dedup handled at store.
+  @Throttle({ default: { limit: 30, ttl: 60 * 1000 } })
   @Post('token')
   async token(@Body() body: Record<string, string>) {
     const grantType = body.grant_type;
