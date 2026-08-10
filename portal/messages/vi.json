@@ -43,7 +43,6 @@
     "unknownError": "Đã xảy ra lỗi"
   },
   "sidebar": {
-    "identity": "Danh tính",
     "theme": "Giao diện",
     "language": "Ngôn ngữ",
     "navigate": "Điều hướng",
@@ -52,8 +51,6 @@
       "dark": "Tối",
       "system": "Theo hệ thống"
     },
-    "changeIdentity": "Đổi danh tính…",
-    "clearIdentity": "Xóa danh tính",
     "searchOrJump": "Tìm hoặc chuyển đến…"
   },
   "nav": {

@@ -5,18 +5,27 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { buttonVariants } from '@/components/ui/button';
 import { useCurrentSpace } from '@/lib/space-context';
-import { getIdentity } from '@/lib/identity';
+import { apiFetch } from '@/lib/api-client';
+
+interface MeResponse {
+  username: string;
+}
 
 // Option A dashboard greeting: text-xl tracking-tight, muted subtext, inverted primary CTA.
+// Username sourced from /api/me (SSO) instead of localStorage identity.
 export function DashboardGreeting() {
   const { space } = useCurrentSpace();
-  const [identity, setIdentity] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const t = useTranslations('pages.dashboard');
   const tSpaces = useTranslations('pages.spaces.switcher');
   const tArtifacts = useTranslations('pages.artifacts');
 
   useEffect(() => {
-    setIdentity(getIdentity());
+    apiFetch<MeResponse>('/me')
+      .then((me) => setUsername(me.username))
+      .catch(() => {
+        // 401 handled by api-client (redirect). Other errors: show anon greeting.
+      });
   }, []);
 
   return (
@@ -24,7 +33,7 @@ export function DashboardGreeting() {
       {/* Left: greeting + space context */}
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          {identity ? t('greeting', { name: identity }) : t('greetingAnon')}
+          {username ? t('greeting', { name: username }) : t('greetingAnon')}
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {space.slug ? (

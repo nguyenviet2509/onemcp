@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
+import { LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,20 +11,24 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { ApiError, apiFetch } from '@/lib/api-client';
-import { clearIdentity, getIdentity, setIdentity } from '@/lib/identity';
+import { apiFetch } from '@/lib/api-client';
 import { setLocaleCookie } from '@/lib/i18n-actions';
 import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n/config';
 
-// Bottom-of-sidebar user pill: avatar + name + subtitle + ⋯ dropdown.
-// Dropdown consolidates identity actions AND theme toggle (moved out of the
-// sidebar footer so bottom row stays single-line per Option A mockup).
+interface MeResponse {
+  id: number;
+  username: string;
+  roles: string[];
+  departmentId: number;
+  status: string;
+  identityMode: string;
+}
+
+// Bottom-of-sidebar user pill: avatar + name + ⋯ dropdown.
+// User info fetched from /api/me (SSO — oauth2-proxy injects X-Onemcp-User from Zitadel LDAP).
+// Sign-out delegates to oauth2-proxy endpoint — clears proxy session cookie.
 export function SidebarUserCard() {
-  const [current, setCurrent] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false);
+  const [me, setMe] = useState<MeResponse | null>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const locale = useLocale() as Locale;
@@ -32,85 +37,17 @@ export function SidebarUserCard() {
   const [, startLocaleTransition] = useTransition();
 
   useEffect(() => {
-    setCurrent(getIdentity());
     setMounted(true);
+    apiFetch<MeResponse>('/me')
+      .then(setMe)
+      .catch(() => {
+        // 401 = not authenticated; api-client handles redirect to sign-in page.
+        // Other errors: silently fall through — display defaults (no username).
+      });
   }, []);
 
-  async function save() {
-    setError(null);
-    const previous = getIdentity();
-    const next = draft.trim().toLowerCase();
-    if (!next) return setError('Username không được rỗng');
-    try {
-      setIdentity(next);
-    } catch (e) {
-      return setError(e instanceof Error ? e.message : 'Invalid username');
-    }
-    setVerifying(true);
-    try {
-      await apiFetch('/users/me');
-    } catch (e) {
-      if (previous) setIdentity(previous);
-      else clearIdentity();
-      setVerifying(false);
-      if (e instanceof ApiError && e.status === 403) {
-        return setError(
-          `"${next}" không truy cập được từ IP hiện tại. Dùng email @inet.vn hoặc mạng nội bộ.`,
-        );
-      }
-      return setError(e instanceof Error ? e.message : 'Verify failed');
-    }
-    setCurrent(next);
-    setEditing(false);
-    setVerifying(false);
-    window.location.reload();
-  }
-
-  function onClear() {
-    clearIdentity();
-    setCurrent(null);
-    window.location.reload();
-  }
-
-  // Inline edit mode — replaces the pill with a compact input row.
-  if (editing) {
-    return (
-      <div className="border-t border-sidebar-border/70 px-3 py-2 space-y-1.5">
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !verifying) save();
-            if (e.key === 'Escape') { setEditing(false); setError(null); }
-          }}
-          disabled={verifying}
-          placeholder="username"
-          className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20"
-        />
-        <div className="flex items-center gap-2">
-          <button
-            onClick={save}
-            disabled={verifying}
-            className="rounded-md border border-foreground bg-foreground px-2 py-0.5 text-xs text-background transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {verifying ? tCommon('loading') : tCommon('save')}
-          </button>
-          <button
-            onClick={() => { setEditing(false); setError(null); }}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {tCommon('cancel')}
-          </button>
-        </div>
-        {error && <p className="text-xs leading-tight text-destructive">{error}</p>}
-      </div>
-    );
-  }
-
-  const initials = current ? current.slice(0, 2).toUpperCase() : '··';
-  const name = current ?? tCommon('signIn');
-  const subtitle = current ? tCommon('signedIn') : tCommon('notSignedIn');
+  const username = me?.username ?? null;
+  const initials = username ? username.slice(0, 2).toUpperCase() : '··';
   const currentTheme = (mounted && theme) || 'system';
 
   return (
@@ -122,44 +59,22 @@ export function SidebarUserCard() {
         {initials}
       </span>
       <div className="min-w-0 flex-1 leading-tight">
-        <div className="truncate text-xs font-medium text-foreground">{name}</div>
-        <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
+        <div className="truncate text-xs font-medium text-foreground">
+          {username ?? tCommon('signIn')}
+        </div>
+        <div className="truncate text-xs text-muted-foreground">
+          {username ? tCommon('signedIn') : tCommon('notSignedIn')}
+        </div>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Open user menu"
           className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
-          {/* Text ellipsis — reuses existing icon budget (0 new lucide icons) */}
           <span aria-hidden className="text-base leading-none tracking-tighter">···</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" sideOffset={6} className="w-52">
-          {/* Plain div label — base-ui GroupLabel throws if not inside Group */}
-          <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {t('identity')}
-          </div>
-          {current ? (
-            <>
-              <DropdownMenuItem
-                render={<button type="button" onClick={() => { setDraft(current); setEditing(true); }} />}
-              >
-                {t('changeIdentity')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                render={<button type="button" onClick={onClear} />}
-              >
-                {t('clearIdentity')}
-              </DropdownMenuItem>
-            </>
-          ) : (
-            <DropdownMenuItem
-              render={<button type="button" onClick={() => { setDraft(''); setEditing(true); }} />}
-            >
-              {tCommon('signIn')}
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
+          {/* Theme section */}
           <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {t('theme')}
           </div>
@@ -176,6 +91,7 @@ export function SidebarUserCard() {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
+          {/* Language section */}
           <div className="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {t('language')}
           </div>
@@ -191,6 +107,12 @@ export function SidebarUserCard() {
               )}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSeparator />
+          {/* Sign out — delegates to oauth2-proxy; clears proxy session cookie. */}
+          <DropdownMenuItem render={<a href="/oauth2/sign_out?rd=/" />}>
+            <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
+            <span>{tCommon('signOut')}</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

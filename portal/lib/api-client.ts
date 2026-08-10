@@ -1,14 +1,14 @@
-import { getIdentity } from './identity';
-
-// Fetch wrapper — auto inject X-Onemcp-User header từ localStorage.
-// Base URL relative (dùng nginx proxy /api/*).
+// Fetch wrapper for OneMCP portal API calls.
+// Base URL relative — nginx proxies /api/* to backend.
+// Credentials: 'include' so oauth2-proxy session cookie travels with every request.
+// X-Onemcp-User header is injected by nginx from oauth2-proxy $auth_username — do NOT
+// send it from client-side (nginx overwrites it; client-injected value is noise).
+// On 401: redirect to oauth2-proxy sign-in preserving current URL for post-login return.
 export async function apiFetch<T = unknown>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
-  const identity = getIdentity();
-  if (identity) headers.set('X-Onemcp-User', identity);
   if (!headers.has('Content-Type') && init.body) {
     headers.set('Content-Type', 'application/json');
   }
@@ -16,7 +16,15 @@ export async function apiFetch<T = unknown>(
   // Must check '/api/' with trailing slash — otherwise '/api-keys' matches
   // startsWith('/api') and skips the prefix, producing wrong URL '/api-keys'.
   const url = path.startsWith('/api/') ? path : `/api${path.startsWith('/') ? '' : '/'}${path}`;
-  const res = await fetch(url, { ...init, headers, credentials: 'same-origin' });
+  const res = await fetch(url, { ...init, headers, credentials: 'include' });
+
+  if (res.status === 401) {
+    // Session expired or not authenticated — redirect to oauth2-proxy sign-in.
+    const returnUrl = encodeURIComponent(window.location.href);
+    window.location.href = `/oauth2/sign_in?rd=${returnUrl}`;
+    // Return a never-resolving promise so callers don't receive a partial response.
+    return new Promise<never>(() => {});
+  }
 
   if (!res.ok) {
     const text = await res.text();

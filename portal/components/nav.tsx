@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { IdentifyAsDropdown } from './identify-as-dropdown';
 import { SpaceSwitcher } from './space-switcher';
 import { SavedSearchesList } from './saved-searches-list';
 
@@ -27,7 +26,6 @@ export function Nav() {
         </div>
         <div className="flex items-center gap-3">
           <Suspense fallback={null}><SpaceSwitcher /></Suspense>
-          <IdentifyAsDropdown />
         </div>
       </div>
       <div className="border-t border-border">

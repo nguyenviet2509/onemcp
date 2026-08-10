@@ -43,7 +43,6 @@
     "unknownError": "Something went wrong"
   },
   "sidebar": {
-    "identity": "Identity",
     "theme": "Theme",
     "language": "Language",
     "navigate": "Navigate",
@@ -52,8 +51,6 @@
       "dark": "Dark",
       "system": "System"
     },
-    "changeIdentity": "Change identity…",
-    "clearIdentity": "Clear identity",
     "searchOrJump": "Search or jump to…"
   },
   "nav": {
