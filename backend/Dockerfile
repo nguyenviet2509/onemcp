@@ -11,7 +11,9 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
+# 8GB heap: tsc + swc go beyond Node default 4GB when project size grows
+# (OAuth AS + multi-project registry pushed it over).
+RUN NODE_OPTIONS=--max-old-space-size=8192 pnpm build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
