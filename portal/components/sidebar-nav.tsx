@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { LayoutDashboard, FileText, Search, Wrench, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, FileText, Search, Wrench, ClipboardCheck, Boxes } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { listArtifacts } from '@/lib/api/artifacts';
 
@@ -13,7 +13,7 @@ import { listArtifacts } from '@/lib/api/artifacts';
 // Wrench for Skills = MCP tools/utilities (semantic fit; replaces Sparkles decor).
 const NAV_ITEMS: Array<{
   href: string;
-  key: 'dashboard' | 'artifacts' | 'search' | 'skills' | 'review';
+  key: 'dashboard' | 'artifacts' | 'search' | 'skills' | 'review' | 'projects';
   icon: React.ComponentType<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>;
   showCount?: boolean;
 }> = [
@@ -21,6 +21,7 @@ const NAV_ITEMS: Array<{
   { href: '/artifacts',        key: 'artifacts', icon: FileText },
   { href: '/search',           key: 'search',    icon: Search },
   { href: '/skills',           key: 'skills',    icon: Wrench },
+  { href: '/projects',         key: 'projects',  icon: Boxes },
   { href: '/artifacts/review', key: 'review',    icon: ClipboardCheck, showCount: true },
 ];
 
