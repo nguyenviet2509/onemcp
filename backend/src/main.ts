@@ -39,7 +39,16 @@ async function bootstrap() {
 
   // Nginx forwards path as-is (proxy_pass với variable không auto-rewrite).
   // Backend serve routes under /api/*, giữ /health /ready ở root cho docker healthcheck.
-  app.setGlobalPrefix('api', { exclude: ['health', 'ready', 'metrics'] });
+  // `.well-known/*` served at root (RFC requirement) — excluded from /api prefix.
+  app.setGlobalPrefix('api', {
+    exclude: [
+      'health',
+      'ready',
+      'metrics',
+      '.well-known/oauth-authorization-server',
+      '.well-known/oauth-protected-resource',
+    ],
+  });
 
   // Trust proxy = Nginx phía trước; cho phép req.ip đọc từ X-Forwarded-For (khi từ trusted proxy CIDR).
   const expressApp = app.getHttpAdapter().getInstance();

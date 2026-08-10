@@ -44,6 +44,14 @@ export const envSchema = z.object({
   // MCP transport selection: 'jsonrpc' = legacy plain POST (default), 'streamable' = SDK Streamable HTTP.
   MCP_TRANSPORT: z.enum(['jsonrpc', 'streamable']).default('jsonrpc'),
 
+  // OAuth 2.1 AS metadata (RFC 8414) + protected resource metadata (RFC 9728).
+  // Placeholder defaults until Zitadel prod endpoints wired (P2 parent plan).
+  OAUTH_ISSUER: z.string().default('https://onemcp.local/oauth/placeholder'),
+  OAUTH_AUTH_URL: z.string().default('https://onemcp.local/oauth/placeholder/authorize'),
+  OAUTH_TOKEN_URL: z.string().default('https://onemcp.local/oauth/placeholder/token'),
+  OAUTH_REGISTRATION_URL: z.string().default('https://onemcp.local/oauth/placeholder/register'),
+  OAUTH_RESOURCE_URL: z.string().default('https://onemcp.local/api/mcp'),
+
   // Observability
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
 });

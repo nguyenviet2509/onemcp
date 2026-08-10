@@ -36,6 +36,11 @@ export class TrustUserMiddleware implements NestMiddleware {
       next();
       return;
     }
+    // OAuth/OIDC discovery endpoints — public per RFC 8414 / RFC 9728.
+    if (path.startsWith('/.well-known/')) {
+      next();
+      return;
+    }
 
     // If ApiKeyMiddleware already authenticated this request, skip trust-header processing.
     if (req.user) {

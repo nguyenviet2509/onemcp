@@ -12,9 +12,12 @@ import { McpSdkServerFactory } from './mcp-sdk-server.factory';
 import { McpSessionStore } from './mcp-session.store';
 import { McpToolsService } from './mcp-tools.service';
 import { StreamableHttpController } from './streamable-http.controller';
+import { AuthorizationServerController } from './well-known/authorization-server.controller';
+import { ProtectedResourceController } from './well-known/protected-resource.controller';
 
 // Phase 1C: import SpacesModule + TemplatesModule for submit_artifact validation.
 // Phase P1-streamable: add SDK server factory + session store + streamable controller.
+// Phase P2-P3: `.well-known/oauth-authorization-server` + `oauth-protected-resource` metadata.
 @Module({
   imports: [
     SkillsModule,
@@ -25,6 +28,11 @@ import { StreamableHttpController } from './streamable-http.controller';
     TypeOrmModule.forFeature([Skill, SkillVersion]),
   ],
   providers: [McpToolsService, McpSdkServerFactory, McpSessionStore],
-  controllers: [McpController, StreamableHttpController],
+  controllers: [
+    McpController,
+    StreamableHttpController,
+    AuthorizationServerController,
+    ProtectedResourceController,
+  ],
 })
 export class McpModule {}
