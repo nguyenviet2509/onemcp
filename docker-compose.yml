@@ -124,6 +124,13 @@ services:
       PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-true}
       # Phase 2B: TEI embedding service — internal docker network, not exposed to host.
       EMBEDDING_URL: ${EMBEDDING_URL:-http://tei:80}
+      # AI Connector Hub (parent P2): AES-256 encryption key + OAuth 2.1 AS config.
+      ONEMCP_ENCRYPTION_KEY: ${ONEMCP_ENCRYPTION_KEY}
+      OAUTH_ISSUER: ${OAUTH_ISSUER:-http://10.200.0.44}
+      OAUTH_RESOURCE_URL: ${OAUTH_RESOURCE_URL:-http://10.200.0.44/api/mcp}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-}
+      MCP_AUTH_MODE: ${MCP_AUTH_MODE:-off}
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-jsonrpc}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
