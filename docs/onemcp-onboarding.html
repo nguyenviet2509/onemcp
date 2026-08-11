@@ -86,8 +86,8 @@
     <div class="sidebar-group-title">Xem theo phiên bản</div>
     <div class="filter-btns" id="version-filter">
       <div class="filter-btn active" data-filter="all">Tất cả</div>
-      <div class="filter-btn" data-filter="v1">v1 LIVE</div>
-      <div class="filter-btn" data-filter="v2">v2 DEV</div>
+      <div class="filter-btn" data-filter="v1">v1 pilot</div>
+      <div class="filter-btn" data-filter="v2">v2 LIVE</div>
     </div>
   </div>
 
@@ -99,7 +99,7 @@
   </div>
 
   <div class="sidebar-group">
-    <div class="sidebar-group-title">v1 (LIVE pilot)</div>
+    <div class="sidebar-group-title">v1 (pilot — kept for legacy)</div>
     <a href="#architecture" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Kiến trúc</a>
     <a href="#capabilities" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Capabilities</a>
     <a href="#setup-v1" class="nav-link" data-toc-version="v1"><span class="tag tag-v1">v1</span> Kết nối (header)</a>
@@ -107,7 +107,7 @@
   </div>
 
   <div class="sidebar-group">
-    <div class="sidebar-group-title">v2 (in dev · blocked)</div>
+    <div class="sidebar-group-title">v2 (LIVE — AI Connector)</div>
     <a href="#architecture-v2" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Kiến trúc mới</a>
     <a href="#setup-v2" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Kết nối (OAuth)</a>
     <a href="#projects" class="nav-link" data-toc-version="v2"><span class="tag tag-v2">v2</span> Multi-project</a>
@@ -134,9 +134,9 @@
 <!-- ============ Hero ============ -->
 <section id="hero" data-version="both" class="max-w-6xl mx-auto px-6 pt-24 pb-20">
   <div class="flex gap-2 mb-6">
-    <span class="chip chip-live">v1 pilot LIVE</span>
-    <span class="chip chip-next">v2 AI Connector · in dev</span>
-    <span class="chip">2026-08</span>
+    <span class="chip chip-live">v2 AI Connector · LIVE</span>
+    <span class="chip">v1 pilot · legacy</span>
+    <span class="chip">Shipped 2026-08-11</span>
   </div>
   <h1 class="text-6xl md:text-7xl font-extrabold mb-6 text-white leading-tight">
     One<span class="gradient-text">MCP</span>
@@ -161,14 +161,23 @@
     <div class="card"><div class="text-3xl font-bold text-emerald-300">SSO</div><div class="text-sm text-slate-400 mt-1">Zimbra email</div></div>
   </div>
 
-  <div class="mt-8 card border-amber-800/50">
+  <div class="mt-8 card border-emerald-800/50">
     <div class="flex gap-3">
-      <span class="chip chip-next">Status</span>
-      <p class="text-slate-300 text-sm">
-        <b class="text-amber-300">v1 pilot LIVE</b> cho phòng Kỹ thuật (7 tools + 3 artifact types + header trust auth).
-        <b class="text-fuchsia-300">v2 AI Connector Hub</b> đang cook — OAuth 2.1 AS + multi-project registry, dự kiến ship sau khi
-        <code class="text-amber-300">260805-1409 zitadel-migrate</code> hoàn tất.
-      </p>
+      <span class="chip chip-live">Status · 2026-08-11</span>
+      <div class="text-slate-300 text-sm space-y-2">
+        <p>
+          <b class="text-emerald-300">v2 AI Connector Hub — LIVE</b> tại
+          <code class="text-amber-300">https://oneconnector.000nethost.com</code>.
+          OAuth 2.1 AS (DCR + PKCE + refresh rotation), portal consent screen, MCP Streamable HTTP endpoint <code class="text-amber-300">/mcp/</code> với <code class="text-amber-300">MCP_AUTH_MODE=required</code>.
+          Claude Desktop verified running với 8 tools. Sectigo wildcard cert (manual renew Feb 2027).
+        </p>
+        <p class="text-slate-400 text-xs">
+          <b>v1 pilot (trust header)</b> vẫn giữ cho legacy scripts nội bộ — sẽ deprecate khi migrate xong.
+          Docs mới: <a href="ai-client-onboarding.md" class="text-indigo-400 underline">ai-client-onboarding.md</a> ·
+          <a href="oauth-troubleshoot.md" class="text-indigo-400 underline">oauth-troubleshoot.md</a> ·
+          <a href="admin-runbook.md" class="text-indigo-400 underline">admin-runbook.md</a>.
+        </p>
+      </div>
     </div>
   </div>
 </section>
@@ -195,7 +204,7 @@
     <div class="card border-emerald-800/50">
       <h3 class="text-lg font-semibold text-emerald-400 mb-3">✅ Với OneMCP AI Connector</h3>
       <ul class="space-y-2 text-slate-300 text-sm">
-        <li>• 1 endpoint <code class="text-amber-300">mcp.inet.vn</code> cho mọi AI client</li>
+        <li>• 1 endpoint <code class="text-amber-300">oneconnector.000nethost.com</code> cho mọi AI client</li>
         <li>• Login 1 lần qua Zimbra email (Zitadel SSO)</li>
         <li>• AI client tự lấy OAuth token qua Dynamic Client Registration</li>
         <li>• Skills từ N dự án aggregate về 1 registry</li>
@@ -298,7 +307,7 @@ sequenceDiagram
   participant OM as OneMCP<br/>(OAuth AS + MCP server)
   participant ZT as Zitadel<br/>(Zimbra SSO)
 
-  U->>CD: Add Connector, paste https://mcp.inet.vn/mcp
+  U->>CD: Add Connector, paste https://oneconnector.000nethost.com/mcp
   CD->>OM: GET /.well-known/oauth-authorization-server
   OM-->>CD: metadata (authorize_endpoint, token_endpoint, DCR endpoint)
   CD->>OM: POST /register (Dynamic Client Registration)
@@ -321,12 +330,12 @@ sequenceDiagram
   <!-- Well-known example -->
   <h3 class="text-2xl font-semibold text-white mb-4">Ví dụ <code class="text-amber-300">.well-known</code> metadata</h3>
   <p class="text-slate-400 text-sm mb-3">AI client fetch endpoint này trước để biết OAuth flow của OneMCP:</p>
-<pre class="code"><span class="c"># GET https://mcp.inet.vn/.well-known/oauth-authorization-server</span>
+<pre class="code"><span class="c"># GET https://oneconnector.000nethost.com/.well-known/oauth-authorization-server</span>
 <span class="k">{</span>
-  <span class="s">"issuer"</span>: <span class="s">"https://mcp.inet.vn"</span>,
-  <span class="s">"authorization_endpoint"</span>: <span class="s">"https://mcp.inet.vn/oauth/authorize"</span>,
-  <span class="s">"token_endpoint"</span>: <span class="s">"https://mcp.inet.vn/oauth/token"</span>,
-  <span class="s">"registration_endpoint"</span>: <span class="s">"https://mcp.inet.vn/oauth/register"</span>,      <span class="c">// DCR</span>
+  <span class="s">"issuer"</span>: <span class="s">"https://oneconnector.000nethost.com"</span>,
+  <span class="s">"authorization_endpoint"</span>: <span class="s">"https://oneconnector.000nethost.com/oauth/authorize"</span>,
+  <span class="s">"token_endpoint"</span>: <span class="s">"https://oneconnector.000nethost.com/oauth/token"</span>,
+  <span class="s">"registration_endpoint"</span>: <span class="s">"https://oneconnector.000nethost.com/oauth/register"</span>,      <span class="c">// DCR</span>
   <span class="s">"scopes_supported"</span>: [<span class="s">"mcp:tools"</span>, <span class="s">"mcp:resources"</span>],
   <span class="s">"response_types_supported"</span>: [<span class="s">"code"</span>],
   <span class="s">"grant_types_supported"</span>: [<span class="s">"authorization_code"</span>, <span class="s">"refresh_token"</span>],
@@ -440,7 +449,7 @@ flowchart LR
 
 <!-- ============ Architecture v2 ============ -->
 <section id="architecture-v2" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <span class="section-badge badge-v2">v2 · LIVE 2026-08-11</span>
   <div class="chip mb-3">Kiến trúc v2</div>
   <h2 class="text-4xl font-bold text-white mb-4">Stack target — AI Connector Hub</h2>
   <p class="text-slate-400 max-w-3xl mb-8">
@@ -616,57 +625,82 @@ export ONEMCP_USER=<span class="s">"your-zimbra-email"</span></pre>
 
 <!-- ============ Setup v2 ============ -->
 <section id="setup-v2" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <span class="section-badge badge-v2">v2 · LIVE 2026-08-11</span>
   <div class="chip mb-3">Kết nối AI client (v2)</div>
   <h2 class="text-4xl font-bold text-white mb-4">Cắm AI client — Remote MCP Connector (OAuth 2.1)</h2>
   <p class="text-slate-400 max-w-3xl mb-8">
     v2 target: user không cần lưu API key. AI client tự đăng ký OAuth client (DCR), user login Zimbra qua Zitadel, allow consent → dùng ngay.
   </p>
 
-  <div class="card border-fuchsia-800/50">
+  <div class="card border-emerald-800/50">
     <p class="text-slate-400 text-sm mb-4">
-      Kết nối 1 lần, refresh token tự động rotate. Session mọi AI client (Claude Desktop, ChatGPT, Cursor…) đồng bộ qua Zitadel session.
+      Kết nối 1 lần, refresh token tự động rotate. AI client hiện đang cần proxy <code class="text-amber-300">mcp-remote</code> để đóng gói OAuth 2.1 flow (Claude Desktop, Cursor, ChatGPT chưa native DCR).
     </p>
 
     <div class="space-y-6">
       <div>
         <div class="flex items-center gap-3 mb-3">
           <div class="step-num">1</div>
-          <h4 class="text-lg font-semibold text-white">Claude Desktop → Settings → Connectors → Add</h4>
+          <h4 class="text-lg font-semibold text-white">Claude Desktop — edit config JSON</h4>
         </div>
         <div class="ml-14">
-          <p class="text-slate-400 text-sm mb-2">URL:</p>
-<pre class="code">https://mcp.inet.vn/mcp</pre>
-          <p class="text-slate-500 text-xs mt-2">Claude Desktop tự discovery qua <code class="text-amber-300">.well-known/oauth-authorization-server</code> + DCR.</p>
+          <p class="text-slate-400 text-sm mb-2">File: <code class="text-amber-300">%APPDATA%\Claude\claude_desktop_config.json</code> (Windows) hoặc <code class="text-amber-300">~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS)</p>
+<pre class="code">{
+  <span class="s">"mcpServers"</span>: {
+    <span class="s">"onemcp"</span>: {
+      <span class="s">"command"</span>: <span class="s">"npx.cmd"</span>,   <span class="c">// macOS/Linux: "npx"</span>
+      <span class="s">"args"</span>: [
+        <span class="s">"-y"</span>,
+        <span class="s">"mcp-remote@latest"</span>,
+        <span class="s">"https://oneconnector.000nethost.com/mcp/"</span>,
+        <span class="s">"--transport"</span>,
+        <span class="s">"http-only"</span>
+      ]
+    }
+  }
+}</pre>
+          <p class="text-slate-500 text-xs mt-2">
+            ⚠️ Không pin callback port — Windows TIME_WAIT giữ port ~2 min → EADDRINUSE retry. Xem <a href="oauth-troubleshoot.md" class="text-indigo-400 underline">oauth-troubleshoot.md</a>.
+          </p>
         </div>
       </div>
 
       <div>
         <div class="flex items-center gap-3 mb-3">
           <div class="step-num">2</div>
-          <h4 class="text-lg font-semibold text-white">Login Zimbra qua Zitadel</h4>
+          <h4 class="text-lg font-semibold text-white">Login Zimbra qua Zitadel + consent</h4>
         </div>
-        <p class="text-slate-400 text-sm ml-14">Browser mở popup consent → login email Zimbra → allow OneMCP → callback về Claude Desktop.</p>
+        <div class="ml-14">
+          <p class="text-slate-400 text-sm">Quit + relaunch Claude Desktop → mcp-remote tự:</p>
+          <ol class="list-decimal ml-5 mt-2 text-slate-400 text-sm space-y-1">
+            <li>Discover AS metadata (<code class="text-amber-300">.well-known/oauth-authorization-server</code>)</li>
+            <li>DCR đăng ký client (RFC 7591)</li>
+            <li>Mở browser → redirect qua Zitadel login (nếu chưa có session)</li>
+            <li>Portal <code class="text-amber-300">/oauth-consent</code> → user nhấn <b>Allow</b></li>
+            <li>Callback về <code class="text-amber-300">http://localhost:&lt;random&gt;/oauth/callback</code> → mcp-remote exchange code lấy access + refresh token</li>
+            <li>Cache token tại <code class="text-amber-300">~/.mcp-auth/mcp-remote-&lt;ver&gt;/tokens.json</code> → skip OAuth trên retry</li>
+          </ol>
+        </div>
       </div>
 
       <div>
         <div class="flex items-center gap-3 mb-3">
           <div class="step-num">3</div>
-          <h4 class="text-lg font-semibold text-white">Hỏi agent bất kỳ</h4>
+          <h4 class="text-lg font-semibold text-white">Verify — hỏi agent 1 câu</h4>
         </div>
         <div class="ml-14">
 <pre class="code"><span class="c"># chat với Claude Desktop</span>
-liệt kê skills onemcp có gì
+Dùng tool list_skills của onemcp để liệt kê skills
 
-<span class="c"># agent tự gọi list_skills qua OneMCP, trả về skills tất cả project user có quyền</span></pre>
+<span class="c"># agent tự gọi list_skills qua OneMCP, trả skills tất cả project user có quyền</span></pre>
         </div>
       </div>
     </div>
 
     <div class="mt-6 grid md:grid-cols-3 gap-3">
-      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">Claude Desktop</h5><p class="text-slate-400 text-xs">Native Remote Connector, support DCR</p></div>
-      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">ChatGPT / Cursor</h5><p class="text-slate-400 text-xs">Test matrix Phase 5, fallback proxy nếu SDK cũ</p></div>
-      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">mcp-remote proxy</h5><p class="text-slate-400 text-xs">Cho client cũ không support Streamable HTTP</p></div>
+      <div class="card bg-slate-900/50"><h5 class="text-emerald-300 text-sm font-semibold mb-1">Claude Desktop ✅</h5><p class="text-slate-400 text-xs">Verified 2026-08-11, running với 8 tools</p></div>
+      <div class="card bg-slate-900/50"><h5 class="text-amber-300 text-sm font-semibold mb-1">Cursor / ChatGPT</h5><p class="text-slate-400 text-xs">Same mcp-remote config — chưa smoke test</p></div>
+      <div class="card bg-slate-900/50"><h5 class="text-fuchsia-300 text-sm font-semibold mb-1">Custom scripts</h5><p class="text-slate-400 text-xs">Dùng mcp-remote CLI hoặc gọi trực tiếp <code class="text-amber-300">/api/oauth/*</code></p></div>
     </div>
   </div>
 
@@ -675,7 +709,7 @@ liệt kê skills onemcp có gì
 
 <!-- ============ Multi-project onboarding ============ -->
 <section id="projects" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <span class="section-badge badge-v2">v2 · LIVE 2026-08-11</span>
   <div class="chip mb-3">Multi-project</div>
   <h2 class="text-4xl font-bold text-white mb-4">Đăng ký dự án đẩy skills lên OneMCP</h2>
   <p class="text-slate-400 max-w-3xl mb-8">
@@ -686,7 +720,7 @@ liệt kê skills onemcp có gì
     <div class="card">
       <h3 class="text-xl font-semibold text-indigo-300 mb-3">1 · Dev đăng ký project</h3>
       <ol class="text-slate-300 text-sm space-y-2 list-decimal ml-4">
-        <li>Login portal <code class="text-amber-300">mcp.inet.vn</code> qua Zimbra SSO</li>
+        <li>Login portal <code class="text-amber-300">oneconnector.000nethost.com</code> qua Zimbra SSO</li>
         <li>New Project → điền: name, git repo URL, scope (public/dept/private)</li>
         <li>Portal generate deploy token + webhook URL</li>
         <li>Dev add webhook + token vào GitLab/GitHub repo settings</li>
@@ -742,7 +776,7 @@ skills-projectname/
       <span class="chip chip-live">v1 hiện tại</span>
       <p class="text-slate-300 text-sm">
         Backend v1 đang chạy: <b class="text-indigo-300">1 mono-repo skills-kythuat</b> (GitLab) + <b class="text-emerald-300">spaces model</b> cho artifacts (space = workspace per dept, VD <code class="text-amber-300">ops-runbook</code>, <code class="text-amber-300">ops-oncall</code>).
-        v2 AI Connector Hub (blocked) sẽ mở multi-project repo — <a href="#projects" class="text-indigo-400 underline">xem section Multi-project</a>.
+        v2 AI Connector Hub (LIVE) đã mở multi-project repo — <a href="#projects" class="text-indigo-400 underline">xem section Multi-project</a>.
       </p>
     </div>
   </div>
@@ -991,7 +1025,7 @@ sequenceDiagram
 
 <!-- ============ Publish flow v2 ============ -->
 <section id="publish-v2" data-version="v2" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
-  <span class="section-badge badge-v2">v2 · in dev (blocked)</span>
+  <span class="section-badge badge-v2">v2 · LIVE 2026-08-11</span>
   <div class="chip mb-3">Push content (v2)</div>
   <h2 class="text-4xl font-bold text-white mb-4">Push flow trong v2 AI Connector Hub</h2>
   <p class="text-slate-400 max-w-3xl mb-8">
@@ -1159,7 +1193,7 @@ sequenceDiagram
     </details>
     <details class="card group">
       <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">AI client nào hỗ trợ v2 OAuth Connector? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
-      <p class="text-slate-300 text-sm mt-3">Claude Desktop native (primary target). ChatGPT + Cursor test matrix trong Phase 5. Client cũ không support Streamable HTTP → dùng <code class="text-amber-300">mcp-remote</code> proxy fallback.</p>
+      <p class="text-slate-300 text-sm mt-3">Verified 2026-08-11: <b class="text-emerald-300">Claude Desktop</b> qua <code class="text-amber-300">mcp-remote@latest</code> — running với 8 tools. Cursor + ChatGPT: same mcp-remote config, chưa smoke test (roadmap).</p>
     </details>
     <details class="card group">
       <summary class="cursor-pointer font-semibold text-indigo-300 flex justify-between">MCP tool aggregator từ project khác có không? <span class="text-slate-500 group-open:rotate-180 transition">▾</span></summary>
@@ -1184,33 +1218,34 @@ sequenceDiagram
 <section data-version="both" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-800">
   <div class="card p-10 md:p-14 text-center" style="background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 100%);border-color:#4338ca">
     <div class="chip mb-4">Bắt đầu</div>
-    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Sẵn sàng cook?</h2>
-    <p class="text-slate-300 max-w-2xl mx-auto mb-8">v1 pilot đang chạy (header trust). v2 Remote Connector ship sau Zitadel SSO. Đăng ký project của bạn qua portal khi v2 live.</p>
+    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">AI Connector Hub — LIVE</h2>
+    <p class="text-slate-300 max-w-2xl mx-auto mb-8">
+      Claude Desktop / Cursor / mcp-remote cắm được ngay qua OAuth 2.1 DCR. v1 pilot (header trust) giữ cho legacy scripts nội bộ trong 4 tuần transition rồi deprecate.
+    </p>
     <div class="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
+      <div class="card border-emerald-800/50">
+        <div class="text-emerald-300 font-semibold mb-1">Portal + MCP endpoint (v2 LIVE)</div>
+        <a class="text-slate-300 underline text-sm" href="https://oneconnector.000nethost.com">https://oneconnector.000nethost.com</a>
+        <div class="text-slate-500 text-xs mt-1">Portal (login Zimbra SSO) · MCP <code class="text-amber-300">/mcp/</code> (OAuth Bearer)</div>
+      </div>
       <div class="card">
-        <div class="text-indigo-300 font-semibold mb-1">Portal (v1 hiện tại)</div>
+        <div class="text-indigo-300 font-semibold mb-1">Portal (v1 legacy)</div>
         <a class="text-slate-300 underline" href="https://onemcp.local">https://onemcp.local</a>
-        <div class="text-slate-500 text-xs mt-1">skills · artifacts · search · review</div>
+        <div class="text-slate-500 text-xs mt-1">Header trust auth · sẽ deprecate</div>
       </div>
       <div class="card">
-        <div class="text-fuchsia-300 font-semibold mb-1">MCP endpoint (v2 target)</div>
-        <code class="text-amber-300 text-sm">https://mcp.inet.vn/mcp</code>
-        <div class="text-slate-500 text-xs mt-1">OAuth 2.1 + DCR · Remote Connector</div>
+        <div class="text-indigo-300 font-semibold mb-1">Docs — user onboarding</div>
+        <div class="text-slate-300 text-sm"><a href="ai-client-onboarding.md" class="text-amber-300 underline">ai-client-onboarding.md</a> — configs Claude/Cursor/mcp-remote</div>
+        <div class="text-slate-300 text-sm"><a href="oauth-troubleshoot.md" class="text-amber-300 underline">oauth-troubleshoot.md</a> — 12-row diagnosis table</div>
       </div>
       <div class="card">
-        <div class="text-indigo-300 font-semibold mb-1">Docs</div>
-        <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/system-architecture.md</code></div>
-        <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/sso-guide.md</code></div>
-        <div class="text-slate-300 text-sm"><code class="text-amber-300">docs/client-session-wrapup.md</code></div>
-      </div>
-      <div class="card">
-        <div class="text-indigo-300 font-semibold mb-1">Support</div>
-        <div class="text-slate-300 text-sm">Slack: <b class="text-slate-100">@maintainer-kythuat</b></div>
-        <div class="text-slate-300 text-sm">Issue: <code class="text-amber-300">onemcp/backend</code></div>
+        <div class="text-indigo-300 font-semibold mb-1">Docs — admin / infra</div>
+        <div class="text-slate-300 text-sm"><a href="admin-runbook.md" class="text-amber-300 underline">admin-runbook.md</a> — approve, sync, cert renewal</div>
+        <div class="text-slate-300 text-sm"><a href="system-architecture.md" class="text-amber-300 underline">system-architecture.md</a></div>
       </div>
     </div>
     <div class="mt-8 text-slate-400 text-xs">
-      Plan tracking: <code class="text-amber-300">plans/260805-0852-onemcp-ai-connector-hub/</code> · Blocker: <code class="text-amber-300">plans/260805-1409-onemcp-migrate-gitlab-to-zitadel/</code>
+      Plan tracking: <code class="text-amber-300">plans/260805-0852-onemcp-ai-connector-hub/</code> · Status: <b class="text-emerald-300">completed 2026-08-11</b> · Journal: <code class="text-amber-300">docs/journals/2026-08-11-onemcp-ai-connector-hub-shipped.md</code>
     </div>
   </div>
 </section>
