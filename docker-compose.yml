@@ -126,9 +126,9 @@ services:
       EMBEDDING_URL: ${EMBEDDING_URL:-http://tei:80}
       # AI Connector Hub (parent P2): AES-256 encryption key + OAuth 2.1 AS config.
       ONEMCP_ENCRYPTION_KEY: ${ONEMCP_ENCRYPTION_KEY}
-      OAUTH_ISSUER: ${OAUTH_ISSUER:-http://10.200.0.44}
-      OAUTH_RESOURCE_URL: ${OAUTH_RESOURCE_URL:-http://10.200.0.44/api/mcp}
-      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-}
+      OAUTH_ISSUER: ${OAUTH_ISSUER:-https://oneconnector.000nethost.com}
+      OAUTH_RESOURCE_URL: ${OAUTH_RESOURCE_URL:-https://oneconnector.000nethost.com/api/mcp}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-https://oneconnector.000nethost.com}
       MCP_AUTH_MODE: ${MCP_AUTH_MODE:-off}
       MCP_TRANSPORT: ${MCP_TRANSPORT:-jsonrpc}
     volumes:
@@ -242,9 +242,23 @@ services:
     volumes:
       - ./ops/nginx/onemcp.conf:/etc/nginx/conf.d/default.conf:ro
       - ./ops/nginx/tls:/etc/nginx/tls:ro
+      # Let's Encrypt: certbot writes /etc/letsencrypt (certs) + /var/www/certbot (challenge).
+      # Nginx reads both. See ops/certbot/README.md for issuance.
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
     ports:
       - "80:80"
       - "443:443"
+
+  # Certbot — on-demand cert issue + renewal. Not restarted; run manually via
+  # `docker compose run --rm certbot ...`. See ops/certbot/README.md.
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["cert"]
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: ["certbot"]
 
 volumes:
   pg-data:
@@ -252,3 +266,5 @@ volumes:
   minio-data:
   git-mirrors:
   tei-cache:
+  certbot-etc:
+  certbot-www:

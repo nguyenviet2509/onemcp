@@ -9,10 +9,10 @@ skip_oidc_discovery = false
 client_id = "REPLACE_WITH_CLIENT_ID"
 client_secret = "REPLACE_WITH_CLIENT_SECRET"
 
-redirect_url = "https://onemcp.inet.vn/oauth2/callback"
+redirect_url = "https://oneconnector.000nethost.com/oauth2/callback"
 
 cookie_secret = "REPLACE_WITH_COOKIE_SECRET_32B_BASE64"
-cookie_domains = ["onemcp.inet.vn"]
+cookie_domains = ["oneconnector.000nethost.com"]
 cookie_secure = true
 cookie_httponly = true
 cookie_samesite = "lax"
@@ -26,6 +26,6 @@ pass_authorization_header = true
 reverse_proxy = true
 
 http_address = "0.0.0.0:4180"
-whitelist_domains = ["onemcp.inet.vn"]
+whitelist_domains = ["oneconnector.000nethost.com"]
 
 scope = "openid profile email offline_access"
