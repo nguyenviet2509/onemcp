@@ -3,8 +3,10 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-COPY package.json ./
-RUN pnpm install --prod=false --frozen-lockfile=false
+COPY package.json pnpm-lock.yaml ./
+# Frozen-lockfile: reproduce local versions exactly (previous VPS build fetched
+# @modelcontextprotocol/sdk >1.30 which changed server.tool() signature → 17 tsc errors).
+RUN pnpm install --prod=false --frozen-lockfile
 
 FROM node:20-alpine AS build
 WORKDIR /app
