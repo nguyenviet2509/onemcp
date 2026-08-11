@@ -83,6 +83,33 @@ export class OAuthService {
     const authMethod = dto.token_endpoint_auth_method ?? 'none';
     const scopes = dto.scope ? dto.scope.split(/\s+/).filter(Boolean) : DEFAULT_SCOPES;
 
+    // DCR dedup for public clients — mcp-remote and similar can race and register twice within ms.
+    // When client_name + sorted redirect_uris match an existing PKCE-only client < 60s old, reuse it.
+    // Avoids race where authorize/token endpoints see different client_ids from same OAuth flow.
+    if (authMethod === 'none') {
+      const cutoff = new Date(Date.now() - 60_000);
+      const candidates = await this.clients
+        .createQueryBuilder('c')
+        .where('c.name = :name', { name: dto.client_name.slice(0, 200) })
+        .andWhere('c.token_endpoint_auth_method = :m', { m: 'none' })
+        .andWhere('c.created_at > :cutoff', { cutoff })
+        .getMany();
+      const sortedInput = [...dto.redirect_uris].sort().join('|');
+      const existing = candidates.find(
+        (c) => [...c.redirectUris].sort().join('|') === sortedInput,
+      );
+      if (existing) {
+        this.log.log(`DCR dedup reuse client_id=${existing.clientId} name="${dto.client_name}"`);
+        return {
+          client_id: existing.clientId,
+          client_name: existing.name,
+          redirect_uris: existing.redirectUris,
+          token_endpoint_auth_method: existing.tokenEndpointAuthMethod,
+          scope: existing.scopes.join(' '),
+        };
+      }
+    }
+
     const clientId = nanoid(24);
     let secretPlain: string | undefined;
     let secretHash: string | null = null;
