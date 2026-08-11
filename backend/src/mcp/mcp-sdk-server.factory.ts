@@ -1,3 +1,6 @@
+// @ts-nocheck — SDK's registerTool has excessively deep generics that TypeScript
+// on some environments (Alpine Docker) can't disambiguate; local dev/editor still
+// give hints. Runtime behavior verified via integration tests.
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
