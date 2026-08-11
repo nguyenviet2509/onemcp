@@ -42,8 +42,20 @@ export class BearerAuthMiddleware implements NestMiddleware {
     const isMcpPath = path.startsWith('/api/mcp');
 
     if (!hasBearer) {
-      if (this.mode === 'required' && isMcpPath) {
-        res.setHeader('WWW-Authenticate', 'Bearer error="missing_token"');
+      // Optional mode: nếu MCP path không có Bearer VÀ không có trust-header
+      // → trả 401 + WWW-Authenticate để mcp-remote tự trigger OAuth flow.
+      // Trust-header (X-Onemcp-User) vẫn work cho internal OpenWebUI actions.
+      // Không có block này thì TrustUserMiddleware sẽ throw 400 → mcp-remote fatal (RFC 6750: cần 401).
+      const hasTrustHeader = Boolean(req.headers['x-onemcp-user']);
+      const shouldChallenge =
+        (this.mode === 'required' && isMcpPath) ||
+        (this.mode === 'optional' && isMcpPath && !hasTrustHeader);
+      if (shouldChallenge) {
+        const issuer = this.config.get<string>('OAUTH_ISSUER') || '';
+        const resourceMetadata = issuer
+          ? `, resource_metadata="${issuer}/.well-known/oauth-protected-resource"`
+          : '';
+        res.setHeader('WWW-Authenticate', `Bearer error="missing_token"${resourceMetadata}`);
         res.status(401).json({ error: 'missing_token' });
         return;
       }
@@ -54,12 +66,22 @@ export class BearerAuthMiddleware implements NestMiddleware {
     const token = auth.slice(7).trim();
     const payload = token ? await this.oauth.verifyBearer(token) : null;
     if (!payload) {
-      if (this.mode === 'required' && isMcpPath) {
-        res.setHeader('WWW-Authenticate', 'Bearer error="invalid_token"');
+      // Cùng logic với missing-token: MCP path + invalid Bearer + không có trust-header
+      // → 401 + WWW-Authenticate để client refresh/re-OAuth.
+      const hasTrustHeader = Boolean(req.headers['x-onemcp-user']);
+      const shouldChallenge =
+        (this.mode === 'required' && isMcpPath) ||
+        (this.mode === 'optional' && isMcpPath && !hasTrustHeader);
+      if (shouldChallenge) {
+        const issuer = this.config.get<string>('OAUTH_ISSUER') || '';
+        const resourceMetadata = issuer
+          ? `, resource_metadata="${issuer}/.well-known/oauth-protected-resource"`
+          : '';
+        res.setHeader('WWW-Authenticate', `Bearer error="invalid_token"${resourceMetadata}`);
         res.status(401).json({ error: 'invalid_token' });
         return;
       }
-      // Optional mode: invalid Bearer falls through, trust-user may still auth via header.
+      // Optional non-MCP path hoặc có trust-header: fall through cho TrustUserMiddleware.
       next();
       return;
     }
