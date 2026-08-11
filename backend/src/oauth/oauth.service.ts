@@ -252,7 +252,12 @@ export class OAuthService {
 
     await this.authenticateClient(input.clientId, input.clientSecret);
 
+    this.log.debug(
+      `PKCE check: verifier_len=${input.codeVerifier?.length ?? 'null'} ` +
+      `challenge=${payload.codeChallenge?.slice(0, 12)}... method=${payload.codeChallengeMethod}`,
+    );
     if (!verifyPkce(input.codeVerifier, payload.codeChallenge, payload.codeChallengeMethod)) {
+      this.log.warn(`PKCE FAIL: verifier_provided=${!!input.codeVerifier} method=${payload.codeChallengeMethod}`);
       throw new UnauthorizedException('PKCE verification failed');
     }
     return this.mintTokens(payload.clientId, payload.userId, payload.username, payload.scopes);
