@@ -228,7 +228,6 @@ export class OAuthService {
       scopes,
       state: params.state,
     });
-    this.log.log(`issueCode: code=${code.slice(0, 8)}... client=${client.clientId} redirect=${params.redirectUri} user=${username}`);
     return code;
   }
 
@@ -240,24 +239,14 @@ export class OAuthService {
     clientSecret?: string;
     redirectUri: string;
   }): Promise<TokenResponse> {
-    this.log.debug(`exchangeCode: code=${input.code?.slice(0, 8)}... client=${input.clientId} redirect=${input.redirectUri}`);
     const payload = await this.store.consumeCode(input.code);
-    if (!payload) {
-      this.log.warn(`exchangeCode: code not found in store (code=${input.code?.slice(0, 8)}...)`);
-      throw new UnauthorizedException('invalid or expired code');
-    }
-    this.log.debug(`exchangeCode: payload client=${payload.clientId} redirect=${payload.redirectUri}`);
+    if (!payload) throw new UnauthorizedException('invalid or expired code');
     if (payload.clientId !== input.clientId) throw new UnauthorizedException('client_id mismatch');
     if (payload.redirectUri !== input.redirectUri) throw new UnauthorizedException('redirect_uri mismatch');
 
     await this.authenticateClient(input.clientId, input.clientSecret);
 
-    this.log.debug(
-      `PKCE check: verifier_len=${input.codeVerifier?.length ?? 'null'} ` +
-      `challenge=${payload.codeChallenge?.slice(0, 12)}... method=${payload.codeChallengeMethod}`,
-    );
     if (!verifyPkce(input.codeVerifier, payload.codeChallenge, payload.codeChallengeMethod)) {
-      this.log.warn(`PKCE FAIL: verifier_provided=${!!input.codeVerifier} method=${payload.codeChallengeMethod}`);
       throw new UnauthorizedException('PKCE verification failed');
     }
     return this.mintTokens(payload.clientId, payload.userId, payload.username, payload.scopes);
