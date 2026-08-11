@@ -1,0 +1,111 @@
+# Prometheus alerts for OneMCP AI Connector Hub
+# Assumes backend exposes /metrics with pino-http + custom oauth counters.
+# Load: prometheus.yml → rule_files: - /etc/prometheus/rules/alerts-ai-connector.yaml
+
+groups:
+  - name: onemcp-ai-connector
+    interval: 30s
+    rules:
+      # OAuth error rate spike (DCR/token/authorize)
+      - alert: OneMcpOAuthErrorRateHigh
+        expr: |
+          sum(rate(http_requests_total{route=~"/api/oauth/.*",status=~"4..|5.."}[5m]))
+            / sum(rate(http_requests_total{route=~"/api/oauth/.*"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: onemcp-backend
+        annotations:
+          summary: "OAuth error rate > 10% ({{ $value | humanizePercentage }})"
+          description: "OAuth 4xx/5xx spike có thể do DCR abuse, mcp-remote bug, hoặc backend issue. Check `docker logs onemcp-backend-1 | grep oauth`."
+
+      # Token exchange fail rate (401 on /api/oauth/token)
+      - alert: OneMcpTokenExchangeFailHigh
+        expr: |
+          sum(rate(http_requests_total{route="/api/oauth/token",status="401"}[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: onemcp-backend
+        annotations:
+          summary: "Token exchange 401 rate > 0.5/s"
+          description: "Có thể do PKCE fail, client_id mismatch, hoặc code expired. Enable LOG_LEVEL=debug để trace."
+
+      # DCR flood (rate limit exhausted)
+      - alert: OneMcpDcrRateLimitExhausted
+        expr: |
+          sum(rate(http_requests_total{route="/api/oauth/register",status="429"}[5m])) > 0.2
+        for: 3m
+        labels:
+          severity: warning
+          service: onemcp-backend
+        annotations:
+          summary: "DCR rate limit 429 spike ({{ $value }} req/s)"
+          description: "AI client bug (không cache client_info) hoặc abuse. Check IP: `docker logs onemcp-backend-1 | grep DCR`."
+
+      # MCP endpoint 401 rate (invalid Bearer)
+      - alert: OneMcpMcpUnauthorizedHigh
+        expr: |
+          sum(rate(http_requests_total{route=~"/api/mcp.*",status="401"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: onemcp-backend
+        annotations:
+          summary: "MCP 401 rate > 1/s"
+          description: "Client dùng token hết hạn không refresh, hoặc bug WWW-Authenticate discovery. Check tokens.json trên client."
+
+      # Skills sync queue backlog
+      - alert: OneMcpSkillSyncQueueBacklog
+        expr: |
+          onemcp_bullmq_queue_length{queue="skill-sync"} > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: onemcp-backend
+        annotations:
+          summary: "Skill sync queue > 50 pending jobs"
+          description: "Worker chậm hoặc dead. Check `docker logs onemcp-backend-1 | grep skill-sync`."
+
+      # Backend down
+      - alert: OneMcpBackendDown
+        expr: up{job="onemcp-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: onemcp-backend
+        annotations:
+          summary: "Backend down > 2 phút"
+          description: "SSH onemcp-vps, `docker compose ps`, `docker logs onemcp-backend-1 --tail 100`."
+
+      # Redis down (token store gone → all OAuth broken)
+      - alert: OneMcpRedisDown
+        expr: up{job="onemcp-redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: onemcp-redis
+        annotations:
+          summary: "Redis down > 1 phút — OAuth tokens + sync queue lost"
+
+      # Cert expiring soon (Sectigo wildcard)
+      - alert: OneMcpCertExpiringSoon
+        expr: |
+          probe_ssl_earliest_cert_expiry{instance="https://oneconnector.000nethost.com"} - time() < 30 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+          service: onemcp-nginx
+        annotations:
+          summary: "SSL cert expiring < 30 ngày ({{ $value | humanizeDuration }} left)"
+          description: "Renew Sectigo wildcard qua provider. Xem docs/admin-runbook.md → Cert renewal."
+
+      - alert: OneMcpCertExpiringCritical
+        expr: |
+          probe_ssl_earliest_cert_expiry{instance="https://oneconnector.000nethost.com"} - time() < 7 * 24 * 3600
+        for: 1h
+        labels:
+          severity: critical
+          service: onemcp-nginx
+        annotations:
+          summary: "SSL cert expiring < 7 ngày — URGENT renew"
