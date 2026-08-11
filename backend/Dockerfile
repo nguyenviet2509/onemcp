@@ -24,7 +24,7 @@ COPY backend/ ./backend/
 RUN cd backend && pnpm build
 # pnpm deploy: flatten workspace into self-contained /app-out with hard-linked
 # real node_modules (no symlinks pointing outside). Runtime stage copies from here.
-RUN pnpm --filter=@onemcp/backend deploy --prod=false --legacy /app-out \
+RUN pnpm --filter=@onemcp/backend deploy --prod=false /app-out \
  && cp -r backend/dist /app-out/dist
 
 FROM node:20-alpine AS runtime
