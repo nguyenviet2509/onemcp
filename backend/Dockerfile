@@ -20,8 +20,8 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/backend/node_modules ./backend/node_modules
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY backend/ ./backend/
-# 12GB heap: tsc+swc need >8GB after OAuth AS added.
-RUN cd backend && NODE_OPTIONS=--max-old-space-size=12288 pnpm build
+# swc builder (nest-cli.json) — transpile only, ~1s, no heap limit needed.
+RUN cd backend && pnpm build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
