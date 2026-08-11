@@ -20,8 +20,8 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/backend/node_modules ./backend/node_modules
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY backend/ ./backend/
-# swc builder (nest-cli.json) — transpile only, ~1s.
-RUN cd backend && pnpm build
+# tsc build: 6GB heap (default 4GB OOM'd on this project size).
+RUN cd backend && NODE_OPTIONS=--max-old-space-size=6144 pnpm build
 # pnpm deploy: flatten workspace into self-contained /app-out with hard-linked
 # real node_modules (no symlinks pointing outside). Runtime stage copies from here.
 RUN pnpm --filter=@onemcp/backend deploy --prod=false /app-out \
