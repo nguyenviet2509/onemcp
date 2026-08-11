@@ -74,8 +74,9 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      # Root context so workspace pnpm-lock.yaml + pnpm-workspace.yaml are accessible.
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:
