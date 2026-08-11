@@ -20,22 +20,25 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/backend/node_modules ./backend/node_modules
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY backend/ ./backend/
-# swc builder (nest-cli.json) — transpile only, ~1s, no heap limit needed.
+# swc builder (nest-cli.json) — transpile only, ~1s.
 RUN cd backend && pnpm build
+# pnpm deploy: flatten workspace into self-contained /app-out with hard-linked
+# real node_modules (no symlinks pointing outside). Runtime stage copies from here.
+RUN pnpm --filter=@onemcp/backend deploy --prod=false --legacy /app-out \
+ && cp -r backend/dist /app-out/dist
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
 # git binary cần cho simple-git (P2 skill sync).
 RUN apk add --no-cache git \
- && corepack enable && corepack prepare pnpm@9.0.0 --activate \
  && addgroup -g 1001 -S onemcp \
  && adduser  -u 1001 -S onemcp -G onemcp \
  && mkdir -p /var/lib/onemcp/mirrors \
  && chown -R onemcp:onemcp /var/lib/onemcp
 ENV NODE_ENV=production
-COPY --from=build /repo/backend/dist ./dist
-COPY --from=build /repo/backend/node_modules ./node_modules
-COPY --from=build /repo/backend/package.json ./package.json
+COPY --from=build /app-out/dist ./dist
+COPY --from=build /app-out/node_modules ./node_modules
+COPY --from=build /app-out/package.json ./package.json
 USER onemcp
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
