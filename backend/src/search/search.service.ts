@@ -143,20 +143,25 @@ export class SearchService {
 
     this.metrics?.searchModeUsed?.inc({ mode: effectiveMode });
 
-    // FTS branch — always runs (unless mode='semantic')
-    const ftsResults: FtsResult[] =
-      effectiveMode !== 'semantic'
-        ? await this.runFtsQuery(query, deptId, input, limit)
-        : [];
+    // Determine embedding availability sớm để fallback đúng khi semantic mà TEI down.
+    const hasEmbedding = Boolean(this.embeddingProvider) && !this.forceFtsOnly;
 
-    // Vector branch — only if mode != 'fts' and kill-switch off
+    // FTS branch — chạy trừ pure semantic CÓ embedding.
+    // Nếu semantic mà KHÔNG có embedding → chạy FTS để tránh trả rỗng (graceful degrade).
+    const shouldRunFts = effectiveMode !== 'semantic' || !hasEmbedding;
+    const ftsResults: FtsResult[] = shouldRunFts
+      ? await this.runFtsQuery(query, deptId, input, limit)
+      : [];
+
+    // Vector branch — chỉ chạy khi có embedding và mode != 'fts'.
     let vectorResults: VectorResult[] = [];
-    if (effectiveMode !== 'fts' && !this.forceFtsOnly) {
+    if (effectiveMode !== 'fts' && hasEmbedding) {
       vectorResults = await this.runVectorQuery(query, deptId, input, limit);
     }
 
-    // Semantic-only: treat vector results as primary, hydrate without RRF
-    if (effectiveMode === 'semantic') {
+    // Semantic-only + có embedding: dùng vector primary.
+    // Semantic-only + KHÔNG embedding: fallback FTS (đã chạy ở trên) qua hydrateHits.
+    if (effectiveMode === 'semantic' && hasEmbedding) {
       return buildHitsFromVector(this.ds, vectorResults, limit);
     }
 
