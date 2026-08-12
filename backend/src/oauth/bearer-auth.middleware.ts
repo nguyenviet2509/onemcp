@@ -2,6 +2,8 @@ import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NextFunction, Response } from 'express';
 import { AuthedRequest } from '../common/user-request';
+import { UsersService } from '../users/users.service';
+import { RoleAssignerService } from '../access/role-assigner.service';
 import { OAuthService } from './oauth.service';
 
 // Sits between ApiKeyMiddleware and TrustUserMiddleware.
@@ -18,7 +20,12 @@ export class BearerAuthMiddleware implements NestMiddleware {
   private readonly log = new Logger(BearerAuthMiddleware.name);
   private readonly mode: 'off' | 'optional' | 'required';
 
-  constructor(private readonly config: ConfigService, private readonly oauth: OAuthService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly oauth: OAuthService,
+    private readonly users: UsersService,
+    private readonly roles: RoleAssignerService,
+  ) {
     const raw = (this.config.get<string>('MCP_AUTH_MODE') ?? 'off').toLowerCase();
     this.mode = (['off', 'optional', 'required'] as const).find((m) => m === raw) ?? 'off';
     if (this.mode !== 'off') this.log.log(`Bearer auth mode: ${this.mode}`);
@@ -86,12 +93,34 @@ export class BearerAuthMiddleware implements NestMiddleware {
       return;
     }
 
+    // Lookup user thật từ DB để lấy departmentId + status thực tế.
+    // Trước đây hardcode departmentId=0 → search/list_artifacts filter dept_id=0 → 0 kết quả
+    // (bug khiến Claude Desktop OAuth không thấy artifact nào của dept mình).
+    const dbUser = await this.users.findById(payload.userId);
+    if (!dbUser) {
+      // Token valid nhưng user bị xoá khỏi DB → treat như invalid token.
+      const hasTrustHeader = Boolean(req.headers['x-onemcp-user']);
+      const shouldChallenge =
+        (this.mode === 'required' && isMcpPath) ||
+        (this.mode === 'optional' && isMcpPath && !hasTrustHeader);
+      if (shouldChallenge) {
+        const issuer = this.config.get<string>('OAUTH_ISSUER') || '';
+        const resourceMetadata = issuer
+          ? `, resource_metadata="${issuer}/.well-known/oauth-protected-resource"`
+          : '';
+        res.setHeader('WWW-Authenticate', `Bearer error="invalid_token"${resourceMetadata}`);
+        res.status(401).json({ error: 'user_not_found' });
+        return;
+      }
+      next();
+      return;
+    }
     req.user = {
-      id: payload.userId,
-      username: payload.username,
-      roles: ['contributor'],
-      departmentId: 0,
-      status: 'active',
+      id: dbUser.id,
+      username: dbUser.username,
+      roles: this.roles.rolesFor(dbUser.username),
+      departmentId: dbUser.departmentId,
+      status: dbUser.status,
       claimedFromHeader: true,
     };
     next();
