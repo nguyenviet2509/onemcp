@@ -161,12 +161,26 @@ export default function ProjectsPage() {
 
   const onSetToken = async (p: Project) => {
     const token = prompt(
-      `Paste GitLab deploy token for project "${p.slug}" (scope: read_repository). Leave empty to clear.`,
+      `Paste GitLab token for project "${p.slug}".\n\n` +
+        `Types:\n` +
+        `- Deploy token (Settings→Repository→Deploy tokens, scope read_repository)\n` +
+        `- Personal Access Token (scope read_repository)\n\n` +
+        `Leave empty to clear.`,
     );
     if (token === null) return;
+    let username: string | undefined = undefined;
+    if (token.trim()) {
+      const u = prompt(
+        `Token username?\n\n` +
+          `- Deploy token: paste the username GitLab showed you (e.g. 'gitlab+deploy-token-42').\n` +
+          `- PAT / OAuth token: leave empty (defaults to 'oauth2').`,
+      );
+      if (u === null) return;
+      username = u.trim() || undefined;
+    }
     try {
-      await setDeployToken(p.id, token);
-      alert(token ? 'Deploy token saved (encrypted).' : 'Deploy token cleared.');
+      await setDeployToken(p.id, token, username);
+      alert(token ? `Deploy token saved (username: ${username ?? 'oauth2'}).` : 'Deploy token cleared.');
     } catch (e) {
       alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
     }

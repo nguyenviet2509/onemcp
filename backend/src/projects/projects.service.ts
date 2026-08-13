@@ -28,27 +28,37 @@ export class ProjectsService {
   ) {}
 
   // Encrypt + store GitLab deploy token so worker can clone private repos.
-  // Passing empty string clears the stored token.
-  async setDeployToken(id: number, user: RequestUser, token: string): Promise<Project> {
+  // Passing empty token clears both fields. Username optional (defaults 'oauth2'
+  // for PAT/OAuth token flows; must be set for GitLab per-project deploy tokens
+  // where username is server-assigned).
+  async setDeployToken(
+    id: number,
+    user: RequestUser,
+    token: string,
+    username?: string,
+  ): Promise<Project> {
     const p = await this.repo.findOneBy({ id });
     if (!p) throw new NotFoundException('Project not found');
     if (!this.isAdmin(user) && p.ownerId !== user.id) {
       throw new ForbiddenException('Only owner or admin can set deploy token');
     }
-    const trimmed = token.trim();
-    if (trimmed) {
-      const ciphertext = this.cipher.encrypt(trimmed);
-      p.deployTokenCiphertext = Buffer.from(ciphertext, 'utf8');
+    const trimmedToken = token.trim();
+    const trimmedUser = username?.trim() || null;
+    if (trimmedToken) {
+      p.deployTokenCiphertext = Buffer.from(this.cipher.encrypt(trimmedToken), 'utf8');
+      p.deployTokenUsername = trimmedUser;
     } else {
       p.deployTokenCiphertext = null;
+      p.deployTokenUsername = null;
     }
     p.updatedAt = new Date();
     const saved = await this.repo.save(p);
     this.audit.record({
       actor: user,
-      action: trimmed ? 'project.deploy_token_set' : 'project.deploy_token_cleared',
+      action: trimmedToken ? 'project.deploy_token_set' : 'project.deploy_token_cleared',
       resourceType: 'project',
       resourceId: id,
+      after: trimmedToken ? { username: trimmedUser ?? 'oauth2' } : undefined,
     });
     return saved;
   }

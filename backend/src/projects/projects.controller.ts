@@ -111,9 +111,11 @@ export class ProjectsController {
   async setDeployToken(
     @CurrentUser() user: RequestUser | undefined,
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: { token?: string },
+    @Body() dto: { token?: string; username?: string },
   ): Promise<Omit<Project, 'webhookSecret'>> {
-    return this.mask(await this.projects.setDeployToken(id, this.mustAuth(user), dto?.token ?? ''));
+    return this.mask(
+      await this.projects.setDeployToken(id, this.mustAuth(user), dto?.token ?? '', dto?.username),
+    );
   }
 
   @Post(':id/regen-secret')

@@ -11,8 +11,11 @@ export interface MirrorHandle {
   repoUrl: string;
   mirrorDir: string;
   branch: string;
-  // Optional auth token (deploy token) — injected as `oauth2:<token>@` in URL.
+  // Optional auth token (PAT or deploy token) — injected as `<username>:<token>@` in URL.
   token?: string;
+  // Optional Basic-auth username. Defaults to 'oauth2' (PAT/OAuth style).
+  // GitLab deploy tokens require the GitLab-assigned username instead.
+  tokenUsername?: string;
 }
 
 // Mirror = bare clone của repo. Fetch bằng deploy token (C2 mitigation).
@@ -44,12 +47,19 @@ export class GitMirrorService {
   }
 
   // Per-project handle. mirrorDir isolated by projectId to avoid collisions.
-  projectHandle(projectId: number, repoUrl: string, branch = 'main', token?: string): MirrorHandle {
+  projectHandle(
+    projectId: number,
+    repoUrl: string,
+    branch = 'main',
+    token?: string,
+    tokenUsername?: string,
+  ): MirrorHandle {
     return {
       repoUrl,
       mirrorDir: path.join(this.root, `project-${projectId}.git`),
       branch,
       token,
+      tokenUsername,
     };
   }
 
@@ -69,9 +79,12 @@ export class GitMirrorService {
     if (!h.token) return h.repoUrl;
     try {
       const u = new URL(h.repoUrl);
-      u.username = 'oauth2';
-      u.password = h.token;
-      return u.toString();
+      // URL#username setter percent-encodes '+' as '%2B' which breaks GitLab deploy
+      // token usernames like 'gitlab+deploy-token-1'. Build the auth prefix manually
+      // and rebuild the URL string to preserve the literal characters.
+      const user = encodeURIComponent(h.tokenUsername || 'oauth2').replace(/%2B/gi, '+');
+      const pass = encodeURIComponent(h.token);
+      return `${u.protocol}//${user}:${pass}@${u.host}${u.pathname}${u.search}${u.hash}`;
     } catch {
       return h.repoUrl;
     }

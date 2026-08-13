@@ -88,10 +88,10 @@ export function deleteProject(id: number): Promise<void> {
   return apiFetch<void>(`/projects/${id}`, { method: 'DELETE' });
 }
 
-export function setDeployToken(id: number, token: string): Promise<Project> {
+export function setDeployToken(id: number, token: string, username?: string): Promise<Project> {
   return apiFetch<Project>(`/projects/${id}/deploy-token`, {
     method: 'PATCH',
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ token, username }),
   });
 }
 

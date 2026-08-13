@@ -121,6 +121,7 @@ export class ProjectOauthService {
       const deploy = await gl.createDeployToken(glProject.id, `onemcp-sync-${saved.slug}`);
       // Encrypt + persist token so worker can clone private repos.
       saved.deployTokenCiphertext = Buffer.from(this.cipher.encrypt(deploy.token), 'utf8');
+      saved.deployTokenUsername = deploy.username;
       await this.repo.save(saved);
     } catch (e) {
       // GitLab call failed AFTER project row inserted → rollback so member can retry cleanly.

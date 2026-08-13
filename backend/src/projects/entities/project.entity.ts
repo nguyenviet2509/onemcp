@@ -42,6 +42,11 @@ export class Project {
   @Column({ name: 'deploy_token_enc', type: 'bytea', nullable: true })
   deployTokenCiphertext!: Buffer | null;
 
+  // GitLab-assigned username for the deploy token (e.g. 'gitlab+deploy-token-42').
+  // NULL falls back to 'oauth2' (used with personal access tokens / OAuth tokens).
+  @Column({ name: 'deploy_token_username', type: 'varchar', length: 128, nullable: true })
+  deployTokenUsername!: string | null;
+
   @Index()
   @Column({ type: 'varchar', length: 16, default: 'private' })
   scope!: ProjectScope;

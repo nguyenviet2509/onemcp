@@ -61,7 +61,13 @@ export class SkillSyncService {
     }
 
     const token = this.decryptDeployToken(project);
-    const handle = this.mirror.projectHandle(project.id, project.gitRepoUrl, project.branch || 'main', token);
+    const handle = this.mirror.projectHandle(
+      project.id,
+      project.gitRepoUrl,
+      project.branch || 'main',
+      token,
+      project.deployTokenUsername ?? undefined,
+    );
     const summary = await this.runSync(handle, project);
 
     // First successful sync of an approved project → active.
