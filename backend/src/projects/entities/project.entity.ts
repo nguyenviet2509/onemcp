@@ -32,6 +32,11 @@ export class Project {
   @Column({ name: 'git_repo_url', type: 'varchar', length: 500 })
   gitRepoUrl!: string;
 
+  // Default branch used by sync worker. Prev hardcoded 'main' — repos using
+  // 'master' / 'develop' failed at rev-parse. Owner can override at register/edit.
+  @Column({ type: 'varchar', length: 64, default: 'main' })
+  branch!: string;
+
   // AES-256-GCM encrypted deploy token. Format: iv:ciphertext:tag (base64 segments joined by ':').
   // Null until a deploy token is issued. Boot guard: prod refuses start if ONEMCP_ENCRYPTION_KEY absent.
   @Column({ name: 'deploy_token_enc', type: 'bytea', nullable: true })

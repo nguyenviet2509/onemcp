@@ -9,6 +9,7 @@ export interface Project {
   name: string;
   description: string | null;
   gitRepoUrl: string;
+  branch: string;
   scope: ProjectScope;
   status: ProjectStatus;
   departmentId: number | null;
@@ -25,6 +26,7 @@ export interface CreateProjectPayload {
   name: string;
   description?: string;
   gitRepoUrl: string;
+  branch?: string;
   scope?: ProjectScope;
 }
 
@@ -71,6 +73,7 @@ export interface UpdateProjectPayload {
   name?: string;
   description?: string;
   gitRepoUrl?: string;
+  branch?: string;
   scope?: ProjectScope;
 }
 

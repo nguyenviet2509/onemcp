@@ -72,6 +72,7 @@ export class ProjectsService {
       name: dto.name,
       description: dto.description ?? null,
       gitRepoUrl: dto.gitRepoUrl,
+      branch: dto.branch?.trim() || 'main',
       scope: dto.scope ?? 'private',
       departmentId: owner.departmentId || null,
       ownerId: owner.id,
@@ -180,18 +181,19 @@ export class ProjectsService {
   async update(
     id: number,
     user: RequestUser,
-    patch: { name?: string; description?: string; gitRepoUrl?: string; scope?: ProjectStatus | 'public' | 'dept' | 'private' },
+    patch: { name?: string; description?: string; gitRepoUrl?: string; scope?: ProjectStatus | 'public' | 'dept' | 'private'; branch?: string },
   ): Promise<Project> {
     const p = await this.repo.findOneBy({ id });
     if (!p) throw new NotFoundException('Project not found');
     if (!this.isAdmin(user) && p.ownerId !== user.id) {
       throw new ForbiddenException('Only owner or admin can edit');
     }
-    const before = { name: p.name, description: p.description, gitRepoUrl: p.gitRepoUrl, scope: p.scope };
+    const before = { name: p.name, description: p.description, gitRepoUrl: p.gitRepoUrl, scope: p.scope, branch: p.branch };
     if (patch.name !== undefined) p.name = patch.name;
     if (patch.description !== undefined) p.description = patch.description || null;
     if (patch.gitRepoUrl !== undefined) p.gitRepoUrl = patch.gitRepoUrl;
     if (patch.scope !== undefined) p.scope = patch.scope as Project['scope'];
+    if (patch.branch !== undefined && patch.branch.trim()) p.branch = patch.branch.trim();
     p.updatedAt = new Date();
     const saved = await this.repo.save(p);
     this.audit.record({
@@ -200,7 +202,7 @@ export class ProjectsService {
       resourceType: 'project',
       resourceId: id,
       before,
-      after: { name: saved.name, description: saved.description, gitRepoUrl: saved.gitRepoUrl, scope: saved.scope },
+      after: { name: saved.name, description: saved.description, gitRepoUrl: saved.gitRepoUrl, scope: saved.scope, branch: saved.branch },
     });
     return saved;
   }

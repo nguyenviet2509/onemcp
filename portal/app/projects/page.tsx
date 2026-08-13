@@ -56,6 +56,7 @@ export default function ProjectsPage() {
     slug: string;
     name: string;
     gitRepoUrl: string;
+    branch: string;
     scope: ProjectScope;
     description?: string;
   }) => {
@@ -189,7 +190,9 @@ export default function ProjectsPage() {
               <div className="font-mono">{p.slug}</div>
               <div>
                 <div>{p.name}</div>
-                <div className="text-xs text-slate-500 truncate">{p.gitRepoUrl}</div>
+                <div className="text-xs text-slate-500 truncate">
+                  {p.gitRepoUrl} <span className="text-slate-400">· branch <span className="font-mono">{p.branch}</span></span>
+                </div>
               </div>
               <div>{p.scope}</div>
               <div>
@@ -261,11 +264,18 @@ function EditModal({
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
   const [gitRepoUrl, setGitRepoUrl] = useState(project.gitRepoUrl);
+  const [branch, setBranch] = useState(project.branch || 'main');
   const [scope, setScope] = useState<ProjectScope>(project.scope);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    onSave({ name: name.trim(), description: description.trim(), gitRepoUrl: gitRepoUrl.trim(), scope });
+    onSave({
+      name: name.trim(),
+      description: description.trim(),
+      gitRepoUrl: gitRepoUrl.trim(),
+      branch: branch.trim() || 'main',
+      scope,
+    });
   };
 
   return (
@@ -287,6 +297,10 @@ function EditModal({
           <input required value={gitRepoUrl} onChange={(e) => setGitRepoUrl(e.target.value)} className="border rounded px-2 py-1" />
         </label>
         <label className="flex flex-col">
+          <span className="text-xs text-slate-500">Default branch</span>
+          <input required value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="main" className="border rounded px-2 py-1 font-mono" />
+        </label>
+        <label className="flex flex-col">
           <span className="text-xs text-slate-500">Scope</span>
           <select value={scope} onChange={(e) => setScope(e.target.value as ProjectScope)} className="border rounded px-2 py-1">
             <option value="private">private</option>
@@ -294,7 +308,7 @@ function EditModal({
             <option value="public">public</option>
           </select>
         </label>
-        <label className="flex flex-col">
+        <label className="flex flex-col col-span-2">
           <span className="text-xs text-slate-500">Description</span>
           <input value={description} onChange={(e) => setDescription(e.target.value)} className="border rounded px-2 py-1" />
         </label>
@@ -314,17 +328,25 @@ function EditModal({
 function RegisterForm({
   onSubmit,
 }: {
-  onSubmit: (p: { slug: string; name: string; gitRepoUrl: string; scope: ProjectScope; description?: string }) => void;
+  onSubmit: (p: { slug: string; name: string; gitRepoUrl: string; branch: string; scope: ProjectScope; description?: string }) => void;
 }) {
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
   const [gitRepoUrl, setGitRepoUrl] = useState('');
+  const [branch, setBranch] = useState('main');
   const [scope, setScope] = useState<ProjectScope>('private');
   const [description, setDescription] = useState('');
 
   const handle = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit({ slug: slug.trim(), name: name.trim(), gitRepoUrl: gitRepoUrl.trim(), scope, description: description.trim() || undefined });
+    onSubmit({
+      slug: slug.trim(),
+      name: name.trim(),
+      gitRepoUrl: gitRepoUrl.trim(),
+      branch: branch.trim() || 'main',
+      scope,
+      description: description.trim() || undefined,
+    });
   };
 
   return (
@@ -342,6 +364,10 @@ function RegisterForm({
         <input required value={gitRepoUrl} onChange={(e) => setGitRepoUrl(e.target.value)} className="border rounded px-2 py-1" />
       </label>
       <label className="flex flex-col">
+        <span className="text-xs text-slate-500">Default branch</span>
+        <input required value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="main" className="border rounded px-2 py-1 font-mono" />
+      </label>
+      <label className="flex flex-col">
         <span className="text-xs text-slate-500">Scope</span>
         <select value={scope} onChange={(e) => setScope(e.target.value as ProjectScope)} className="border rounded px-2 py-1">
           <option value="private">private (owner + admin only)</option>
@@ -349,7 +375,7 @@ function RegisterForm({
           <option value="public">public (any authenticated user)</option>
         </select>
       </label>
-      <label className="flex flex-col">
+      <label className="flex flex-col col-span-2">
         <span className="text-xs text-slate-500">Description (optional)</span>
         <input value={description} onChange={(e) => setDescription(e.target.value)} className="border rounded px-2 py-1" />
       </label>

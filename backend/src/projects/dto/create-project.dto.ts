@@ -23,4 +23,10 @@ export class CreateProjectDto {
   @IsOptional()
   @IsIn(['public', 'dept', 'private'])
   scope?: 'public' | 'dept' | 'private';
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  @Matches(/^[A-Za-z0-9._/-]+$/, { message: 'branch must contain only letters, digits, . _ / -' })
+  branch?: string;
 }

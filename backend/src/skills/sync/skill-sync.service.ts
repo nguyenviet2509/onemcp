@@ -61,8 +61,7 @@ export class SkillSyncService {
     }
 
     const token = this.decryptDeployToken(project);
-    // Default branch = 'main'; TODO expose per-project branch column when needed.
-    const handle = this.mirror.projectHandle(project.id, project.gitRepoUrl, 'main', token);
+    const handle = this.mirror.projectHandle(project.id, project.gitRepoUrl, project.branch || 'main', token);
     const summary = await this.runSync(handle, project);
 
     // First successful sync of an approved project → active.
