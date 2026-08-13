@@ -18,7 +18,7 @@ import { ProjectsService } from './projects.service';
 // Multi-project registry REST API (P6).
 // Auth: req.user comes from TrustUserMiddleware / ApiKeyMiddleware.
 // Admin gate performed inside service (isAdmin check on roles).
-@Controller('api/projects')
+@Controller('projects')
 export class ProjectsController {
   constructor(private readonly projects: ProjectsService) {}
 
