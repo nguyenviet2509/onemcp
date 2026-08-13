@@ -207,16 +207,31 @@ export default function SkillsListPage() {
                   </div>
                 )}
               </div>
-              {/* Status chip — Option A style, no green/gray hardcoded */}
-              <span
-                className={`shrink-0 rounded border px-2 py-px text-[11px] font-medium ${
-                  s.status === 'active'
-                    ? 'border-transparent bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'
-                    : 'border-border bg-muted text-muted-foreground'
-                }`}
-              >
-                {s.status}
-              </span>
+              {/* Status chip — chỉ hiển thị "active" khi có version đã approve
+                  (currentVersionId != null). Khi chưa có version active → "pending"
+                  để user không nhầm là skill đã được publish. */}
+              {(() => {
+                const effective = s.currentVersionId == null ? 'pending' : s.status;
+                const isReady = effective === 'active';
+                return (
+                  <span
+                    className={`shrink-0 rounded border px-2 py-px text-[11px] font-medium ${
+                      isReady
+                        ? 'border-transparent bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'
+                        : effective === 'pending'
+                          ? 'border-transparent bg-amber-500/12 text-amber-600 dark:text-amber-400'
+                          : 'border-border bg-muted text-muted-foreground'
+                    }`}
+                    title={
+                      effective === 'pending'
+                        ? 'Chưa có version nào được approve — skill không tải được'
+                        : undefined
+                    }
+                  >
+                    {effective}
+                  </span>
+                );
+              })()}
             </li>
           ))}
         </ul>

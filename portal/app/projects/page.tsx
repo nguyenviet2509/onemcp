@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../lib/api-client';
 import {
   approveProject,
@@ -244,45 +244,43 @@ export default function ProjectsPage() {
                 <StatusPill status={p.status} />
               </div>
               <div className="text-xs">user #{p.ownerId ?? '—'}</div>
-              <div className="flex gap-1 flex-wrap">
-                {isAdmin && p.status === 'pending' && (
-                  <>
-                    <ActionBtn onClick={() => onApprove(p.id)} variant="ok">Approve</ActionBtn>
-                    <ActionBtn onClick={() => onReject(p.id)} variant="bad">Reject</ActionBtn>
-                  </>
-                )}
-                {isAdmin && (p.status === 'active' || p.status === 'approved') && (
-                  <ActionBtn onClick={() => onSuspend(p.id)} variant="warn">Suspend</ActionBtn>
-                )}
-                {isAdmin && p.status === 'suspended' && (
-                  <ActionBtn onClick={() => onResume(p.id)} variant="ok">Resume</ActionBtn>
-                )}
-                {canEdit && (
-                  <ActionBtn onClick={() => setEditing(p)} variant="neutral">Edit</ActionBtn>
-                )}
-                {canEdit && (
-                  <ActionBtn onClick={() => onRegen(p.id)} variant="neutral">Regen secret</ActionBtn>
-                )}
-                {canEdit && (
-                  <ActionBtn onClick={() => onSetToken(p)} variant="neutral">Deploy token</ActionBtn>
-                )}
-                {canEdit && (
-                  <ActionBtn
-                    onClick={() => {
-                      const url = `${window.location.origin}/api/webhooks/skills/${p.id}`;
-                      navigator.clipboard.writeText(url)
-                        .then(() => alert(`Copied:\n${url}`))
-                        .catch(() => prompt('Copy webhook URL:', url));
-                    }}
-                    variant="neutral"
-                  >
-                    Copy webhook URL
-                  </ActionBtn>
-                )}
-                {isAdmin && (
-                  <ActionBtn onClick={() => onDelete(p)} variant="bad">Delete</ActionBtn>
-                )}
-              </div>
+              <ActionsMenu
+                items={[
+                  ...(isAdmin && p.status === 'pending'
+                    ? [
+                        { label: 'Approve', variant: 'ok' as const, onClick: () => onApprove(p.id) },
+                        { label: 'Reject', variant: 'bad' as const, onClick: () => onReject(p.id) },
+                      ]
+                    : []),
+                  ...(isAdmin && (p.status === 'active' || p.status === 'approved')
+                    ? [{ label: 'Suspend', variant: 'warn' as const, onClick: () => onSuspend(p.id) }]
+                    : []),
+                  ...(isAdmin && p.status === 'suspended'
+                    ? [{ label: 'Resume', variant: 'ok' as const, onClick: () => onResume(p.id) }]
+                    : []),
+                  ...(canEdit
+                    ? [
+                        { label: 'Edit', variant: 'neutral' as const, onClick: () => setEditing(p) },
+                        { label: 'Regen secret', variant: 'neutral' as const, onClick: () => onRegen(p.id) },
+                        { label: 'Deploy token', variant: 'neutral' as const, onClick: () => onSetToken(p) },
+                        {
+                          label: 'Copy webhook URL',
+                          variant: 'neutral' as const,
+                          onClick: () => {
+                            const url = `${window.location.origin}/api/webhooks/skills/${p.id}`;
+                            navigator.clipboard
+                              .writeText(url)
+                              .then(() => alert(`Copied:\n${url}`))
+                              .catch(() => prompt('Copy webhook URL:', url));
+                          },
+                        },
+                      ]
+                    : []),
+                  ...(isAdmin
+                    ? [{ label: 'Delete', variant: 'bad' as const, onClick: () => onDelete(p) }]
+                    : []),
+                ]}
+              />
             </div>
           );
         })}
@@ -500,24 +498,79 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`px-2 py-0.5 rounded text-xs ${cls[status] ?? 'bg-slate-100'}`}>{status}</span>;
 }
 
-function ActionBtn({
-  children,
-  onClick,
-  variant,
-}: {
-  children: React.ReactNode;
+type ActionVariant = 'ok' | 'bad' | 'warn' | 'neutral';
+interface ActionItem {
+  label: string;
+  variant: ActionVariant;
   onClick: () => void;
-  variant: 'ok' | 'bad' | 'warn' | 'neutral';
-}) {
-  const cls: Record<string, string> = {
-    ok: 'bg-green-600 text-white hover:bg-green-700',
-    bad: 'bg-red-600 text-white hover:bg-red-700',
-    warn: 'bg-yellow-500 text-white hover:bg-yellow-600',
-    neutral: 'border text-slate-700 hover:bg-slate-50',
+}
+
+// Compact dropdown replacing the wrapped row of buttons. Click-outside closes.
+function ActionsMenu({ items }: { items: ActionItem[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const itemCls: Record<ActionVariant, string> = {
+    ok: 'text-green-700 hover:bg-green-50',
+    bad: 'text-red-700 hover:bg-red-50',
+    warn: 'text-yellow-700 hover:bg-yellow-50',
+    neutral: 'text-slate-700 hover:bg-slate-50',
   };
+
+  if (items.length === 0) {
+    return <span className="text-xs text-slate-400">—</span>;
+  }
+
   return (
-    <button onClick={onClick} className={`px-2 py-0.5 rounded text-xs ${cls[variant]}`}>
-      {children}
-    </button>
+    <div ref={ref} className="relative inline-block text-left">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        Actions
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+          <path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-20 mt-1 w-44 origin-top-right rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+        >
+          {items.map((it) => (
+            <button
+              key={it.label}
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                it.onClick();
+              }}
+              className={`block w-full px-3 py-1.5 text-left text-xs ${itemCls[it.variant]}`}
+            >
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
