@@ -85,6 +85,13 @@ export function deleteProject(id: number): Promise<void> {
   return apiFetch<void>(`/projects/${id}`, { method: 'DELETE' });
 }
 
+export function setDeployToken(id: number, token: string): Promise<Project> {
+  return apiFetch<Project>(`/projects/${id}/deploy-token`, {
+    method: 'PATCH',
+    body: JSON.stringify({ token }),
+  });
+}
+
 export function regenerateSecret(id: number): Promise<ProjectWithSecret> {
   return apiFetch<ProjectWithSecret>(`/projects/${id}/regen-secret`, { method: 'POST' });
 }

@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
 import { Repository } from 'typeorm';
 import { AuditLogService } from '../audit/audit-log.service';
+import { TokenCipherService } from '../common/crypto/token-cipher.service';
 import { RequestUser } from '../common/user-request';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { Project, ProjectStatus } from './entities/project.entity';
@@ -23,7 +24,34 @@ export class ProjectsService {
     @InjectRepository(Project)
     private readonly repo: Repository<Project>,
     private readonly audit: AuditLogService,
+    private readonly cipher: TokenCipherService,
   ) {}
+
+  // Encrypt + store GitLab deploy token so worker can clone private repos.
+  // Passing empty string clears the stored token.
+  async setDeployToken(id: number, user: RequestUser, token: string): Promise<Project> {
+    const p = await this.repo.findOneBy({ id });
+    if (!p) throw new NotFoundException('Project not found');
+    if (!this.isAdmin(user) && p.ownerId !== user.id) {
+      throw new ForbiddenException('Only owner or admin can set deploy token');
+    }
+    const trimmed = token.trim();
+    if (trimmed) {
+      const ciphertext = this.cipher.encrypt(trimmed);
+      p.deployTokenCiphertext = Buffer.from(ciphertext, 'utf8');
+    } else {
+      p.deployTokenCiphertext = null;
+    }
+    p.updatedAt = new Date();
+    const saved = await this.repo.save(p);
+    this.audit.record({
+      actor: user,
+      action: trimmed ? 'project.deploy_token_set' : 'project.deploy_token_cleared',
+      resourceType: 'project',
+      resourceId: id,
+    });
+    return saved;
+  }
 
   private isAdmin(user: RequestUser): boolean {
     return user.roles.some((r) => r === 'super-admin' || r === 'dept-admin');

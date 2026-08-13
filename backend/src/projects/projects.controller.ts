@@ -107,6 +107,15 @@ export class ProjectsController {
     await this.projects.remove(id, this.mustAuth(user));
   }
 
+  @Patch(':id/deploy-token')
+  async setDeployToken(
+    @CurrentUser() user: RequestUser | undefined,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { token?: string },
+  ): Promise<Omit<Project, 'webhookSecret'>> {
+    return this.mask(await this.projects.setDeployToken(id, this.mustAuth(user), dto?.token ?? ''));
+  }
+
   @Post(':id/regen-secret')
   async regen(
     @CurrentUser() user: RequestUser | undefined,

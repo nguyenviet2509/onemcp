@@ -12,6 +12,7 @@ import {
   regenerateSecret,
   rejectProject,
   resumeProject,
+  setDeployToken,
   suspendProject,
   updateProject,
   UpdateProjectPayload,
@@ -126,6 +127,19 @@ export default function ProjectsPage() {
     }
   };
 
+  const onSetToken = async (p: Project) => {
+    const token = prompt(
+      `Paste GitLab deploy token for project "${p.slug}" (scope: read_repository). Leave empty to clear.`,
+    );
+    if (token === null) return;
+    try {
+      await setDeployToken(p.id, token);
+      alert(token ? 'Deploy token saved (encrypted).' : 'Deploy token cleared.');
+    } catch (e) {
+      alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    }
+  };
+
   const onRegen = async (id: number) => {
     if (!confirm('Rotate webhook secret? Old secret becomes invalid immediately.')) return;
     try {
@@ -200,6 +214,9 @@ export default function ProjectsPage() {
                 )}
                 {canEdit && (
                   <ActionBtn onClick={() => onRegen(p.id)} variant="neutral">Regen secret</ActionBtn>
+                )}
+                {canEdit && (
+                  <ActionBtn onClick={() => onSetToken(p)} variant="neutral">Deploy token</ActionBtn>
                 )}
                 {isAdmin && (
                   <ActionBtn onClick={() => onDelete(p)} variant="bad">Delete</ActionBtn>
