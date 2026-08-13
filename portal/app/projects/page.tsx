@@ -5,12 +5,16 @@ import { ApiError } from '../../lib/api-client';
 import {
   approveProject,
   createProject,
+  deleteProject,
   listProjects,
   Project,
   ProjectScope,
   regenerateSecret,
   rejectProject,
+  resumeProject,
   suspendProject,
+  updateProject,
+  UpdateProjectPayload,
 } from '../../lib/api/projects';
 
 interface Me {
@@ -27,6 +31,7 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [freshSecret, setFreshSecret] = useState<{ id: number; secret: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Project | null>(null);
 
   const isAdmin = me?.roles.some((r) => r === 'super-admin' || r === 'dept-admin') ?? false;
 
@@ -92,6 +97,35 @@ export default function ProjectsPage() {
     }
   };
 
+  const onResume = async (id: number) => {
+    try {
+      await resumeProject(id);
+      refresh();
+    } catch (e) {
+      alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    }
+  };
+
+  const onSaveEdit = async (id: number, patch: UpdateProjectPayload) => {
+    try {
+      await updateProject(id, patch);
+      setEditing(null);
+      refresh();
+    } catch (e) {
+      alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    }
+  };
+
+  const onDelete = async (p: Project) => {
+    if (!confirm(`Delete project "${p.slug}" (#${p.id})? Associated skills will be orphaned (project link set to NULL).`)) return;
+    try {
+      await deleteProject(p.id);
+      refresh();
+    } catch (e) {
+      alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    }
+  };
+
   const onRegen = async (id: number) => {
     if (!confirm('Rotate webhook secret? Old secret becomes invalid immediately.')) return;
     try {
@@ -120,7 +154,8 @@ export default function ProjectsPage() {
       {loading && <div className="text-slate-500 text-sm">Loading…</div>}
 
       <div className="border rounded divide-y">
-        <div className="grid grid-cols-[1fr,2fr,80px,90px,90px,auto] gap-3 px-3 py-2 text-xs font-medium text-slate-500 bg-slate-50">
+        <div className="grid grid-cols-[60px,1fr,2fr,80px,90px,90px,auto] gap-3 px-3 py-2 text-xs font-medium text-slate-500 bg-slate-50">
+          <div>ID</div>
           <div>Slug</div>
           <div>Name / Repo</div>
           <div>Scope</div>
@@ -128,37 +163,51 @@ export default function ProjectsPage() {
           <div>Owner</div>
           <div>Actions</div>
         </div>
-        {items.map((p) => (
-          <div
-            key={p.id}
-            className="grid grid-cols-[1fr,2fr,80px,90px,90px,auto] gap-3 px-3 py-2 text-sm items-center"
-          >
-            <div className="font-mono">{p.slug}</div>
-            <div>
-              <div>{p.name}</div>
-              <div className="text-xs text-slate-500 truncate">{p.gitRepoUrl}</div>
+        {items.map((p) => {
+          const isOwner = p.ownerId === me?.id;
+          const canEdit = isAdmin || isOwner;
+          return (
+            <div
+              key={p.id}
+              className="grid grid-cols-[60px,1fr,2fr,80px,90px,90px,auto] gap-3 px-3 py-2 text-sm items-center"
+            >
+              <div className="font-mono text-slate-600">#{p.id}</div>
+              <div className="font-mono">{p.slug}</div>
+              <div>
+                <div>{p.name}</div>
+                <div className="text-xs text-slate-500 truncate">{p.gitRepoUrl}</div>
+              </div>
+              <div>{p.scope}</div>
+              <div>
+                <StatusPill status={p.status} />
+              </div>
+              <div className="text-xs">user #{p.ownerId ?? '—'}</div>
+              <div className="flex gap-1 flex-wrap">
+                {isAdmin && p.status === 'pending' && (
+                  <>
+                    <ActionBtn onClick={() => onApprove(p.id)} variant="ok">Approve</ActionBtn>
+                    <ActionBtn onClick={() => onReject(p.id)} variant="bad">Reject</ActionBtn>
+                  </>
+                )}
+                {isAdmin && (p.status === 'active' || p.status === 'approved') && (
+                  <ActionBtn onClick={() => onSuspend(p.id)} variant="warn">Suspend</ActionBtn>
+                )}
+                {isAdmin && p.status === 'suspended' && (
+                  <ActionBtn onClick={() => onResume(p.id)} variant="ok">Resume</ActionBtn>
+                )}
+                {canEdit && (
+                  <ActionBtn onClick={() => setEditing(p)} variant="neutral">Edit</ActionBtn>
+                )}
+                {canEdit && (
+                  <ActionBtn onClick={() => onRegen(p.id)} variant="neutral">Regen secret</ActionBtn>
+                )}
+                {isAdmin && (
+                  <ActionBtn onClick={() => onDelete(p)} variant="bad">Delete</ActionBtn>
+                )}
+              </div>
             </div>
-            <div>{p.scope}</div>
-            <div>
-              <StatusPill status={p.status} />
-            </div>
-            <div className="text-xs">#{p.ownerId ?? '—'}</div>
-            <div className="flex gap-1 flex-wrap">
-              {isAdmin && p.status === 'pending' && (
-                <>
-                  <ActionBtn onClick={() => onApprove(p.id)} variant="ok">Approve</ActionBtn>
-                  <ActionBtn onClick={() => onReject(p.id)} variant="bad">Reject</ActionBtn>
-                </>
-              )}
-              {isAdmin && (p.status === 'active' || p.status === 'approved') && (
-                <ActionBtn onClick={() => onSuspend(p.id)} variant="warn">Suspend</ActionBtn>
-              )}
-              {(isAdmin || p.ownerId === me?.id) && (
-                <ActionBtn onClick={() => onRegen(p.id)} variant="neutral">Regen secret</ActionBtn>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {!loading && items.length === 0 && (
           <div className="px-3 py-6 text-sm text-slate-500 text-center">No projects yet.</div>
         )}
@@ -171,6 +220,76 @@ export default function ProjectsPage() {
           onClose={() => setFreshSecret(null)}
         />
       )}
+
+      {editing && (
+        <EditModal
+          project={editing}
+          onCancel={() => setEditing(null)}
+          onSave={(patch) => onSaveEdit(editing.id, patch)}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditModal({
+  project,
+  onSave,
+  onCancel,
+}: {
+  project: Project;
+  onSave: (patch: UpdateProjectPayload) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description ?? '');
+  const [gitRepoUrl, setGitRepoUrl] = useState(project.gitRepoUrl);
+  const [scope, setScope] = useState<ProjectScope>(project.scope);
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    onSave({ name: name.trim(), description: description.trim(), gitRepoUrl: gitRepoUrl.trim(), scope });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onCancel}>
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-lg p-6 max-w-xl w-full grid grid-cols-2 gap-3 text-sm"
+      >
+        <h2 className="text-lg font-semibold col-span-2">
+          Edit project <span className="font-mono">{project.slug}</span> (#{project.id})
+        </h2>
+        <label className="flex flex-col col-span-2">
+          <span className="text-xs text-slate-500">Name</span>
+          <input required value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-2 py-1" />
+        </label>
+        <label className="flex flex-col col-span-2">
+          <span className="text-xs text-slate-500">Git repo URL (https)</span>
+          <input required value={gitRepoUrl} onChange={(e) => setGitRepoUrl(e.target.value)} className="border rounded px-2 py-1" />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-xs text-slate-500">Scope</span>
+          <select value={scope} onChange={(e) => setScope(e.target.value as ProjectScope)} className="border rounded px-2 py-1">
+            <option value="private">private</option>
+            <option value="dept">dept</option>
+            <option value="public">public</option>
+          </select>
+        </label>
+        <label className="flex flex-col">
+          <span className="text-xs text-slate-500">Description</span>
+          <input value={description} onChange={(e) => setDescription(e.target.value)} className="border rounded px-2 py-1" />
+        </label>
+        <div className="col-span-2 flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onCancel} className="px-3 py-1.5 rounded border text-sm hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="submit" className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
+            Save
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

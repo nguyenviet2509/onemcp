@@ -63,6 +63,28 @@ export function suspendProject(id: number): Promise<Project> {
   return apiFetch<Project>(`/projects/${id}/suspend`, { method: 'PATCH' });
 }
 
+export function resumeProject(id: number): Promise<Project> {
+  return apiFetch<Project>(`/projects/${id}/resume`, { method: 'PATCH' });
+}
+
+export interface UpdateProjectPayload {
+  name?: string;
+  description?: string;
+  gitRepoUrl?: string;
+  scope?: ProjectScope;
+}
+
+export function updateProject(id: number, patch: UpdateProjectPayload): Promise<Project> {
+  return apiFetch<Project>(`/projects/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteProject(id: number): Promise<void> {
+  return apiFetch<void>(`/projects/${id}`, { method: 'DELETE' });
+}
+
 export function regenerateSecret(id: number): Promise<ProjectWithSecret> {
   return apiFetch<ProjectWithSecret>(`/projects/${id}/regen-secret`, { method: 'POST' });
 }

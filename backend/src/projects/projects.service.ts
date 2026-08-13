@@ -134,6 +134,64 @@ export class ProjectsService {
     return { project: p, webhookSecret };
   }
 
+  async resume(id: number, admin: RequestUser): Promise<Project> {
+    if (!this.isAdmin(admin)) throw new ForbiddenException('Admin only');
+    const p = await this.repo.findOneBy({ id });
+    if (!p) throw new NotFoundException('Project not found');
+    if (p.status !== 'suspended') {
+      throw new ConflictException(`Cannot resume from status '${p.status}' (only 'suspended')`);
+    }
+    // Back to 'approved' — next successful sync will flip to 'active' via markActive().
+    p.status = 'approved';
+    p.updatedAt = new Date();
+    const saved = await this.repo.save(p);
+    this.audit.record({ actor: admin, action: 'project.resumed', resourceType: 'project', resourceId: id });
+    return saved;
+  }
+
+  async update(
+    id: number,
+    user: RequestUser,
+    patch: { name?: string; description?: string; gitRepoUrl?: string; scope?: ProjectStatus | 'public' | 'dept' | 'private' },
+  ): Promise<Project> {
+    const p = await this.repo.findOneBy({ id });
+    if (!p) throw new NotFoundException('Project not found');
+    if (!this.isAdmin(user) && p.ownerId !== user.id) {
+      throw new ForbiddenException('Only owner or admin can edit');
+    }
+    const before = { name: p.name, description: p.description, gitRepoUrl: p.gitRepoUrl, scope: p.scope };
+    if (patch.name !== undefined) p.name = patch.name;
+    if (patch.description !== undefined) p.description = patch.description || null;
+    if (patch.gitRepoUrl !== undefined) p.gitRepoUrl = patch.gitRepoUrl;
+    if (patch.scope !== undefined) p.scope = patch.scope as Project['scope'];
+    p.updatedAt = new Date();
+    const saved = await this.repo.save(p);
+    this.audit.record({
+      actor: user,
+      action: 'project.updated',
+      resourceType: 'project',
+      resourceId: id,
+      before,
+      after: { name: saved.name, description: saved.description, gitRepoUrl: saved.gitRepoUrl, scope: saved.scope },
+    });
+    return saved;
+  }
+
+  async remove(id: number, admin: RequestUser): Promise<void> {
+    if (!this.isAdmin(admin)) throw new ForbiddenException('Admin only');
+    const p = await this.repo.findOneBy({ id });
+    if (!p) throw new NotFoundException('Project not found');
+    // Skills have onDelete: SET NULL — orphan skills fall back to legacy scope.
+    await this.repo.remove(p);
+    this.audit.record({
+      actor: admin,
+      action: 'project.deleted',
+      resourceType: 'project',
+      resourceId: id,
+      before: { slug: p.slug, gitRepoUrl: p.gitRepoUrl, status: p.status },
+    });
+  }
+
   // Called by sync worker (P9) on first successful mirror of an approved project.
   async markActive(id: number): Promise<void> {
     const p = await this.repo.findOneBy({ id });

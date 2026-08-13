@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
@@ -12,6 +14,7 @@ import { CurrentUser } from '../access/current-user.decorator';
 import { RequestUser } from '../common/user-request';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { RejectProjectDto } from './dto/reject-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { Project } from './entities/project.entity';
 import { ProjectsService } from './projects.service';
 
@@ -76,6 +79,32 @@ export class ProjectsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<Omit<Project, 'webhookSecret'>> {
     return this.mask(await this.projects.suspend(id, this.mustAuth(user)));
+  }
+
+  @Patch(':id/resume')
+  async resume(
+    @CurrentUser() user: RequestUser | undefined,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Omit<Project, 'webhookSecret'>> {
+    return this.mask(await this.projects.resume(id, this.mustAuth(user)));
+  }
+
+  @Patch(':id')
+  async update(
+    @CurrentUser() user: RequestUser | undefined,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProjectDto,
+  ): Promise<Omit<Project, 'webhookSecret'>> {
+    return this.mask(await this.projects.update(id, this.mustAuth(user), dto));
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(
+    @CurrentUser() user: RequestUser | undefined,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<void> {
+    await this.projects.remove(id, this.mustAuth(user));
   }
 
   @Post(':id/regen-secret')
