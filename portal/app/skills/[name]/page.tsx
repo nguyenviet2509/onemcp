@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import { useTranslations } from 'next-intl';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ApiError } from '../../../lib/api-client';
 import {
   approveSkillVersion,
@@ -12,6 +14,17 @@ import {
   Skill,
   SkillVersion,
 } from '../../../lib/api/skills';
+
+// Strip trailing `.git` + return web-viewable base for GitLab repo URL.
+function stripDotGit(url: string): string {
+  return url.replace(/\.git$/, '');
+}
+function gitlabBlobUrl(repoUrl: string, path: string, ref = 'HEAD'): string {
+  return `${stripDotGit(repoUrl)}/-/blob/${ref}/${path}`;
+}
+function gitlabWebIdeUrl(repoUrl: string, path: string, branch = 'main'): string {
+  return `${stripDotGit(repoUrl)}/-/ide/edit/${branch}/-/${path}`;
+}
 
 interface Props {
   params: Promise<{ name: string }>;
@@ -74,9 +87,12 @@ export default function SkillDetailPage({ params }: Props) {
       {skill && (
         <>
           {/* Header */}
-          <div className="mb-6 flex items-baseline gap-3">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">{skill.name}</h1>
-            <StatusChip status={skill.status} />
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">{skill.name}</h1>
+              <StatusChip status={skill.status} />
+            </div>
+            <GitlabLinks skill={skill} />
           </div>
 
           {skill.description && (
@@ -115,6 +131,9 @@ export default function SkillDetailPage({ params }: Props) {
               </MetaRow>
             </dl>
           </div>
+
+          {/* Current version content (SKILL.md) */}
+          <SkillBodyPreview skill={skill} versions={versions} />
 
           {/* Version history */}
           <section className="mt-8">
@@ -179,6 +198,78 @@ export default function SkillDetailPage({ params }: Props) {
         </>
       )}
     </main>
+  );
+}
+
+function GitlabLinks({ skill }: { skill: Skill }) {
+  const entrypointPath = `skills/${skill.name}/SKILL.md`;
+  return (
+    <div className="flex gap-2">
+      <a
+        href={gitlabBlobUrl(skill.repoUrl, entrypointPath)}
+        target="_blank"
+        rel="noreferrer"
+        className="rounded border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/70 transition-colors"
+      >
+        View on GitLab
+      </a>
+      <a
+        href={gitlabWebIdeUrl(skill.repoUrl, entrypointPath)}
+        target="_blank"
+        rel="noreferrer"
+        className="rounded border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+        title="Open GitLab Web IDE — edit, commit and push straight from the browser. Sync will trigger on push."
+      >
+        Edit in Web IDE
+      </a>
+    </div>
+  );
+}
+
+function SkillBodyPreview({ skill, versions }: { skill: Skill; versions: SkillVersion[] }) {
+  const current = useMemo(
+    () =>
+      versions.find((v) => v.id === skill.currentVersionId) ??
+      versions.find((v) => v.status === 'active') ??
+      versions[0],
+    [versions, skill.currentVersionId],
+  );
+  if (!current) return null;
+  if (!current.body) {
+    return (
+      <section className="mt-8 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+        No SKILL.md content synced for this version.
+      </section>
+    );
+  }
+  return (
+    <section className="mt-8">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          SKILL.md (version {current.version ?? '—'} · <span className="font-mono">{current.commitSha.slice(0, 8)}</span>)
+        </h2>
+      </div>
+      <article
+        className="rounded-lg border border-border bg-background px-6 py-5 text-sm leading-relaxed
+          [&_h1]:mt-4 [&_h1]:mb-3 [&_h1]:text-lg [&_h1]:font-semibold
+          [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold
+          [&_h3]:mt-3 [&_h3]:mb-2 [&_h3]:font-semibold
+          [&_p]:mb-3
+          [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc
+          [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal
+          [&_li]:mb-1
+          [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs
+          [&_pre]:mb-3 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-3 [&_pre>code]:bg-transparent [&_pre>code]:p-0
+          [&_a]:text-primary [&_a]:underline hover:[&_a]:opacity-80
+          [&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground
+          [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse
+          [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left
+          [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1
+          [&_hr]:my-4 [&_hr]:border-border"
+      >
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{current.body}</ReactMarkdown>
+      </article>
+    </section>
   );
 }
 

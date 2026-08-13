@@ -20,6 +20,7 @@ export interface SkillVersion {
   commitSha: string;
   version: string | null;
   manifest: Record<string, unknown>;
+  body: string | null;
   approvedBy: number | null;
   approvedAt: string | null;
   status: 'pending' | 'active' | 'rejected';
