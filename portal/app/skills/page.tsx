@@ -12,6 +12,7 @@ export default function SkillsListPage() {
   const [items, setItems] = useState<Skill[]>([]);
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
+  const [projectSlug, setProjectSlug] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -31,10 +32,24 @@ export default function SkillsListPage() {
     const q = query.trim().toLowerCase();
     return items.filter((s) => {
       if (tag && !s.tags.includes(tag)) return false;
+      if (projectSlug !== null) {
+        const ownedByProject = projectSlug === '__legacy__' ? s.projectSlug === null : s.projectSlug === projectSlug;
+        if (!ownedByProject) return false;
+      }
       if (!q) return true;
       return s.name.includes(q) || (s.description ?? '').toLowerCase().includes(q);
     });
-  }, [items, query, tag]);
+  }, [items, query, tag, projectSlug]);
+
+  const projects = useMemo(() => {
+    const map = new Map<string, string>();
+    let hasLegacy = false;
+    items.forEach((s) => {
+      if (s.projectSlug && s.projectName) map.set(s.projectSlug, s.projectName);
+      else if (!s.projectSlug) hasLegacy = true;
+    });
+    return { list: Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])), hasLegacy };
+  }, [items]);
 
   // Reset to page 1 when filter changes
   const pagedFiltered = useMemo(() => {
@@ -54,6 +69,50 @@ export default function SkillsListPage() {
         <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
         <span className="text-xs text-muted-foreground">{t('count', { count: items.length })}</span>
       </div>
+
+      {/* Project filter */}
+      {(projects.list.length > 0 || projects.hasLegacy) && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Project:</span>
+          <button
+            onClick={() => { setProjectSlug(null); setPage(1); }}
+            className={`rounded border px-2 py-px text-[11px] font-medium transition-colors ${
+              projectSlug === null
+                ? 'border-foreground bg-foreground text-background'
+                : 'border-border bg-muted text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            all
+          </button>
+          {projects.list.map(([slug, name]) => (
+            <button
+              key={slug}
+              onClick={() => { setProjectSlug(slug === projectSlug ? null : slug); setPage(1); }}
+              className={`rounded border px-2 py-px text-[11px] font-medium transition-colors ${
+                slug === projectSlug
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+              title={name}
+            >
+              {slug}
+            </button>
+          ))}
+          {projects.hasLegacy && (
+            <button
+              onClick={() => { setProjectSlug('__legacy__' === projectSlug ? null : '__legacy__'); setPage(1); }}
+              className={`rounded border px-2 py-px text-[11px] font-medium transition-colors ${
+                projectSlug === '__legacy__'
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+              title="Legacy mono-repo skills (no project)"
+            >
+              legacy
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Search + tag filter */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -116,12 +175,22 @@ export default function SkillsListPage() {
           {pagedFiltered.map((s) => (
             <li key={s.id} className="flex items-start justify-between gap-4 px-4 py-3 hover:bg-muted/50 transition-colors">
               <div className="min-w-0 flex-1">
-                <Link
-                  href={`/skills/${encodeURIComponent(s.name)}`}
-                  className="text-sm font-medium text-foreground hover:text-primary"
-                >
-                  {s.name}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/skills/${encodeURIComponent(s.name)}`}
+                    className="text-sm font-medium text-foreground hover:text-primary"
+                  >
+                    {s.name}
+                  </Link>
+                  {s.projectSlug && (
+                    <span
+                      className="rounded border border-border bg-muted/50 px-1.5 py-px font-mono text-[10px] text-muted-foreground"
+                      title={s.projectName ?? undefined}
+                    >
+                      {s.projectSlug}
+                    </span>
+                  )}
+                </div>
                 {s.description && (
                   <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
                 )}

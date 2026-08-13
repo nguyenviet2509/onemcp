@@ -266,6 +266,19 @@ export default function ProjectsPage() {
                 {canEdit && (
                   <ActionBtn onClick={() => onSetToken(p)} variant="neutral">Deploy token</ActionBtn>
                 )}
+                {canEdit && (
+                  <ActionBtn
+                    onClick={() => {
+                      const url = `${window.location.origin}/api/webhooks/skills/${p.id}`;
+                      navigator.clipboard.writeText(url)
+                        .then(() => alert(`Copied:\n${url}`))
+                        .catch(() => prompt('Copy webhook URL:', url));
+                    }}
+                    variant="neutral"
+                  >
+                    Copy webhook URL
+                  </ActionBtn>
+                )}
                 {isAdmin && (
                   <ActionBtn onClick={() => onDelete(p)} variant="bad">Delete</ActionBtn>
                 )}

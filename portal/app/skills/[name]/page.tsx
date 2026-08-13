@@ -13,6 +13,7 @@ import {
   rejectSkillVersion,
   Skill,
   SkillVersion,
+  triggerSkillsSync,
 } from '../../../lib/api/skills';
 
 // Strip trailing `.git` + return web-viewable base for GitLab repo URL.
@@ -22,8 +23,11 @@ function stripDotGit(url: string): string {
 function gitlabBlobUrl(repoUrl: string, path: string, ref = 'HEAD'): string {
   return `${stripDotGit(repoUrl)}/-/blob/${ref}/${path}`;
 }
-function gitlabWebIdeUrl(repoUrl: string, path: string, branch = 'main'): string {
-  return `${stripDotGit(repoUrl)}/-/ide/edit/${branch}/-/${path}`;
+// GitLab 16.x removed the legacy `/-/ide/edit/<branch>/-/<path>` route.
+// Stable path across 15+/16+: `/-/edit/<branch>/<path>` opens the simple file
+// editor with commit-to-branch form (member does not need local git).
+function gitlabEditUrl(repoUrl: string, path: string, branch = 'main'): string {
+  return `${stripDotGit(repoUrl)}/-/edit/${branch}/${path}`;
 }
 
 interface Props {
@@ -203,8 +207,34 @@ export default function SkillDetailPage({ params }: Props) {
 
 function GitlabLinks({ skill }: { skill: Skill }) {
   const entrypointPath = `skills/${skill.name}/SKILL.md`;
+  const [resyncing, setResyncing] = useState(false);
+
+  const resync = async () => {
+    if (!skill.projectId) {
+      alert('This skill has no project (legacy mono-repo). Use manual sync trigger.');
+      return;
+    }
+    setResyncing(true);
+    try {
+      const r = await triggerSkillsSync(skill.projectId);
+      alert(`Resync enqueued (jobId: ${r.jobId}). Reload in ~10s to see result.`);
+    } catch (e) {
+      alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    } finally {
+      setResyncing(false);
+    }
+  };
+
   return (
     <div className="flex gap-2">
+      <button
+        onClick={resync}
+        disabled={resyncing}
+        className="rounded border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/70 disabled:opacity-50 transition-colors"
+        title="Force webhook-less re-sync from the repo default branch (webhook miss / testing)."
+      >
+        {resyncing ? 'Resyncing…' : 'Force resync'}
+      </button>
       <a
         href={gitlabBlobUrl(skill.repoUrl, entrypointPath)}
         target="_blank"
@@ -214,13 +244,13 @@ function GitlabLinks({ skill }: { skill: Skill }) {
         View on GitLab
       </a>
       <a
-        href={gitlabWebIdeUrl(skill.repoUrl, entrypointPath)}
+        href={gitlabEditUrl(skill.repoUrl, entrypointPath)}
         target="_blank"
         rel="noreferrer"
         className="rounded border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-        title="Open GitLab Web IDE — edit, commit and push straight from the browser. Sync will trigger on push."
+        title="Open GitLab file editor — edit + commit straight from browser. Sync triggers on commit."
       >
-        Edit in Web IDE
+        Edit on GitLab
       </a>
     </div>
   );

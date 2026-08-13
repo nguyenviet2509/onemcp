@@ -10,6 +10,9 @@ export interface Skill {
   status: 'active' | 'deprecated' | 'archived';
   description: string | null;
   tags: string[];
+  projectId: number | null;
+  projectSlug: string | null;
+  projectName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,12 +30,20 @@ export interface SkillVersion {
   createdAt: string;
 }
 
-export function listSkills(params: { tag?: string; q?: string } = {}) {
+export function listSkills(params: { tag?: string; q?: string; projectId?: number } = {}) {
   const qs = new URLSearchParams();
   if (params.tag) qs.set('tag', params.tag);
   if (params.q) qs.set('q', params.q);
+  if (params.projectId !== undefined) qs.set('projectId', String(params.projectId));
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
   return apiFetch<Skill[]>(`/skills${suffix}`);
+}
+
+export function triggerSkillsSync(projectId?: number): Promise<{ accepted: boolean; jobId: string; projectId: number | null }> {
+  return apiFetch('/skills/sync', {
+    method: 'POST',
+    body: JSON.stringify(projectId ? { projectId } : {}),
+  });
 }
 
 export function getSkill(name: string) {

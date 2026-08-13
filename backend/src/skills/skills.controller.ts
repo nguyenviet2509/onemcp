@@ -30,9 +30,11 @@ export class SkillsController {
     @CurrentUser() user: RequestUser | undefined,
     @Query('tag') tag?: string,
     @Query('q') q?: string,
+    @Query('projectId') projectId?: string,
   ) {
     if (!user) throw new UnauthorizedException();
-    return this.skills.list(user, { tag, q });
+    const pid = projectId ? Number(projectId) : undefined;
+    return this.skills.list(user, { tag, q, projectId: Number.isFinite(pid) ? pid : undefined });
   }
 
   @Get(':name')
@@ -73,16 +75,21 @@ export class SkillsController {
   }
 
   // Manual re-sync trigger (dev tool + fallback UI action).
+  // projectId optional — omit for legacy mono-repo, set for per-project resync.
   @Post('sync')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(202)
-  async triggerSync(@CurrentUser() user: RequestUser | undefined) {
+  async triggerSync(
+    @CurrentUser() user: RequestUser | undefined,
+    @Body() body?: { projectId?: number },
+  ) {
     if (!user) throw new UnauthorizedException();
     const allowed = ['maintainer', 'dept-admin', 'super-admin'];
     if (!user.roles.some((r) => allowed.includes(r))) {
       throw new UnauthorizedException('Chỉ maintainer/admin trigger được sync');
     }
-    const jobId = await this.syncQueue.enqueue({ trigger: 'manual' });
-    return { accepted: true, jobId };
+    const projectId = body?.projectId;
+    const jobId = await this.syncQueue.enqueue({ trigger: 'manual', projectId });
+    return { accepted: true, jobId, projectId: projectId ?? null };
   }
 }

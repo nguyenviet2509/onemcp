@@ -10,6 +10,7 @@ import { SkillLoadEvent } from './entities/skill-load-event.entity';
 export interface SkillListFilter {
   tag?: string;
   q?: string;
+  projectId?: number;
 }
 
 @Injectable()
@@ -55,7 +56,28 @@ export class SkillsService {
     if (filter.q) {
       qb.andWhere('(s.name ILIKE :q OR s.description ILIKE :q)', { q: `%${filter.q}%` });
     }
-    return qb.orderBy('s.name', 'ASC').getMany();
+    if (filter.projectId !== undefined) {
+      qb.andWhere('s.project_id = :pid', { pid: filter.projectId });
+    }
+    const skills = await qb.orderBy('s.name', 'ASC').getMany();
+
+    // Attach project slug/name so portal can display + filter without a second round-trip.
+    const projectIds = Array.from(
+      new Set(skills.map((s) => s.projectId).filter((v): v is number => !!v)),
+    );
+    const projectMap = new Map<number, { slug: string; name: string }>();
+    if (projectIds.length > 0) {
+      const rows = await this.skills.manager.query<{ id: number; slug: string; name: string }[]>(
+        `SELECT id, slug, name FROM projects WHERE id = ANY($1::int[])`,
+        [projectIds],
+      );
+      for (const r of rows) projectMap.set(r.id, { slug: r.slug, name: r.name });
+    }
+    return skills.map((s) => ({
+      ...s,
+      projectSlug: s.projectId ? projectMap.get(s.projectId)?.slug ?? null : null,
+      projectName: s.projectId ? projectMap.get(s.projectId)?.name ?? null : null,
+    }));
   }
 
   async findByName(user: RequestUser, name: string): Promise<Skill> {
