@@ -18,7 +18,7 @@ import { ProjectOauthService } from './project-oauth.service';
 
 // Portal-facing OAuth flow to auto-provision GitLab webhook + deploy token so
 // members no longer copy-paste 2 secrets between GitLab and OneMCP.
-@Controller('api/projects/oauth')
+@Controller('projects/oauth')
 export class ProjectOauthController {
   private readonly log = new Logger(ProjectOauthController.name);
 
