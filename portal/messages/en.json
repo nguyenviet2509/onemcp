@@ -348,7 +348,9 @@
     "noViews": "No views yet.",
     "topTags": "Top tags",
     "noTags": "No tags yet.",
-    "tags": "Tags"
+    "tags": "Tags",
+    "recentSkills": "Recent skills",
+    "noSkills": "No skills yet."
   },
   "reviewNote": {
     "noContent": "No content to review."

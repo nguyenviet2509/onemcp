@@ -348,7 +348,9 @@
     "noViews": "Chưa có lượt xem.",
     "topTags": "Tag phổ biến",
     "noTags": "Chưa có tag.",
-    "tags": "Tag"
+    "tags": "Tag",
+    "recentSkills": "Skills mới",
+    "noSkills": "Chưa có skill."
   },
   "reviewNote": {
     "noContent": "Chưa có nội dung để duyệt."

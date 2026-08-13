@@ -213,80 +213,99 @@ export default function ProjectsPage() {
       {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       {loading && <div className="text-slate-500 text-sm">Loading…</div>}
 
-      <div className="border rounded divide-y">
-        <div className="grid grid-cols-[60px,1fr,2fr,80px,90px,90px,auto] gap-3 px-3 py-2 text-xs font-medium text-slate-500 bg-slate-50">
-          <div>ID</div>
-          <div>Slug</div>
-          <div>Name / Repo</div>
-          <div>Scope</div>
-          <div>Status</div>
-          <div>Owner</div>
-          <div>Actions</div>
-        </div>
-        {items.map((p) => {
-          const isOwner = p.ownerId === me?.id;
-          const canEdit = isAdmin || isOwner;
-          return (
-            <div
-              key={p.id}
-              className="grid grid-cols-[60px,1fr,2fr,80px,90px,90px,auto] gap-3 px-3 py-2 text-sm items-center"
-            >
-              <div className="font-mono text-slate-600">#{p.id}</div>
-              <div className="font-mono">{p.slug}</div>
-              <div>
-                <div>{p.name}</div>
-                <div className="text-xs text-slate-500 truncate">
-                  {p.gitRepoUrl} <span className="text-slate-400">· branch <span className="font-mono">{p.branch}</span></span>
-                </div>
-              </div>
-              <div>{p.scope}</div>
-              <div>
-                <StatusPill status={p.status} />
-              </div>
-              <div className="text-xs">user #{p.ownerId ?? '—'}</div>
-              <ActionsMenu
-                items={[
-                  ...(isAdmin && p.status === 'pending'
-                    ? [
-                        { label: 'Approve', variant: 'ok' as const, onClick: () => onApprove(p.id) },
-                        { label: 'Reject', variant: 'bad' as const, onClick: () => onReject(p.id) },
-                      ]
-                    : []),
-                  ...(isAdmin && (p.status === 'active' || p.status === 'approved')
-                    ? [{ label: 'Suspend', variant: 'warn' as const, onClick: () => onSuspend(p.id) }]
-                    : []),
-                  ...(isAdmin && p.status === 'suspended'
-                    ? [{ label: 'Resume', variant: 'ok' as const, onClick: () => onResume(p.id) }]
-                    : []),
-                  ...(canEdit
-                    ? [
-                        { label: 'Edit', variant: 'neutral' as const, onClick: () => setEditing(p) },
-                        { label: 'Regen secret', variant: 'neutral' as const, onClick: () => onRegen(p.id) },
-                        { label: 'Deploy token', variant: 'neutral' as const, onClick: () => onSetToken(p) },
-                        {
-                          label: 'Copy webhook URL',
-                          variant: 'neutral' as const,
-                          onClick: () => {
-                            const url = `${window.location.origin}/api/webhooks/skills/${p.id}`;
-                            navigator.clipboard
-                              .writeText(url)
-                              .then(() => alert(`Copied:\n${url}`))
-                              .catch(() => prompt('Copy webhook URL:', url));
-                          },
-                        },
-                      ]
-                    : []),
-                  ...(isAdmin
-                    ? [{ label: 'Delete', variant: 'bad' as const, onClick: () => onDelete(p) }]
-                    : []),
-                ]}
-              />
-            </div>
-          );
-        })}
-        {!loading && items.length === 0 && (
-          <div className="px-3 py-6 text-sm text-slate-500 text-center">No projects yet.</div>
-        )}
+      <div className="overflow-x-auto rounded border">
+        <table className="w-full text-sm">
+          <colgroup>
+            <col className="w-14" />
+            <col className="w-40" />
+            <col />
+            <col className="w-20" />
+            <col className="w-24" />
+            <col className="w-24" />
+            <col className="w-28" />
+          </colgroup>
+          <thead className="bg-slate-50 text-xs font-medium text-slate-500">
+            <tr>
+              <th className="px-3 py-2 text-left">ID</th>
+              <th className="px-3 py-2 text-left">Slug</th>
+              <th className="px-3 py-2 text-left">Name / Repo</th>
+              <th className="px-3 py-2 text-left">Scope</th>
+              <th className="px-3 py-2 text-left">Status</th>
+              <th className="px-3 py-2 text-left">Owner</th>
+              <th className="px-3 py-2 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {items.map((p) => {
+              const isOwner = p.ownerId === me?.id;
+              const canEdit = isAdmin || isOwner;
+              return (
+                <tr key={p.id} className="align-middle">
+                  <td className="px-3 py-2 font-mono text-slate-600">#{p.id}</td>
+                  <td className="px-3 py-2 font-mono">{p.slug}</td>
+                  <td className="px-3 py-2 min-w-0">
+                    <div>{p.name}</div>
+                    <div className="truncate text-xs text-slate-500">
+                      {p.gitRepoUrl}
+                      <span className="text-slate-400"> · branch <span className="font-mono">{p.branch}</span></span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">{p.scope}</td>
+                  <td className="px-3 py-2">
+                    <StatusPill status={p.status} />
+                  </td>
+                  <td className="px-3 py-2 text-xs">user #{p.ownerId ?? '—'}</td>
+                  <td className="px-3 py-2 text-right">
+                    <ActionsMenu
+                      items={[
+                        ...(isAdmin && p.status === 'pending'
+                          ? [
+                              { label: 'Approve', variant: 'ok' as const, onClick: () => onApprove(p.id) },
+                              { label: 'Reject', variant: 'bad' as const, onClick: () => onReject(p.id) },
+                            ]
+                          : []),
+                        ...(isAdmin && (p.status === 'active' || p.status === 'approved')
+                          ? [{ label: 'Suspend', variant: 'warn' as const, onClick: () => onSuspend(p.id) }]
+                          : []),
+                        ...(isAdmin && p.status === 'suspended'
+                          ? [{ label: 'Resume', variant: 'ok' as const, onClick: () => onResume(p.id) }]
+                          : []),
+                        ...(canEdit
+                          ? [
+                              { label: 'Edit', variant: 'neutral' as const, onClick: () => setEditing(p) },
+                              { label: 'Regen secret', variant: 'neutral' as const, onClick: () => onRegen(p.id) },
+                              { label: 'Deploy token', variant: 'neutral' as const, onClick: () => onSetToken(p) },
+                              {
+                                label: 'Copy webhook URL',
+                                variant: 'neutral' as const,
+                                onClick: () => {
+                                  const url = `${window.location.origin}/api/webhooks/skills/${p.id}`;
+                                  navigator.clipboard
+                                    .writeText(url)
+                                    .then(() => alert(`Copied:\n${url}`))
+                                    .catch(() => prompt('Copy webhook URL:', url));
+                                },
+                              },
+                            ]
+                          : []),
+                        ...(isAdmin
+                          ? [{ label: 'Delete', variant: 'bad' as const, onClick: () => onDelete(p) }]
+                          : []),
+                      ]}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+            {!loading && items.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-3 py-6 text-center text-sm text-slate-500">
+                  No projects yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {freshSecret && (
