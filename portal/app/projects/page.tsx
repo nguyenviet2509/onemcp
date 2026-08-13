@@ -7,6 +7,7 @@ import {
   createProject,
   deleteProject,
   listProjects,
+  oauthAuthorize,
   Project,
   ProjectScope,
   regenerateSecret,
@@ -50,7 +51,37 @@ export default function ProjectsPage() {
       .then(setMe)
       .catch(() => setMe(null));
     refresh();
+
+    // Handle OAuth callback bounce: /projects?created=<id>&secret=... or ?oauth_error=...
+    if (typeof window !== 'undefined') {
+      const q = new URLSearchParams(window.location.search);
+      const created = q.get('created');
+      const secret = q.get('secret');
+      const oauthError = q.get('oauth_error');
+      if (created && secret) {
+        setFreshSecret({ id: Number(created), secret });
+        window.history.replaceState({}, '', '/projects');
+      } else if (oauthError) {
+        setError(`OAuth error: ${oauthError}`);
+        window.history.replaceState({}, '', '/projects');
+      }
+    }
   }, []);
+
+  const onOAuthRegister = async (payload: {
+    slug: string;
+    name: string;
+    gitRepoUrl: string;
+    scope: ProjectScope;
+    description?: string;
+  }) => {
+    try {
+      const { authorizeUrl } = await oauthAuthorize(payload);
+      window.location.href = authorizeUrl;
+    } catch (e) {
+      alert(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e));
+    }
+  };
 
   const onCreate = async (payload: {
     slug: string;
@@ -163,7 +194,7 @@ export default function ProjectsPage() {
         </button>
       </div>
 
-      {showForm && <RegisterForm onSubmit={onCreate} />}
+      {showForm && <RegisterForm onSubmit={onCreate} onSubmitOAuth={onOAuthRegister} />}
 
       {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       {loading && <div className="text-slate-500 text-sm">Loading…</div>}
@@ -327,8 +358,10 @@ function EditModal({
 
 function RegisterForm({
   onSubmit,
+  onSubmitOAuth,
 }: {
   onSubmit: (p: { slug: string; name: string; gitRepoUrl: string; branch: string; scope: ProjectScope; description?: string }) => void;
+  onSubmitOAuth: (p: { slug: string; name: string; gitRepoUrl: string; scope: ProjectScope; description?: string }) => void;
 }) {
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
@@ -337,16 +370,28 @@ function RegisterForm({
   const [scope, setScope] = useState<ProjectScope>('private');
   const [description, setDescription] = useState('');
 
+  const collect = () => ({
+    slug: slug.trim(),
+    name: name.trim(),
+    gitRepoUrl: gitRepoUrl.trim(),
+    branch: branch.trim() || 'main',
+    scope,
+    description: description.trim() || undefined,
+  });
+
   const handle = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      slug: slug.trim(),
-      name: name.trim(),
-      gitRepoUrl: gitRepoUrl.trim(),
-      branch: branch.trim() || 'main',
-      scope,
-      description: description.trim() || undefined,
-    });
+    onSubmit(collect());
+  };
+
+  const handleOAuth = () => {
+    if (!slug.trim() || !name.trim() || !gitRepoUrl.trim()) {
+      alert('Fill slug, name, and Git repo URL first.');
+      return;
+    }
+    const { branch: _b, ...rest } = collect();
+    void _b; // Branch auto-detected via GitLab API — not sent.
+    onSubmitOAuth(rest);
   };
 
   return (
@@ -379,9 +424,17 @@ function RegisterForm({
         <span className="text-xs text-slate-500">Description (optional)</span>
         <input value={description} onChange={(e) => setDescription(e.target.value)} className="border rounded px-2 py-1" />
       </label>
-      <div className="col-span-2 flex justify-end">
+      <div className="col-span-2 flex justify-between items-center pt-2">
+        <button
+          type="button"
+          onClick={handleOAuth}
+          className="px-3 py-1.5 rounded bg-orange-600 text-white text-sm hover:bg-orange-700"
+          title="Auto-provision webhook + deploy token via GitLab OAuth. Requires Maintainer role on the repo."
+        >
+          Register with GitLab (auto)
+        </button>
         <button type="submit" className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
-          Submit for approval
+          Manual — submit for approval
         </button>
       </div>
     </form>

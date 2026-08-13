@@ -95,6 +95,19 @@ export function setDeployToken(id: number, token: string): Promise<Project> {
   });
 }
 
+export function oauthAuthorize(payload: {
+  slug: string;
+  name: string;
+  description?: string;
+  gitRepoUrl: string;
+  scope?: ProjectScope;
+}): Promise<{ authorizeUrl: string }> {
+  return apiFetch<{ authorizeUrl: string }>('/projects/oauth/authorize', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export function regenerateSecret(id: number): Promise<ProjectWithSecret> {
   return apiFetch<ProjectWithSecret>(`/projects/${id}/regen-secret`, { method: 'POST' });
 }
