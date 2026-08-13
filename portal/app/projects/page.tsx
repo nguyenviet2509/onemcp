@@ -213,8 +213,14 @@ export default function ProjectsPage() {
       {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       {loading && <div className="text-slate-500 text-sm">Loading…</div>}
 
-      <div className="overflow-x-auto rounded border">
-        <table className="w-full text-sm">
+      {/* KHÔNG dùng overflow-x-auto ở đây — sẽ tạo scroll container clip cả
+          trục Y, khiến ActionsMenu (absolute) bị crop và scrollbar sinh
+          trong wrapper thay vì overlay ra ngoài. Table đã có colgroup fixed
+          widths + table-fixed → không cần horizontal scroll cho use case
+          hiện tại. Nếu sau này cần responsive narrow: bọc mỗi row bằng card
+          view <sm chứ không clip container. */}
+      <div className="rounded border">
+        <table className="w-full table-fixed text-sm">
           <colgroup>
             <col className="w-14" />
             <col className="w-40" />
