@@ -106,12 +106,15 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
   }
 
   // Fetch userinfo endpoint với access_token. Zitadel yêu cầu Bearer.
-  // Cache theo sub TTL 5 phút để giảm load Zitadel.
+  // Cache key = access_token (KHÔNG phải sub) → role change ở Zitadel + user
+  // re-login = access_token mới = cache miss = fresh userinfo. Cache theo sub
+  // trước đây gây stale role: sub không đổi giữa các lần login, entry cũ hit
+  // dù grant mới. TTL 5 phút hợp lý — access token thường sống ~1h nên entry
+  // cũ tự expire, không phình memory.
   private async fetchUserinfo(
     accessToken: string,
-    sub: string,
   ): Promise<Record<string, unknown> | null> {
-    const cached = this.userinfoCache.get(sub);
+    const cached = this.userinfoCache.get(accessToken);
     const now = Date.now();
     if (cached && now - cached.at < USERINFO_TTL_MS) return cached.data;
 
@@ -124,7 +127,7 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
         return null;
       }
       const data = (await res.json()) as Record<string, unknown>;
-      this.userinfoCache.set(sub, { data, at: now });
+      this.userinfoCache.set(accessToken, { data, at: now });
       return data;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -183,7 +186,7 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
         !claims.preferred_username ||
         !claims['urn:zitadel:iam:org:project:roles'];
       if (sub && needsUserinfo) {
-        const userinfo = await this.fetchUserinfo(token, sub);
+        const userinfo = await this.fetchUserinfo(token);
         if (userinfo) mergedClaims = { ...claims, ...userinfo } as ZitadelClaims;
       }
 
