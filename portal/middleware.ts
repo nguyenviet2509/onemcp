@@ -16,6 +16,7 @@ const AUTH_MODE = process.env.AUTH_MODE ?? 'iap';
 // Path bypass — không cần session dù mode nào.
 function isBypassed(pathname: string): boolean {
   if (pathname.startsWith('/api/auth/')) return true; // NextAuth handlers
+  if (pathname.startsWith('/auth/')) return true; // Custom signin page (auto-trigger OAuth)
   if (pathname === '/health') return true;
   if (pathname.startsWith('/_next/')) return true; // Next assets
   if (pathname.startsWith('/favicon')) return true;
@@ -28,7 +29,8 @@ export default async function middleware(req: NextRequest) {
 
   const session = await auth();
   if (!session) {
-    const signInUrl = new URL('/api/auth/signin', req.nextUrl.origin);
+    // Redirect tới custom signin page → auto-trigger Zitadel OAuth (không show button).
+    const signInUrl = new URL('/auth/signin', req.nextUrl.origin);
     signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(signInUrl);
   }
