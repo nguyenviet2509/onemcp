@@ -67,13 +67,22 @@ function usernameFromEmail(email?: string, preferred?: string): string | null {
   return localPart;
 }
 
+// Cache userinfo response per sub — Zitadel access_token thường KHÔNG chứa email
+// claim (chỉ ID token có). Backend fetch userinfo endpoint để derive username.
+// TTL 5 phút hợp lý — role/email không đổi thường xuyên; grant change → user
+// re-login thì access_token mới → cache miss → fetch lại.
+type UserinfoCacheEntry = { data: Record<string, unknown>; at: number };
+const USERINFO_TTL_MS = 5 * 60 * 1000;
+
 @Injectable()
 export class ZitadelJwtMiddleware implements NestMiddleware {
   private readonly log = new Logger(ZitadelJwtMiddleware.name);
   private readonly enabled: boolean;
   private readonly issuer: string;
   private readonly clientId: string;
+  private readonly userinfoUrl: string;
   private readonly getKey: JWTVerifyGetKey | null;
+  private readonly userinfoCache = new Map<string, UserinfoCacheEntry>();
 
   constructor(
     private readonly config: ConfigService,
@@ -82,6 +91,7 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
     this.enabled = this.config.get<string>('ZITADEL_OIDC_ENABLED') === 'true';
     this.issuer = this.config.get<string>('ZITADEL_ISSUER') ?? '';
     this.clientId = this.config.get<string>('ZITADEL_CLIENT_ID') ?? '';
+    this.userinfoUrl = `${this.issuer.replace(/\/$/, '')}/oidc/v1/userinfo`;
     const jwksUri = this.config.get<string>('ZITADEL_JWKS_URI') ?? '';
 
     if (this.enabled && this.issuer && this.clientId && jwksUri) {
@@ -92,6 +102,34 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
       if (this.enabled) {
         this.log.warn('ZITADEL_OIDC_ENABLED=true nhưng thiếu ISSUER/CLIENT_ID/JWKS_URI — skipping');
       }
+    }
+  }
+
+  // Fetch userinfo endpoint với access_token. Zitadel yêu cầu Bearer.
+  // Cache theo sub TTL 5 phút để giảm load Zitadel.
+  private async fetchUserinfo(
+    accessToken: string,
+    sub: string,
+  ): Promise<Record<string, unknown> | null> {
+    const cached = this.userinfoCache.get(sub);
+    const now = Date.now();
+    if (cached && now - cached.at < USERINFO_TTL_MS) return cached.data;
+
+    try {
+      const res = await fetch(this.userinfoUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) {
+        this.log.warn(`Userinfo fetch failed status=${res.status}`);
+        return null;
+      }
+      const data = (await res.json()) as Record<string, unknown>;
+      this.userinfoCache.set(sub, { data, at: now });
+      return data;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.log.warn(`Userinfo fetch error: ${msg}`);
+      return null;
     }
   }
 
@@ -132,15 +170,24 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
       });
       const claims = payload as ZitadelClaims;
 
-      const username = usernameFromEmail(claims.email, claims.preferred_username);
+      // Access token Zitadel thường KHÔNG chứa email/preferred_username (chỉ ID
+      // token có). Fetch userinfo endpoint để lấy đầy đủ user info + role claim.
+      // Merge với JWT claims (roles từ JWT nếu có; email/username từ userinfo).
+      const sub = String(claims.sub ?? '');
+      let mergedClaims: ZitadelClaims = claims;
+      if (sub && (!claims.email || !claims.preferred_username)) {
+        const userinfo = await this.fetchUserinfo(token, sub);
+        if (userinfo) mergedClaims = { ...claims, ...userinfo } as ZitadelClaims;
+      }
+
+      const username = usernameFromEmail(mergedClaims.email, mergedClaims.preferred_username);
       if (!username) {
-        // Invalid username format từ email — không phải fatal, fall through cho middleware khác.
-        this.log.warn(`Zitadel JWT valid nhưng email/preferred_username không match regex`);
+        this.log.warn(`Zitadel JWT valid nhưng userinfo email/preferred_username thiếu — sub=${sub}`);
         next();
         return;
       }
 
-      const zitadelRoles = extractZitadelRoles(claims);
+      const zitadelRoles = extractZitadelRoles(mergedClaims);
       const mappedRoles = mapZitadelRoles(zitadelRoles);
 
       const dbUser = await this.users.upsertByUsername(username);
