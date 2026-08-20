@@ -47,6 +47,15 @@ export const envSchema = z.object({
   // Bearer auth mode for MCP endpoints. See BearerAuthMiddleware.
   MCP_AUTH_MODE: z.enum(['off', 'optional', 'required']).default('off'),
 
+  // Zitadel OIDC — Cơ chế 2 (plan 260819-1628 phase-03).
+  // Portal (NextAuth v5) forward access_token JWT trong Authorization: Bearer.
+  // Backend verify JWKS + parse claim roles (Zitadel role catalog OneMCP Portal).
+  // Dual-mode với IAP: ENABLED=false → skip middleware, fall through TrustUserMiddleware.
+  ZITADEL_OIDC_ENABLED: z.enum(['true', 'false']).default('false'),
+  ZITADEL_ISSUER: z.string().default('http://10.200.0.125'),
+  ZITADEL_JWKS_URI: z.string().default('http://10.200.0.125/oauth/v2/keys'),
+  ZITADEL_CLIENT_ID: z.string().default(''),
+
   // OAuth 2.1 AS metadata (RFC 8414) + protected resource metadata (RFC 9728).
   // OAUTH_ISSUER = the external URL where AS lives. Endpoints derived from it.
   // Set to real domain when TLS + DNS ready. For IP-only pilot: http://<vps-ip>.
