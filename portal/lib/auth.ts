@@ -28,7 +28,11 @@ const config: NextAuthConfig = {
       clientId: process.env.ZITADEL_CLIENT_ID,
       clientSecret: process.env.ZITADEL_CLIENT_SECRET,
       // Scopes basic — role đọc từ claim raw đã có sẵn khi assert_roles=true trên project.
-      authorization: { params: { scope: 'openid email profile' } },
+      // Scope `urn:zitadel:iam:org:project:roles` yêu cầu Zitadel trả roles claim
+      // trong userinfo + id_token (kể cả khi project chưa enable assert_roles).
+      authorization: {
+        params: { scope: 'openid email profile urn:zitadel:iam:org:project:roles' },
+      },
       idToken: true,
       // profile() runs once at sign-in; extract needed fields.
       profile(profile) {

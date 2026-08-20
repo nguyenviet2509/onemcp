@@ -175,7 +175,14 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
       // Merge với JWT claims (roles từ JWT nếu có; email/username từ userinfo).
       const sub = String(claims.sub ?? '');
       let mergedClaims: ZitadelClaims = claims;
-      if (sub && (!claims.email || !claims.preferred_username)) {
+      // Access token thường KHÔNG có email/preferred_username/roles claim
+      // (chỉ ID token + userinfo có). Fetch userinfo nếu thiếu bất kỳ field
+      // cần thiết nào — bao gồm project roles để RBAC mapping hoạt động.
+      const needsUserinfo =
+        !claims.email ||
+        !claims.preferred_username ||
+        !claims['urn:zitadel:iam:org:project:roles'];
+      if (sub && needsUserinfo) {
         const userinfo = await this.fetchUserinfo(token, sub);
         if (userinfo) mergedClaims = { ...claims, ...userinfo } as ZitadelClaims;
       }
@@ -189,6 +196,9 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
 
       const zitadelRoles = extractZitadelRoles(mergedClaims);
       const mappedRoles = mapZitadelRoles(zitadelRoles);
+      this.log.log(
+        `Zitadel claims sub=${sub} zitadelRoles=${JSON.stringify(zitadelRoles)} mapped=${JSON.stringify(mappedRoles)} hasProjectRolesClaim=${!!mergedClaims['urn:zitadel:iam:org:project:roles']}`,
+      );
 
       const dbUser = await this.users.upsertByUsername(username);
       if (dbUser.status === 'disabled') {
