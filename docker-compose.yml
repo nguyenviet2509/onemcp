@@ -137,6 +137,13 @@ services:
       PORTAL_BASE_URL: ${PORTAL_BASE_URL:-https://oneconnector.000nethost.com}
       MCP_AUTH_MODE: ${MCP_AUTH_MODE:-off}
       MCP_TRANSPORT: ${MCP_TRANSPORT:-jsonrpc}
+      # Zitadel OIDC user auth (plan onelog 260819-1628 phase-03) — dual-mode.
+      # ENABLED=false → ZitadelJwtMiddleware skip, IAP path only.
+      # ENABLED=true → verify Bearer JWT từ portal, extract roles claim.
+      ZITADEL_OIDC_ENABLED: ${ZITADEL_OIDC_ENABLED:-false}
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-http://10.200.0.125}
+      ZITADEL_JWKS_URI: ${ZITADEL_JWKS_URI:-http://10.200.0.125/oauth/v2/keys}
+      ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
@@ -157,6 +164,9 @@ services:
     build:
       context: ./portal
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* must be baked at build time (Next.js reads them at build).
+        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-iap}
     restart: unless-stopped
     depends_on:
       - backend
@@ -166,6 +176,15 @@ services:
       # loopback healthcheck succeeds (otherwise binds to container IP only).
       HOSTNAME: 0.0.0.0
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost/api}
+      # Zitadel OIDC (plan onelog 260819-1628 phase-03) — NextAuth v5 config.
+      # AUTH_MODE=iap (default) → NextAuth handlers mount nhưng middleware skip.
+      # AUTH_MODE=oidc → middleware bảo vệ routes, api-client forward Bearer.
+      AUTH_MODE: ${AUTH_MODE:-iap}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_TRUST_HOST: 'true'
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-http://10.200.0.125}
+      ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
+      ZITADEL_CLIENT_SECRET: ${ZITADEL_CLIENT_SECRET:-}
     ports:
       - "127.0.0.1:3001:3000"
     healthcheck:

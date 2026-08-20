@@ -9,6 +9,9 @@ RUN pnpm install --prod=false --frozen-lockfile=false
 FROM node:20-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* baked at build time (plan onelog 260819-1628 phase-03).
+ARG NEXT_PUBLIC_AUTH_MODE=iap
+ENV NEXT_PUBLIC_AUTH_MODE=$NEXT_PUBLIC_AUTH_MODE
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
