@@ -124,7 +124,6 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
         return null;
       }
       const data = (await res.json()) as Record<string, unknown>;
-      this.log.log(`Userinfo raw sub=${sub} keys=${JSON.stringify(Object.keys(data))} data=${JSON.stringify(data)}`);
       this.userinfoCache.set(sub, { data, at: now });
       return data;
     } catch (err) {
@@ -197,9 +196,13 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
 
       const zitadelRoles = extractZitadelRoles(mergedClaims);
       const mappedRoles = mapZitadelRoles(zitadelRoles);
-      this.log.log(
-        `Zitadel claims sub=${sub} zitadelRoles=${JSON.stringify(zitadelRoles)} mapped=${JSON.stringify(mappedRoles)} hasProjectRolesClaim=${!!mergedClaims['urn:zitadel:iam:org:project:roles']}`,
-      );
+      if (zitadelRoles.length === 0) {
+        // Missing role claim thường do project config: chưa bật `assert_roles`
+        // + `Add user roles to the access token/ID Token` trên Zitadel project.
+        this.log.warn(
+          `Zitadel token thiếu roles claim — fallback contributor sub=${sub}. Check assert_roles trong Zitadel project settings.`,
+        );
+      }
 
       const dbUser = await this.users.upsertByUsername(username);
       if (dbUser.status === 'disabled') {

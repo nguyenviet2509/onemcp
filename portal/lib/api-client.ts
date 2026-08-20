@@ -61,9 +61,10 @@ export async function apiFetch<T = unknown>(
     // IAP mode → oauth2-proxy sign-in (legacy path).
     const returnUrl = encodeURIComponent(window.location.href);
     const authMode = process.env.NEXT_PUBLIC_AUTH_MODE ?? 'iap';
+    // OIDC: dùng custom /auth/signin (auto-trigger Zitadel, skip provider button).
     const signInPath =
       authMode === 'oidc'
-        ? `/api/auth/signin?callbackUrl=${returnUrl}`
+        ? `/auth/signin?callbackUrl=${returnUrl}`
         : `/oauth2/sign_in?rd=${returnUrl}`;
     window.location.href = signInPath;
     // Return a never-resolving promise so callers don't receive a partial response.

@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
 import { LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -15,6 +16,8 @@ import { apiFetch } from '@/lib/api-client';
 import { setLocaleCookie } from '@/lib/i18n-actions';
 import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n/config';
 
+const AUTH_MODE = process.env.NEXT_PUBLIC_AUTH_MODE ?? 'iap';
+
 interface MeResponse {
   id: number;
   username: string;
@@ -25,8 +28,10 @@ interface MeResponse {
 }
 
 // Bottom-of-sidebar user pill: avatar + name + ⋯ dropdown.
-// User info fetched from /api/me (SSO — oauth2-proxy injects X-Onemcp-User from Zitadel LDAP).
-// Sign-out delegates to oauth2-proxy endpoint — clears proxy session cookie.
+// User info fetched from /api/me. Identity source dual-mode:
+//   AUTH_MODE=oidc → NextAuth session (Zitadel JWT verified by backend).
+//   AUTH_MODE=iap  → X-Onemcp-User header (oauth2-proxy legacy).
+// Sign-out dispatches theo mode: NextAuth signOut() (OIDC) vs oauth2-proxy endpoint.
 export function SidebarUserCard() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const { theme, setTheme } = useTheme();
@@ -108,11 +113,20 @@ export function SidebarUserCard() {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          {/* Sign out — delegates to oauth2-proxy; clears proxy session cookie. */}
-          <DropdownMenuItem render={<a href="/oauth2/sign_out?rd=/" />}>
-            <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
-            <span>{tCommon('signOut')}</span>
-          </DropdownMenuItem>
+          {/* Sign out — OIDC: NextAuth signOut() (POST + CSRF). IAP: anchor tới oauth2-proxy. */}
+          {AUTH_MODE === 'oidc' ? (
+            <DropdownMenuItem
+              render={<button type="button" onClick={() => signOut({ callbackUrl: '/' })} />}
+            >
+              <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
+              <span>{tCommon('signOut')}</span>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem render={<a href="/oauth2/sign_out?rd=/" />}>
+              <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
+              <span>{tCommon('signOut')}</span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
