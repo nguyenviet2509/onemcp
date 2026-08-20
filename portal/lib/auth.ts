@@ -62,10 +62,9 @@ const config: NextAuthConfig = {
     },
   },
   trustHost: true, // Chạy sau nginx TLS termination trên onemcp-vps.
-  // Signout redirect qua Zitadel end_session để clear session cả 2 side.
-  pages: {
-    signIn: '/api/auth/signin',
-  },
+  // KHÔNG override pages.signIn — v5 beta removed default UI, nhưng vẫn có
+  // built-in provider page. Tự-reference vào handler tạo infinite loop.
+  // Chỉ 1 provider → NextAuth auto-trigger OAuth khi hit /api/auth/signin/zitadel.
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config);
