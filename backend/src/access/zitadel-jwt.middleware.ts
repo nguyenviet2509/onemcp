@@ -124,6 +124,7 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
         return null;
       }
       const data = (await res.json()) as Record<string, unknown>;
+      this.log.log(`Userinfo raw sub=${sub} keys=${JSON.stringify(Object.keys(data))} data=${JSON.stringify(data)}`);
       this.userinfoCache.set(sub, { data, at: now });
       return data;
     } catch (err) {
