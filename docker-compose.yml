@@ -182,6 +182,10 @@ services:
       AUTH_MODE: ${AUTH_MODE:-iap}
       AUTH_SECRET: ${AUTH_SECRET:-}
       AUTH_TRUST_HOST: 'true'
+      # AUTH_URL bắt buộc set explicit vì HOSTNAME=0.0.0.0 (Node bind) làm NextAuth
+      # v5 internal URL construction dùng 0.0.0.0:3000 → callback wrong → redirect loop.
+      # Set = public URL, NextAuth build absolute callback đúng.
+      AUTH_URL: ${AUTH_URL:-https://oneconnector.000nethost.com}
       ZITADEL_ISSUER: ${ZITADEL_ISSUER:-http://10.200.0.125}
       ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
       ZITADEL_CLIENT_SECRET: ${ZITADEL_CLIENT_SECRET:-}
