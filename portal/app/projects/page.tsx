@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { ApiError } from '../../lib/api-client';
+import { ApiError, apiFetch } from '../../lib/api-client';
 import {
   approveProject,
   createProject,
@@ -35,7 +35,7 @@ export default function ProjectsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
 
-  const isAdmin = me?.roles.some((r) => r === 'super-admin' || r === 'dept-admin') ?? false;
+  const isAdmin = me?.roles?.some((r) => r === 'super-admin' || r === 'dept-admin') ?? false;
 
   const refresh = () => {
     setLoading(true);
@@ -46,8 +46,8 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    fetch('/api/me', { credentials: 'include' })
-      .then((r) => r.json())
+    // apiFetch attaches Bearer in OIDC mode; raw fetch dropped Authorization → 400.
+    apiFetch<Me>('/me')
       .then(setMe)
       .catch(() => setMe(null));
     refresh();
