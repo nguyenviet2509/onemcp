@@ -14,7 +14,8 @@
 let sessionCache: { at: number; token: string | null } | null = null;
 const SESSION_CACHE_TTL_MS = 30_000;
 
-async function getAccessToken(): Promise<string | null> {
+// Exported — dùng chung cho multipart upload / blob download (không đi qua apiFetch).
+export async function getAccessToken(): Promise<string | null> {
   // Chỉ chạy client-side. Server component có `auth()` dùng riêng.
   if (typeof window === 'undefined') return null;
   const now = Date.now();

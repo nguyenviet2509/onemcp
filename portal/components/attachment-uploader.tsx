@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import {
   Attachment,
   deleteAttachment,
-  downloadAttachmentUrl,
+  downloadAttachmentBlob,
   listAttachments,
   uploadAttachment,
 } from '../lib/api/attachments';
@@ -54,6 +54,24 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
     }
   }
 
+  async function handleDownload(a: Attachment) {
+    try {
+      const blob = await downloadAttachmentBlob(a.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = a.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      toast.error(msg);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm(t('confirmDelete'))) return;
     try {
@@ -96,13 +114,13 @@ export function AttachmentUploader({ artifactId, canWrite = true }: Props) {
         <ul className="mt-3 space-y-1 text-sm">
           {items.map((a) => (
             <li key={a.id} className="flex items-center justify-between rounded px-2 py-1 hover:bg-muted">
-              <a
-                href={downloadAttachmentUrl(a.id)}
-                className="flex-1 truncate text-primary hover:underline"
-                download={a.filename}
+              <button
+                type="button"
+                onClick={() => handleDownload(a)}
+                className="flex-1 truncate text-left text-primary hover:underline"
               >
                 {a.filename}
-              </a>
+              </button>
               <span className="ml-3 font-mono text-xs text-muted-foreground">
                 {a.contentType} · {humanSize(Number(a.sizeBytes))}
               </span>

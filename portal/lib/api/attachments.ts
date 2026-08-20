@@ -1,4 +1,4 @@
-import { apiFetch } from '../api-client';
+import { apiFetch, getAccessToken } from '../api-client';
 
 export interface Attachment {
   id: string;
@@ -16,14 +16,18 @@ export function listAttachments(artifactId: string) {
   return apiFetch<Attachment[]>(`/artifacts/${encodeURIComponent(artifactId)}/attachments`);
 }
 
-// Custom fetch — multipart cần bỏ Content-Type để browser tự set boundary.
-// credentials: 'include' ensures oauth2-proxy session cookie travels with the request.
+// Multipart cần bỏ Content-Type để browser tự set boundary — không dùng apiFetch được.
+// OIDC mode: gắn Bearer từ NextAuth session. IAP mode: token null → cookie path.
 export async function uploadAttachment(artifactId: string, file: File): Promise<Attachment> {
   const form = new FormData();
   form.append('file', file);
+  const headers = new Headers();
+  const token = await getAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
   const res = await fetch(`/api/artifacts/${encodeURIComponent(artifactId)}/attachments`, {
     method: 'POST',
     body: form,
+    headers,
     credentials: 'include',
   });
   if (!res.ok) {
@@ -33,8 +37,21 @@ export async function uploadAttachment(artifactId: string, file: File): Promise<
   return (await res.json()) as Attachment;
 }
 
-export function downloadAttachmentUrl(id: string): string {
-  return `/api/attachments/${encodeURIComponent(id)}/download`;
+// Download qua fetch+blob (thay vì <a href>) — anchor navigation không mang Bearer
+// header, sẽ fail trong OIDC mode. Trả blob URL để component tạo link download động.
+export async function downloadAttachmentBlob(id: string): Promise<Blob> {
+  const headers = new Headers();
+  const token = await getAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await fetch(`/api/attachments/${encodeURIComponent(id)}/download`, {
+    headers,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status}: ${text}`);
+  }
+  return res.blob();
 }
 
 export function deleteAttachment(id: string) {
