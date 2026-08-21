@@ -1,0 +1,94 @@
+# OneMCP-vps Vector agent — forward container + host logs → OneLog VL.
+# Plan: 260821-1346-onemcp-monitor-backup-integration
+# Convention: docs/observability-log-forwarding-convention.md — host="onemcp"
+
+sources:
+  # All onemcp containers except vector self + noisy metric-only exporters.
+  docker:
+    type: docker_logs
+    exclude_containers:
+      - onemcp-vector-1
+      - onemcp-node-exporter-1
+      - onemcp-cadvisor-1
+      - onemcp-postgres-exporter-1
+      - onemcp-redis-exporter-1
+      - onemcp-tei-1              # embedding cache warm-up floods; add explicit if needed later
+      - onemcp-certbot-1
+
+  syslog_file:
+    type: file
+    include: [/var/log/syslog]
+    ignore_older_secs: 86400
+    read_from: end
+
+  auth_file:
+    type: file
+    include: [/var/log/auth.log]
+    ignore_older_secs: 86400
+    read_from: end
+
+transforms:
+  enrich:
+    type: remap
+    inputs: [docker]
+    source: |
+      raw_msg = string(.message) ?? ""
+
+      # Parse structured JSON body if present (backend NestJS may emit JSON).
+      parsed, err = parse_json(raw_msg)
+      if err == null && is_object(parsed) {
+        . = merge(., object!(parsed))
+      }
+
+      ._msg = raw_msg
+      .host = "onemcp"
+
+      # Service = container name without onemcp- prefix + -1 suffix.
+      cname = string!(.container_name)
+      cname = replace(cname, "onemcp-", "")
+      cname = replace(cname, "-1", "")
+      .service = cname
+
+      # Drop docker metadata to keep VL index lean.
+      del(.container_id)
+      del(.container_created_at)
+      del(.image)
+      del(.label)
+      del(.stream)
+      del(.message)
+
+  syslog_enrich:
+    type: remap
+    inputs: [syslog_file]
+    source: |
+      ._msg = string(.message) ?? ""
+      .host = "onemcp"
+      .service = "syslog"
+      del(.file)
+      del(.host_key)
+      del(.message)
+
+  auth_enrich:
+    type: remap
+    inputs: [auth_file]
+    source: |
+      ._msg = string(.message) ?? ""
+      .host = "onemcp"
+      .service = "auth"
+      del(.file)
+      del(.host_key)
+      del(.message)
+
+sinks:
+  victorialogs:
+    type: http
+    inputs: [enrich, syslog_enrich, auth_enrich]
+    uri: http://10.200.0.30:9428/insert/jsonline?_stream_fields=host,service
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    compression: gzip
+    request:
+      retry_attempts: 3
+      timeout_secs: 30

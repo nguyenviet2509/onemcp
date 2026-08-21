@@ -148,6 +148,9 @@ services:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
       - "127.0.0.1:3000:3000"
+      # Private-net binding — OneLog vmagent scrapes /metrics via 10.200.0.44:3000
+      # (plan 260821-1346 onemcp-monitor-backup-integration).
+      - "10.200.0.44:3000:3000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
       interval: 15s
@@ -288,6 +291,64 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-www:/var/www/certbot
     entrypoint: ["certbot"]
+
+  # ─── Observability sidecars (plan 260821-1346-onemcp-monitor-backup) ───
+  # Scraped by onelog-vps vmagent (10.200.0.30) over private net.
+  # All exporter ports bound to 10.200.0.44 only — never public.
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "10.200.0.44:9100:9100"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    ports:
+      - "10.200.0.44:8081:8080"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: postgres://${POSTGRES_USER:-onemcp}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-onemcp}?sslmode=disable
+    ports:
+      - "10.200.0.44:9187:9187"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    restart: unless-stopped
+    depends_on:
+      - redis
+    command:
+      - "--redis.addr=redis://redis:6379"
+    ports:
+      - "10.200.0.44:9121:9121"
+
+  vector:
+    image: timberio/vector:0.42.0-alpine
+    restart: unless-stopped
+    user: "0:0"    # root — read /var/log/{syslog,auth.log} (mode 640 syslog:adm)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./ops/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/log:/var/log:ro
+    command: ["--config", "/etc/vector/vector.yaml"]
 
 volumes:
   pg-data:
