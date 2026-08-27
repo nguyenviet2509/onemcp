@@ -1,4 +1,4 @@
-import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Global, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ApiKeysModule } from '../api-keys/api-keys.module';
 import { ApiKeyMiddleware } from '../api-keys/api-key.middleware';
@@ -35,6 +35,11 @@ export class AccessModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(ApiKeyMiddleware, ZitadelJwtMiddleware, BearerAuthMiddleware, TrustUserMiddleware)
+      .exclude(
+        // Central RBAC self-registration manifest (public, no identity — fetched by central-rbac SSRF-hardened fetcher)
+        { path: '.well-known/rbac-permissions.json', method: RequestMethod.GET },
+        { path: 'api/.well-known/rbac-permissions.json', method: RequestMethod.GET },
+      )
       .forRoutes('*');
   }
 }
