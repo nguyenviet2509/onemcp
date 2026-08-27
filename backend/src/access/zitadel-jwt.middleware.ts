@@ -1,7 +1,7 @@
-import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { Injectable, Logger, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NextFunction, Response } from 'express';
-import { createRemoteJWKSet, jwtVerify, JWTPayload, JWTVerifyGetKey } from 'jose';
+import { createRemoteJWKSet, decodeJwt, jwtVerify, JWTPayload, JWTVerifyGetKey } from 'jose';
 import { AuthedRequest } from '../common/user-request';
 import { UsersService } from '../users/users.service';
 import { RoleCode } from '../users/entities/role.entity';
@@ -166,6 +166,29 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
       return;
     }
 
+    // Decode-without-verify để check iss claim. Nếu iss = Zitadel issuer thì
+    // token này "thuộc" middleware này — mọi verify failure (expired/signature/
+    // audience mismatch) phải throw 401 để client (portal) redirect signin.
+    // Trước đây fall through → TrustUserMiddleware throw 400 "Missing identity
+    // header" → api-client chỉ redirect trên 401 → user kẹt màn dashboard với
+    // widget hiện raw JSON error.
+    let ownsToken = false;
+    try {
+      const preview = decodeJwt(token);
+      if (typeof preview.iss === 'string' && preview.iss === this.issuer) {
+        ownsToken = true;
+      }
+    } catch {
+      // Decode fail → không phải JWT hợp lệ, fall through cho middleware sau.
+      next();
+      return;
+    }
+    if (!ownsToken) {
+      // JWT của issuer khác (VD OneMCP opaque JWT nếu có tương lai) → fall through.
+      next();
+      return;
+    }
+
     try {
       const { payload } = await jwtVerify(token, this.getKey, {
         issuer: this.issuer,
@@ -193,8 +216,7 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
       const username = usernameFromEmail(mergedClaims.email, mergedClaims.preferred_username);
       if (!username) {
         this.log.warn(`Zitadel JWT valid nhưng userinfo email/preferred_username thiếu — sub=${sub}`);
-        next();
-        return;
+        throw new UnauthorizedException('missing_userinfo');
       }
 
       const zitadelRoles = extractZitadelRoles(mergedClaims);
@@ -209,13 +231,8 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
 
       const dbUser = await this.users.upsertByUsername(username);
       if (dbUser.status === 'disabled') {
-        // Không throw — TrustUserMiddleware sẽ throw ForbiddenException nếu cần.
-        // Nhưng ta đã có valid JWT → set user và để controller quyết.
-        // Actually giữ symmetry với BearerAuthMiddleware: throw hoặc log-fall-through?
-        // Fall through — TrustUserMiddleware xử lý (path exempt logic khớp nhau).
         this.log.warn(`Zitadel JWT user disabled: ${username}`);
-        next();
-        return;
+        throw new UnauthorizedException('user_disabled');
       }
 
       req.user = {
@@ -228,11 +245,14 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
       };
       next();
     } catch (err) {
-      // JWT invalid / expired / wrong iss/aud → fall through cho middleware khác.
-      // Log warn để debug được. Không expose reason cho client (security).
+      // Token đã xác định là "của mình" (iss khớp) → mọi verify failure
+      // (expired/signature/audience) MUST throw 401 để api-client redirect signin.
+      // Trước đây fall through → TrustUserMiddleware throw 400 "Missing identity
+      // header" → portal chỉ redirect trên 401 → user kẹt màn dashboard rỗng.
+      if (err instanceof UnauthorizedException) throw err;
       const msg = err instanceof Error ? err.message : String(err);
       this.log.warn(`Zitadel JWT verify failed: ${msg}`);
-      next();
+      throw new UnauthorizedException('invalid_token');
     }
   }
 }
