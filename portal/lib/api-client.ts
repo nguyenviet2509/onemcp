@@ -59,9 +59,14 @@ export async function apiFetch<T = unknown>(
   if (res.status === 401) {
     // Session expired or not authenticated. OIDC mode → NextAuth signin.
     // IAP mode → oauth2-proxy sign-in (legacy path).
+    // Nếu đã ở trên trang auth (VD /auth/signin) thì KHÔNG redirect nữa —
+    // tránh loop mount→fetch→401→redirect→mount khi SidebarUserCard fire
+    // /me với session expired trong lúc user đang xem trang signin.
+    if (window.location.pathname.startsWith('/auth/')) {
+      throw new ApiError(res.status, 'unauthenticated');
+    }
     const returnUrl = encodeURIComponent(window.location.href);
     const authMode = process.env.NEXT_PUBLIC_AUTH_MODE ?? 'iap';
-    // OIDC: dùng custom /auth/signin (auto-trigger Zitadel, skip provider button).
     const signInPath =
       authMode === 'oidc'
         ? `/auth/signin?callbackUrl=${returnUrl}`
