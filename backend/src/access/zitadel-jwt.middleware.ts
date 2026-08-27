@@ -36,12 +36,17 @@ const USERNAME_RE = /^[a-z0-9._-]{2,32}$/;
 
 // Map Zitadel role key → OneMCP RoleCode. Contract documented in
 // docs/authway-role-catalog.md. Multi-role: priority = super-admin > maintainer > contributor.
+//
+// Accepts BOTH legacy namespaceless keys (`admin`, `editor`, `viewer`) and app-
+// namespaced keys post-Migration 011 (`onemcp.admin`, `onemcp.editor`, ...).
+// Suffix parsing keeps this scalable if more app namespaces are added later.
 function mapZitadelRoles(zitadelRoles: string[]): RoleCode[] {
   const roles = new Set<RoleCode>();
   for (const r of zitadelRoles) {
-    if (r === 'admin') roles.add('super-admin');
-    else if (r === 'editor') roles.add('maintainer');
-    else if (r === 'viewer') roles.add('contributor');
+    const suffix = r.includes('.') ? (r.split('.').pop() ?? '') : r;
+    if (suffix === 'admin') roles.add('super-admin');
+    else if (suffix === 'editor') roles.add('maintainer');
+    else if (suffix === 'viewer') roles.add('contributor');
   }
   if (roles.size === 0) roles.add('contributor'); // default fallback
   // Ensure maintainer implies contributor for backward compat (RoleAssignerService pattern).
