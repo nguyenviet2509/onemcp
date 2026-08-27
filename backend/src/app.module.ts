@@ -16,6 +16,7 @@ import { AuditModule } from './audit/audit.module';
 import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
 import { HealthModule } from './health/health.module';
+import { RbacManifestModule } from './rbac-manifest/rbac-manifest.module';
 import { McpModule } from './mcp/mcp.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { SearchModule } from './search/search.module';
@@ -61,6 +62,7 @@ import { OAuthModule } from './oauth/oauth.module';
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     HealthModule,
+    RbacManifestModule,
     DepartmentsModule,
     UsersModule,
     AccessModule,
