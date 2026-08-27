@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiError } from '../../lib/api-client';
-import { listSkills, Skill } from '../../lib/api/skills';
-import { Pagination, paginateItems } from '../../components/pagination';
+import { ApiError } from '@/lib/api-client';
+import { listSkills, Skill } from '@/lib/api/skills';
+import { Pagination, paginateItems } from '@/components/pagination';
 
 // Option A skills list: px-8 py-6, divide-y row layout, chip tags, no bespoke colors.
 export default function SkillsListPage() {

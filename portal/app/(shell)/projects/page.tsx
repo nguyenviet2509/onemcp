@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { ApiError, apiFetch } from '../../lib/api-client';
+import { ApiError, apiFetch } from '@/lib/api-client';
 import {
   approveProject,
   createProject,
@@ -17,7 +17,7 @@ import {
   suspendProject,
   updateProject,
   UpdateProjectPayload,
-} from '../../lib/api/projects';
+} from '@/lib/api/projects';
 
 interface Me {
   id: number;

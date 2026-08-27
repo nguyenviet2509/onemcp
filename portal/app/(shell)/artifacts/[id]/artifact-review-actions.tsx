@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { Button } from '../../../components/ui/button';
-import { ApiError } from '../../../lib/api-client';
-import { reviewArtifact } from '../../../lib/api/artifacts';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { ApiError } from '@/lib/api-client';
+import { reviewArtifact } from '@/lib/api/artifacts';
 
 interface Props {
   artifactId: string;

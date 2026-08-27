@@ -4,18 +4,18 @@ import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { buttonVariants } from '../../components/ui/button';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Badge } from '../../components/ui/badge';
-import { Alert, AlertDescription } from '../../components/ui/alert';
-import { PageShell } from '../../components/page-shell';
-import { EmptyState } from '../../components/empty-state';
-import { ArtifactFilterPanel, FilterState } from '../../components/artifact-filter-panel';
-import { ArtifactBulkActions } from '../../components/artifact-bulk-actions';
-import { Artifact, ArtifactStatus, deleteArtifact, listArtifacts } from '../../lib/api/artifacts';
-import { statusVariant } from '../../lib/status-pill-variants';
-import { Pagination, paginateItems } from '../../components/pagination';
+import { buttonVariants } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageShell } from '@/components/page-shell';
+import { EmptyState } from '@/components/empty-state';
+import { ArtifactFilterPanel, FilterState } from '@/components/artifact-filter-panel';
+import { ArtifactBulkActions } from '@/components/artifact-bulk-actions';
+import { Artifact, ArtifactStatus, deleteArtifact, listArtifacts } from '@/lib/api/artifacts';
+import { statusVariant } from '@/lib/status-pill-variants';
+import { Pagination, paginateItems } from '@/components/pagination';
 
 function filterToParams(f: FilterState) {
   return {

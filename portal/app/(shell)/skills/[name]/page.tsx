@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, use } from 'react';
 import { useTranslations } from 'next-intl';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ApiError } from '../../../lib/api-client';
+import { ApiError } from '@/lib/api-client';
 import {
   approveSkillVersion,
   getSkill,
@@ -14,7 +14,7 @@ import {
   Skill,
   SkillVersion,
   triggerSkillsSync,
-} from '../../../lib/api/skills';
+} from '@/lib/api/skills';
 
 // Strip trailing `.git` + return web-viewable base for GitLab repo URL.
 function stripDotGit(url: string): string {

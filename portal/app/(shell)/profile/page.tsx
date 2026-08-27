@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { apiFetch, ApiError } from '../../lib/api-client';
+import { apiFetch, ApiError } from '@/lib/api-client';
 
 interface Me {
   id: number;

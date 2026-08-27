@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { TemplatePicker } from '../../../components/template-picker';
-import { MarkdownEditor, MarkdownEditorDark } from '../../../components/markdown-editor';
-import { PageShell } from '../../../components/page-shell';
-import { Button, buttonVariants } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { Separator } from '../../../components/ui/separator';
-import { ApiError } from '../../../lib/api-client';
-import { submitArtifact, ArtifactType } from '../../../lib/api/artifacts';
-import { getTemplate, Template, TemplateField } from '../../../lib/api/templates';
+import { TemplatePicker } from '@/components/template-picker';
+import { MarkdownEditor, MarkdownEditorDark } from '@/components/markdown-editor';
+import { PageShell } from '@/components/page-shell';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { ApiError } from '@/lib/api-client';
+import { submitArtifact, ArtifactType } from '@/lib/api/artifacts';
+import { getTemplate, Template, TemplateField } from '@/lib/api/templates';
 
 // Draft persisted to localStorage so the user doesn't lose work on refresh.
 const DRAFT_KEY = 'onemcp:new-artifact:draft';

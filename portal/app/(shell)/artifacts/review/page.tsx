@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiError } from '../../../lib/api-client';
-import { Artifact, listArtifacts } from '../../../lib/api/artifacts';
-import { Badge } from '../../../components/ui/badge';
-import { statusVariant } from '../../../lib/status-pill-variants';
-import { Pagination, paginateItems } from '../../../components/pagination';
+import { ApiError } from '@/lib/api-client';
+import { Artifact, listArtifacts } from '@/lib/api/artifacts';
+import { Badge } from '@/components/ui/badge';
+import { statusVariant } from '@/lib/status-pill-variants';
+import { Pagination, paginateItems } from '@/components/pagination';
 
 // Queue cho maintainer — chỉ show pending artifacts.
 // Non-maintainer sẽ chỉ thấy own pending (backend RBAC).
