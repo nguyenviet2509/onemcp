@@ -14,7 +14,17 @@ type ArtifactMetaRow = {
   template_key: string | null;
   space_id: string | null;
   tags: string[];
+  // Populated by hydrate SQL — carried into HybridSearchHit for HTTP adapter.
+  updated_at: string | Date | null;
+  version_no: number | string | null;
 };
+
+// Postgres returns timestamptz as Date via pg driver; JSON transport needs ISO string.
+function toIso(v: string | Date | null | undefined): string | undefined {
+  if (v == null) return undefined;
+  if (v instanceof Date) return v.toISOString();
+  return typeof v === 'string' ? v : undefined;
+}
 
 /**
  * Build HybridSearchHit[] from vector-only results (semantic mode).
@@ -30,7 +40,8 @@ export async function buildHitsFromVector(
   const versionIds = vectorResults.slice(0, limit).map((r) => r.versionId);
   const rows = await ds.query<Array<ArtifactMetaRow & { body: string }>>(
     `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
-            a.template_key, a.space_id, a.tags, LEFT(av.body, 300) AS body
+            a.template_key, a.space_id, a.tags, LEFT(av.body, 300) AS body,
+            a.updated_at, av.version_no
      FROM artifact_versions av
      JOIN artifacts a ON a.id = av.artifact_id
      WHERE av.id = ANY($1::bigint[])`,
@@ -56,6 +67,8 @@ export async function buildHitsFromVector(
         source: 'semantic',
         vectorRank: idx + 1,
         rrfScore: 1 / (60 + idx + 1),
+        updatedAt: toIso(r.updated_at),
+        versionNo: r.version_no != null ? Number(r.version_no) : undefined,
       };
       return [hit];
     });
@@ -75,7 +88,8 @@ export async function hydrateHits(
   const versionIds = merged.map((m) => m.versionId);
   const rows = await ds.query<Array<ArtifactMetaRow>>(
     `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
-            a.template_key, a.space_id, a.tags
+            a.template_key, a.space_id, a.tags,
+            a.updated_at, av.version_no
      FROM artifact_versions av
      JOIN artifacts a ON a.id = av.artifact_id
      WHERE av.id = ANY($1::bigint[])`,
@@ -109,6 +123,8 @@ export async function hydrateHits(
         ftsRank: m.ftsRank,
         vectorRank: m.vectorRank,
         rrfScore: m.rrfScore,
+        updatedAt: toIso(r.updated_at),
+        versionNo: r.version_no != null ? Number(r.version_no) : undefined,
       } as HybridSearchHit;
     })
     .filter((h): h is HybridSearchHit => h !== null);

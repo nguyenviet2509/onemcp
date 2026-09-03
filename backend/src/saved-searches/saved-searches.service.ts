@@ -2,7 +2,8 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RequestUser } from '../common/user-request';
-import { HybridSearchHit, SearchService } from '../search/search.service';
+import { SearchHit, SearchService } from '../search/search.service';
+import { hybridToSearchHits } from '../search/hybrid-to-search-hit';
 import { SaveSearchDto } from './dto/save-search.dto';
 import { SavedSearch } from './saved-search.entity';
 
@@ -46,18 +47,20 @@ export class SavedSearchesService {
   }
 
   // Re-run the stored query using hybrid SearchService.
-  async run(user: RequestUser, id: string): Promise<HybridSearchHit[]> {
+  // Returns SearchHit[] (portal contract) — adapter unifies HTTP response shape.
+  async run(user: RequestUser, id: string): Promise<SearchHit[]> {
     const saved = await this.repo.findOne({ where: { id } });
     if (!saved) throw new NotFoundException(`Saved search #${id} not found`);
     if (!isSameUserId(saved.userId, user.id)) throw new ForbiddenException('Not your saved search');
 
     const filters = saved.filters ?? {};
-    return this.searchService.hybrid(user, {
+    const hits = await this.searchService.hybrid(user, {
       query: saved.query,
       mode: saved.mode as 'hybrid' | 'fts' | 'semantic',
       spaceId: filters.spaceId,
       templateKey: filters.templateKey,
       tags: filters.tags,
     });
+    return hybridToSearchHits(hits);
   }
 }

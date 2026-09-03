@@ -4,6 +4,7 @@ import { CurrentUser } from '../access/current-user.decorator';
 import { RequestUser } from '../common/user-request';
 import { SpacesService } from '../spaces/spaces.service';
 import { SearchEntityKind, SearchMode, SearchService } from './search.service';
+import { hybridToSearchHits } from './hybrid-to-search-hit';
 
 const VALID_MODES = new Set<SearchMode>(['hybrid', 'fts', 'semantic']);
 
@@ -86,7 +87,10 @@ export class SearchController {
       ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
       : undefined;
 
-    return this.search.hybrid(user, {
+    // HTTP contract: /search always returns SearchHit[] shape (portal expects
+    // id/name/kind). Adapter unifies hybrid output → legacy SearchHit; keeps
+    // MCP tool handler (which consumes HybridSearchHit directly) unaffected.
+    const hits = await this.search.hybrid(user, {
       query: q,
       mode,
       spaceId,
@@ -94,6 +98,7 @@ export class SearchController {
       tags,
       limit,
     });
+    return hybridToSearchHits(hits);
   }
 
   private resolveServiceParam(raw: string | undefined): string | null {

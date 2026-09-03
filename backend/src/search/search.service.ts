@@ -56,6 +56,10 @@ export interface HybridSearchHit {
   ftsRank?: number;
   vectorRank?: number;
   rrfScore: number;
+  // Extended meta (2026-09-03) — populated by hydrate so HTTP adapter (hybrid-to-search-hit)
+  // can fill SearchHit.meta.updatedAt/versionNo used by portal search cards.
+  updatedAt?: string;
+  versionNo?: number;
 }
 
 const DEFAULT_KNOWN_SERVICES = ['postgres', 'redis', 'nginx', 'minio', 'backend', 'portal', 'gitlab'];
