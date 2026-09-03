@@ -167,14 +167,30 @@ function SearchPageInner() {
     []
   );
 
+  // URL is source of truth: whenever ?q/?mode/?space change (mount, back/fwd,
+  // sidebar Saved click, in-page router.replace), sync local state + auto-run
+  // search. Guard q<2 skip.
+  useEffect(() => {
+    const urlQ = (searchParams.get('q') ?? '').trim();
+    const rawM = searchParams.get('mode');
+    const urlMode: SearchMode =
+      rawM === 'fts' || rawM === 'semantic' ? rawM : 'hybrid';
+    const urlSpace = searchParams.get('space') ?? '';
+    setQ(urlQ);
+    setMode(urlMode);
+    setSpace(urlSpace);
+    if (urlQ.length >= 2) runSearch(urlQ, urlMode, urlSpace);
+  }, [searchParams, runSearch]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
     params.set('q', q);
     params.set('mode', mode);
     if (space) params.set('space', space); else params.delete('space');
+    // URL is single source of truth — effect above will detect the change and
+    // trigger runSearch. Direct call removed to avoid double-fetch.
     router.replace(`?${params.toString()}`, { scroll: false });
-    runSearch(q, mode, space);
   }
 
   async function handleSave() {
@@ -242,7 +258,14 @@ function SearchPageInner() {
           <button
             key={m}
             type="button"
-            onClick={() => { setMode(m); if (submitted && q.trim().length >= 2) runSearch(q, m, space); }}
+            onClick={() => {
+              // Update URL — effect will sync state + refetch. Keeps URL as
+              // single source of truth (Saved-search links stay accurate).
+              const params = new URLSearchParams(searchParams.toString());
+              params.set('mode', m);
+              if (q.trim()) params.set('q', q); else params.delete('q');
+              router.replace(`?${params.toString()}`, { scroll: false });
+            }}
             className={`rounded px-2 py-0.5 transition-colors ${
               mode === m
                 ? 'bg-muted text-foreground font-medium'
