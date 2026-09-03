@@ -5,6 +5,7 @@ import { SidebarBrand } from './sidebar-brand';
 import { SidebarNav } from './sidebar-nav';
 import { SidebarSecondaryNav } from './sidebar-secondary-nav';
 import { SidebarUserCard } from './sidebar-user-card';
+import { SavedSearchesList } from './saved-searches-list';
 
 interface AppShellProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ interface AppShellProps {
 // footer stays a single row per Option A mockup.
 export async function AppShell({ children }: AppShellProps) {
   const tSidebar = await getTranslations('sidebar');
+  const tNav = await getTranslations('nav');
   return (
     <div className="flex min-h-screen bg-background">
       {/* aside: 3-zone flex column — top fixed, middle scrollable, bottom fixed */}
@@ -48,6 +50,14 @@ export async function AppShell({ children }: AppShellProps) {
             <SectionHeader className="px-2.5">{tSidebar('navigate')}</SectionHeader>
           </div>
           <SidebarNav />
+
+          {/* Saved searches — user-scoped bookmarks; click to re-run query */}
+          <div className="mt-3 border-t border-sidebar-border pt-2">
+            <div className="px-2">
+              <SectionHeader className="px-2.5">{tNav('savedSearches')}</SectionHeader>
+            </div>
+            <SavedSearchesList />
+          </div>
 
           {/* Account nav */}
           <div className="mt-3 border-t border-sidebar-border pt-2">
