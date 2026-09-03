@@ -39,9 +39,11 @@ export async function buildHitsFromVector(
 
   const versionIds = vectorResults.slice(0, limit).map((r) => r.versionId);
   const rows = await ds.query<Array<ArtifactMetaRow & { body: string }>>(
+    // Note: artifacts."updatedAt" is quoted camelCase (legacy TypeORM naming),
+    // artifact_versions.version_no is snake_case. Alias to snake_case for row shape.
     `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
             a.template_key, a.space_id, a.tags, LEFT(av.body, 300) AS body,
-            a.updated_at, av.version_no
+            a."updatedAt" AS updated_at, av.version_no
      FROM artifact_versions av
      JOIN artifacts a ON a.id = av.artifact_id
      WHERE av.id = ANY($1::bigint[])`,
@@ -87,9 +89,10 @@ export async function hydrateHits(
 
   const versionIds = merged.map((m) => m.versionId);
   const rows = await ds.query<Array<ArtifactMetaRow>>(
+    // Note: artifacts."updatedAt" is quoted camelCase (legacy TypeORM naming).
     `SELECT a.id AS artifact_id, av.id AS version_id, a.title, a.slug,
             a.template_key, a.space_id, a.tags,
-            a.updated_at, av.version_no
+            a."updatedAt" AS updated_at, av.version_no
      FROM artifact_versions av
      JOIN artifacts a ON a.id = av.artifact_id
      WHERE av.id = ANY($1::bigint[])`,
