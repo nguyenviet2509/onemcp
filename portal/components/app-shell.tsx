@@ -44,8 +44,9 @@ export async function AppShell({ children }: AppShellProps) {
 
         </div>
 
-        {/* Middle zone — scrollable nav; min-h-0 ensures flex child can shrink */}
-        <div className="flex-1 min-h-0 overflow-y-auto pt-3">
+        {/* Middle zone — scrollable nav; min-h-0 ensures flex child can shrink.
+            scrollbar-thin: only visible when content overflows viewport. */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pt-3">
           <div className="px-2">
             <SectionHeader className="px-2.5">{tSidebar('navigate')}</SectionHeader>
           </div>

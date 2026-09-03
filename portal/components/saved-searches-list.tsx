@@ -67,33 +67,37 @@ export function SavedSearchesList() {
       )}
 
       {!loading && items.length > 0 && (
-        <ul className="space-y-0.5">
-          {items.map((s) => (
-            <li key={s.id} className="group flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => router.push(savedToUrl(s))}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left text-xs hover:bg-muted truncate"
-                title={s.query}
-              >
-                <span className="truncate">{s.name}</span>
-                {s.mode && (
-                  <Badge variant="outline" className="shrink-0 font-mono px-1 py-0">
-                    {s.mode}
-                  </Badge>
-                )}
-              </button>
-              <button
-                type="button"
-                aria-label={`Delete "${s.name}"`}
-                onClick={() => setDeleteTarget(s)}
-                className="hidden shrink-0 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:block"
-              >
-                del
-              </button>
-            </li>
-          ))}
-        </ul>
+        // Cap height so long lists don't push the account section off-screen;
+        // local scroll with a thin, muted scrollbar (see globals.css .scrollbar-thin).
+        <div className="max-h-64 overflow-y-auto scrollbar-thin pr-0.5">
+          <ul className="space-y-0.5">
+            {items.map((s) => (
+              <li key={s.id} className="group flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => router.push(savedToUrl(s))}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left text-xs hover:bg-muted truncate"
+                  title={s.query}
+                >
+                  <span className="truncate">{s.name}</span>
+                  {s.mode && (
+                    <Badge variant="outline" className="shrink-0 font-mono px-1 py-0">
+                      {s.mode}
+                    </Badge>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete "${s.name}"`}
+                  onClick={() => setDeleteTarget(s)}
+                  className="hidden shrink-0 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:block"
+                >
+                  del
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Confirm delete dialog */}
