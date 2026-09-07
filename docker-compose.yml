@@ -141,8 +141,8 @@ services:
       # ENABLED=false → ZitadelJwtMiddleware skip, IAP path only.
       # ENABLED=true → verify Bearer JWT từ portal, extract roles claim.
       ZITADEL_OIDC_ENABLED: ${ZITADEL_OIDC_ENABLED:-false}
-      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-http://10.200.0.125}
-      ZITADEL_JWKS_URI: ${ZITADEL_JWKS_URI:-http://10.200.0.125/oauth/v2/keys}
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-https://zitadel.000nethost.com}
+      ZITADEL_JWKS_URI: ${ZITADEL_JWKS_URI:-https://zitadel.000nethost.com/oauth/v2/keys}
       ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
@@ -189,7 +189,7 @@ services:
       # v5 internal URL construction dùng 0.0.0.0:3000 → callback wrong → redirect loop.
       # Set = public URL, NextAuth build absolute callback đúng.
       AUTH_URL: ${AUTH_URL:-https://oneconnector.000nethost.com}
-      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-http://10.200.0.125}
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-https://zitadel.000nethost.com}
       ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
       ZITADEL_CLIENT_SECRET: ${ZITADEL_CLIENT_SECRET:-}
     ports:

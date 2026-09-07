@@ -52,8 +52,8 @@ export const envSchema = z.object({
   // Backend verify JWKS + parse claim roles (Zitadel role catalog OneMCP Portal).
   // Dual-mode với IAP: ENABLED=false → skip middleware, fall through TrustUserMiddleware.
   ZITADEL_OIDC_ENABLED: z.enum(['true', 'false']).default('false'),
-  ZITADEL_ISSUER: z.string().default('http://10.200.0.125'),
-  ZITADEL_JWKS_URI: z.string().default('http://10.200.0.125/oauth/v2/keys'),
+  ZITADEL_ISSUER: z.string().default('https://zitadel.000nethost.com'),
+  ZITADEL_JWKS_URI: z.string().default('https://zitadel.000nethost.com/oauth/v2/keys'),
   ZITADEL_CLIENT_ID: z.string().default(''),
 
   // OAuth 2.1 AS metadata (RFC 8414) + protected resource metadata (RFC 9728).

@@ -14,8 +14,8 @@ import { RoleCode } from '../users/entities/role.entity';
 //
 // Env:
 //   ZITADEL_OIDC_ENABLED     — bật/tắt middleware (dual-mode với IAP)
-//   ZITADEL_ISSUER           — http://10.200.0.125 (khớp iss claim)
-//   ZITADEL_JWKS_URI         — http://10.200.0.125/oauth/v2/keys
+//   ZITADEL_ISSUER           — https://zitadel.000nethost.com (khớp iss claim)
+//   ZITADEL_JWKS_URI         — https://zitadel.000nethost.com/oauth/v2/keys
 //   ZITADEL_CLIENT_ID        — audience check (aud claim phải chứa client_id)
 //
 // Role mapping Zitadel → OneMCP RoleCode:

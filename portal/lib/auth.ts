@@ -9,7 +9,7 @@
 
 import NextAuth, { type NextAuthConfig } from 'next-auth';
 
-const issuer = process.env.ZITADEL_ISSUER ?? 'http://10.200.0.125';
+const issuer = process.env.ZITADEL_ISSUER ?? 'https://zitadel.000nethost.com';
 
 // Extract Zitadel role keys từ claim raw. Same logic backend zitadel-jwt.middleware.ts.
 function extractRoles(profile: Record<string, unknown>): string[] {

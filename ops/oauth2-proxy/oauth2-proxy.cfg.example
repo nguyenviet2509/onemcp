@@ -2,7 +2,7 @@
 # oauth2-proxy.cfg is gitignored (contains client_secret + cookie_secret)
 
 provider = "oidc"
-oidc_issuer_url = "http://10.200.0.125"
+oidc_issuer_url = "https://zitadel.000nethost.com"
 insecure_oidc_allow_unverified_email = true
 skip_oidc_discovery = false
 
