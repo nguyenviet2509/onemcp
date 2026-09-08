@@ -59,6 +59,30 @@ export class AuditLogService {
       this.log.error(`audit_insert_fail action=${entry.action}: ${err.message}`);
     });
 
+    // High-volume `mcp.tool.call` → publish COMPACT DIGEST only (not full payload).
+    // Central RBAC gets tamper-evident hash chain over metadata (ts, actor, tool,
+    // args_hash) — enough for compliance + evidence-erasure protection. Full args
+    // stays local (Phase 07 portal reads local; cross-reference by args_hash).
+    // Red-team F3 fix: was "skip publish" — inverted to prevent deletion vector.
+    if (entry.action === 'mcp.tool.call') {
+      const before = entry.before as { args_hash?: string } | undefined;
+      const after = entry.after as { status?: string; duration_ms?: number } | undefined;
+      this.centralPublisher.publish({
+        action: entry.action,
+        target_type: entry.resourceType ?? 'n/a',
+        target_id: 'digest', // marker for compact form
+        actor_id: entry.actor?.id != null ? String(entry.actor.id) : 'service',
+        actor_type: entry.actor ? 'user' : 'service',
+        actor_email: toActorEmail(entry.actor?.username, this.emailDomain),
+        before_state: { args_hash: before?.args_hash }, // hash only, never raw args
+        after_state: { status: after?.status, duration_ms: after?.duration_ms },
+        ip: entry.ip,
+        session_id: entry.sessionId,
+      });
+      return;
+    }
+
+    // State-change events (oauth.*, project.*, user.*, sync.*) — full payload publish
     this.centralPublisher.publish({
       action: entry.action,
       target_type: entry.resourceType ?? 'n/a',
