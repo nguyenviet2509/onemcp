@@ -148,6 +148,13 @@ services:
       # Empty URL/TOKEN disables (local audit_events remains as fallback).
       CENTRAL_RBAC_AUDIT_INGEST_URL: ${CENTRAL_RBAC_AUDIT_INGEST_URL:-}
       CENTRAL_RBAC_AUDIT_INGEST_TOKEN: ${CENTRAL_RBAC_AUDIT_INGEST_TOKEN:-}
+      # MCP tool call audit (plan 260908-1552). Master flag OFF by default —
+      # enable only after portal /audit UI is live to avoid data-with-no-viewer.
+      # HMAC secret required when ENABLED=true (>=32 chars, openssl rand -base64 48).
+      MCP_TOOL_AUDIT_ENABLED: ${MCP_TOOL_AUDIT_ENABLED:-false}
+      MCP_AUDIT_HASH_SECRET: ${MCP_AUDIT_HASH_SECRET:-}
+      MCP_TOOL_AUDIT_RETENTION_DAYS: ${MCP_TOOL_AUDIT_RETENTION_DAYS:-90}
+      MCP_TOOL_AUDIT_RETENTION_ENABLED: ${MCP_TOOL_AUDIT_RETENTION_ENABLED:-true}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
