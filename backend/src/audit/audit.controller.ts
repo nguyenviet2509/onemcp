@@ -45,11 +45,8 @@ export class AuditController {
       from: dto.from ? new Date(dto.from) : undefined,
       to: dto.to ? new Date(dto.to) : undefined,
       status: dto.status,
-      limit: dto.limit ?? 50,
-      cursor:
-        dto.cursorTs && dto.cursorId
-          ? { ts: new Date(dto.cursorTs), id: dto.cursorId }
-          : undefined,
+      page: dto.page ?? 1,
+      pageSize: dto.pageSize ?? 20,
     });
   }
 

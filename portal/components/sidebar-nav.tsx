@@ -26,8 +26,8 @@ const NAV_ITEMS: Array<{
   { href: '/search',           key: 'search',    icon: Search },
   { href: '/skills',           key: 'skills',    icon: Wrench },
   { href: '/projects',         key: 'projects',  icon: Boxes },
-  { href: '/audit',            key: 'audit',     icon: Shield, adminOnly: true },
   { href: '/artifacts/review', key: 'review',    icon: ClipboardCheck, showCount: true },
+  { href: '/audit',            key: 'audit',     icon: Shield, adminOnly: true },
 ];
 
 export function SidebarNav() {

@@ -35,19 +35,18 @@ export class ListMcpCallsDto {
   @IsIn(['ok', 'error'])
   status?: 'ok' | 'error';
 
+  // 1-based page number. Client sends 1, 2, 3, ...
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(500)
-  limit?: number;
-
-  // Keyset cursor — pass back nextCursor.ts + nextCursor.id from previous page
-  @IsOptional()
-  @IsISO8601()
-  cursorTs?: string;
+  @Max(100000)
+  page?: number;
 
   @IsOptional()
-  @Matches(/^\d{1,20}$/, { message: 'cursorId must be numeric string' })
-  cursorId?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(10)
+  @Max(100)
+  pageSize?: number;
 }

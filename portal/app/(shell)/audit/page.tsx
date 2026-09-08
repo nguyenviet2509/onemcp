@@ -3,18 +3,20 @@
 import { useEffect, useState } from 'react';
 import { ApiError, apiFetch } from '@/lib/api-client';
 import {
-  AuditListResponse,
   AuditMcpCallRow,
   listMcpCallUsers,
   listMcpCalls,
   ListMcpCallsParams,
 } from '@/lib/api/audit';
+import { Pagination } from '@/components/pagination';
 
 interface Me {
   id: number;
   username: string;
   roles: string[];
 }
+
+type PageSize = 10 | 20 | 50 | 100;
 
 const KNOWN_TOOLS = [
   'list_skills',
@@ -40,7 +42,7 @@ export default function AuditPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [users, setUsers] = useState<string[]>([]);
   const [rows, setRows] = useState<AuditMcpCallRow[]>([]);
-  const [nextCursor, setNextCursor] = useState<{ ts: string; id: string } | undefined>(undefined);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<AuditMcpCallRow | null>(null);
@@ -51,6 +53,10 @@ export default function AuditPage() {
   const [toolFilter, setToolFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'' | 'ok' | 'error'>('');
 
+  // Pagination state (shared Pagination component pattern)
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(20);
+
   const isAdmin =
     me?.roles?.some((r) => r === 'super-admin' || r === 'dept-admin') ?? false;
 
@@ -60,52 +66,29 @@ export default function AuditPage() {
       .catch(() => setMe(null));
   }, []);
 
-  const refresh = () => {
+  // Fetch on any filter or pagination change
+  useEffect(() => {
     if (!isAdmin) return;
     setLoading(true);
     setError(null);
-    setNextCursor(undefined);
     const from = new Date(Date.now() - rangeHours * 3600_000).toISOString();
-    const params: ListMcpCallsParams = { from, limit: 100 };
-    if (userFilter) params.user = userFilter;
-    if (toolFilter) params.tool = toolFilter;
-    if (statusFilter) params.status = statusFilter;
-    listMcpCalls(params)
-      .then((res: AuditListResponse) => {
-        setRows(res.rows);
-        setNextCursor(res.nextCursor);
-      })
-      .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
-      .finally(() => setLoading(false));
-  };
-
-  const loadMore = () => {
-    if (!nextCursor || loading) return;
-    setLoading(true);
-    const from = new Date(Date.now() - rangeHours * 3600_000).toISOString();
-    const params: ListMcpCallsParams = {
-      from,
-      limit: 100,
-      cursorTs: nextCursor.ts,
-      cursorId: nextCursor.id,
-    };
+    const params: ListMcpCallsParams = { from, page, pageSize };
     if (userFilter) params.user = userFilter;
     if (toolFilter) params.tool = toolFilter;
     if (statusFilter) params.status = statusFilter;
     listMcpCalls(params)
       .then((res) => {
-        setRows((prev) => [...prev, ...res.rows]);
-        setNextCursor(res.nextCursor);
+        setRows(res.rows);
+        setTotal(res.total);
       })
       .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
       .finally(() => setLoading(false));
-  };
+  }, [isAdmin, rangeHours, userFilter, toolFilter, statusFilter, page, pageSize]);
 
-  // Initial + on filter change
+  // Reset to page 1 whenever filters change
   useEffect(() => {
-    if (isAdmin) refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, rangeHours, userFilter, toolFilter, statusFilter]);
+    setPage(1);
+  }, [rangeHours, userFilter, toolFilter, statusFilter]);
 
   // User dropdown values
   useEffect(() => {
@@ -116,6 +99,25 @@ export default function AuditPage() {
         // Empty dropdown OK — user can still filter by typing
       });
   }, [isAdmin]);
+
+  const refresh = () => {
+    // Force re-fetch by triggering effect via page bump (harmless if already 1)
+    setPage((p) => p);
+    // Above no-ops setState if unchanged. Use synthetic trigger.
+    setLoading(true);
+    const from = new Date(Date.now() - rangeHours * 3600_000).toISOString();
+    const params: ListMcpCallsParams = { from, page, pageSize };
+    if (userFilter) params.user = userFilter;
+    if (toolFilter) params.tool = toolFilter;
+    if (statusFilter) params.status = statusFilter;
+    listMcpCalls(params)
+      .then((res) => {
+        setRows(res.rows);
+        setTotal(res.total);
+      })
+      .catch((e) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
+      .finally(() => setLoading(false));
+  };
 
   if (me && !isAdmin) {
     return (
@@ -268,19 +270,14 @@ export default function AuditPage() {
         </table>
       </div>
 
-      {/* Pagination + count */}
-      <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
-        <span>Showing {rows.length} row(s)</span>
-        {nextCursor && (
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="px-3 py-1 rounded border text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            {loading ? 'Loading…' : 'Load more'}
-          </button>
-        )}
-      </div>
+      {/* Shared Pagination — same style as Artifacts/Skills */}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
 
       {detail && <DetailModal row={detail} onClose={() => setDetail(null)} />}
     </div>

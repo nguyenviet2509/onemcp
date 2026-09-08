@@ -22,12 +22,16 @@ export interface AuditMcpCallRow {
 
 export interface AuditListResponse {
   rows: AuditMcpCallRow[];
-  nextCursor?: { ts: string; id: string };
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 // Read-side service for /api/audit/mcp-calls (Phase 07 portal).
-// F10 red-team fix: keyset pagination (WHERE (ts, id) < (:cts, :cid)) instead
-// of offset — stable under concurrent inserts (avoids duplicates/skips).
+// Uses page-based offset pagination to match shared Pagination component
+// used by Artifacts/Skills UI. Trade-off vs keyset: rows inserted during
+// active paging may cause minor drift (offset shift), acceptable since
+// dept-admin sessions are short and audit rows are append-only.
 // F12 red-team fix: listUsers() cached 5min, capped at 1000 users.
 @Injectable()
 export class AuditQueryService {
@@ -45,8 +49,8 @@ export class AuditQueryService {
     from?: Date;
     to?: Date;
     status?: 'ok' | 'error';
-    limit: number;
-    cursor?: { ts: Date; id: string };
+    page: number;      // 1-based
+    pageSize: number;  // clamped [10, 100] by DTO
   }): Promise<AuditListResponse> {
     const qb = this.repo
       .createQueryBuilder('e')
@@ -59,24 +63,19 @@ export class AuditQueryService {
     // Status stored in JSONB after.status — filter with jsonb operator.
     if (filter.status) qb.andWhere(`e.after->>'status' = :st`, { st: filter.status });
 
-    // F10: keyset cursor — deterministic ordering with (ts, id) tiebreak
-    if (filter.cursor) {
-      qb.andWhere('(e.ts, e.id) < (:cts, :cid)', {
-        cts: filter.cursor.ts,
-        cid: filter.cursor.id,
-      });
-    }
+    // Deterministic ordering (ts, id) so page boundaries are stable within a snapshot.
+    qb.orderBy('e.ts', 'DESC').addOrderBy('e.id', 'DESC');
 
-    qb.orderBy('e.ts', 'DESC').addOrderBy('e.id', 'DESC').limit(filter.limit + 1);
-    const raw = await qb.getMany();
-    const hasMore = raw.length > filter.limit;
-    const rows = raw.slice(0, filter.limit);
-    const last = rows[rows.length - 1];
+    const offset = (filter.page - 1) * filter.pageSize;
+    qb.skip(offset).take(filter.pageSize);
+
+    const [rows, total] = await qb.getManyAndCount();
 
     return {
       rows: rows.map(toRow),
-      nextCursor:
-        hasMore && last ? { ts: last.ts.toISOString(), id: last.id } : undefined,
+      total,
+      page: filter.page,
+      pageSize: filter.pageSize,
     };
   }
 

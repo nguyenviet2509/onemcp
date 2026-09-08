@@ -16,7 +16,9 @@ export interface AuditMcpCallRow {
 
 export interface AuditListResponse {
   rows: AuditMcpCallRow[];
-  nextCursor?: { ts: string; id: string };
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface ListMcpCallsParams {
@@ -25,9 +27,8 @@ export interface ListMcpCallsParams {
   from?: string; // ISO
   to?: string; // ISO
   status?: 'ok' | 'error';
-  limit?: number;
-  cursorTs?: string;
-  cursorId?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export function listMcpCalls(params: ListMcpCallsParams = {}): Promise<AuditListResponse> {
