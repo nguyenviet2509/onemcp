@@ -1,17 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ARTIFACT_TYPES, ArtifactType } from '../artifacts/artifact-type.enum';
 import { ArtifactsService } from '../artifacts/artifacts.service';
 import { sanitizeRunbookOutput } from '../artifacts/runbook-sanitize.util';
 import { getTemplate } from '../artifacts/templates/template-registry';
+import { AuditLogService } from '../audit/audit-log.service';
 import { AuthedRequest } from '../common/user-request';
+import { MetricsService } from '../metrics/metrics.service';
 import { SearchService } from '../search/search.service';
 import { Skill } from '../skills/entities/skill.entity';
 import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillsService } from '../skills/skills.service';
 import { SpacesService } from '../spaces/spaces.service';
 import { TemplatesService } from '../templates/templates.service';
+import { initHashSecret, redactArgs, sanitizeForLog } from './mcp-args-redactor';
 import { McpToolDefinition, McpToolResult } from './mcp-jsonrpc.types';
 import { handleSearchTool } from './tools/search-tool-handler';
 import { handleSubmitArtifactTool } from './tools/submit-artifact-tool-handler';
@@ -19,8 +23,9 @@ import { handleSubmitArtifactTool } from './tools/submit-artifact-tool-handler';
 // MCP tools exposed to AI agents. Dept-scoped (từ req.user).
 // Tool naming theo MCP convention: snake_case.
 @Injectable()
-export class McpToolsService {
+export class McpToolsService implements OnModuleInit {
   private readonly log = new Logger(McpToolsService.name);
+  private auditEnabled = false;
 
   constructor(
     private readonly skills: SkillsService,
@@ -30,7 +35,22 @@ export class McpToolsService {
     private readonly templatesService: TemplatesService,
     @InjectRepository(SkillVersion) private readonly versions: Repository<SkillVersion>,
     @InjectRepository(Skill) private readonly skillsRepo: Repository<Skill>,
+    private readonly audit: AuditLogService,
+    private readonly metrics: MetricsService,
+    private readonly config: ConfigService,
   ) {}
+
+  onModuleInit(): void {
+    this.auditEnabled =
+      (this.config.get<string>('MCP_TOOL_AUDIT_ENABLED', 'false') || 'false').toLowerCase() ===
+      'true';
+    if (this.auditEnabled) {
+      // F6: HMAC secret required only when audit is on. Fail-fast at boot if missing/short.
+      const secret = this.config.get<string>('MCP_AUDIT_HASH_SECRET', '') || '';
+      initHashSecret(secret);
+      this.log.log(`MCP tool audit ENABLED (HMAC hash active)`);
+    }
+  }
 
   definitions(): McpToolDefinition[] {
     return [
@@ -164,16 +184,70 @@ export class McpToolsService {
 
   async call(name: string, args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
     if (!req.user) return this.errorResult('unauthenticated — missing identity header');
+    if (!this.auditEnabled) {
+      return this.dispatch(name, args, req);
+    }
+
+    // Audit-wrapped path — record per-call metadata for compliance/abuse/debug.
+    // Redacted args + duration + status stored to audit_events (Phase 03/04).
+    const startedAt = Date.now();
+    const safeName = sanitizeForLog(name, 64); // F14: strip control chars from user input
+    const redacted = redactArgs(name, args);
+    let result: McpToolResult | undefined;
+    let status: 'ok' | 'error' = 'ok';
+    let errorMsg: string | undefined;
+    try {
+      result = await this.dispatch(name, args, req);
+      if (result?.isError) {
+        status = 'error';
+        errorMsg = sanitizeForLog(extractErrorText(result), 200);
+      }
+    } catch (err: unknown) {
+      status = 'error';
+      errorMsg = sanitizeForLog(err instanceof Error ? err.message : String(err), 200);
+      throw err; // Rethrow — audit is side-effect, never swallow tool errors
+    } finally {
+      const durationMs = Date.now() - startedAt;
+      try {
+        // F11: wrap in try/catch — audit bug must NOT crash tool call path
+        this.audit.record({
+          actor: req.user,
+          action: 'mcp.tool.call',
+          resourceType: `tool:${safeName}`,
+          resourceId: extractResourceId(name, args),
+          before: { args: redacted.fields, args_hash: redacted.args_hash },
+          after: {
+            status,
+            duration_ms: durationMs,
+            error: errorMsg,
+            result_count: result ? extractResultCount(result) : undefined,
+          },
+          ip: req.clientIp,
+          // A8: fallback to portal:{username} for trust-header path where clientId is undefined
+          sessionId: req.user.clientId ?? `portal:${req.user.username}`,
+        });
+        this.metrics.auditWritten.inc({ tool: safeName, status });
+      } catch (auditErr) {
+        this.log.error(
+          `audit_record_threw tool=${safeName}: ${sanitizeForLog(String(auditErr), 200)}`,
+        );
+        this.metrics.auditWriteFailures.inc({ tool: safeName, status });
+      }
+    }
+    return result ?? this.errorResult('unknown dispatch failure');
+  }
+
+  private dispatch(name: string, args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
     switch (name) {
-      case 'list_skills':         return this.listSkills(args, req);
-      case 'load_skill':          return this.loadSkill(args, req);
-      case 'list_artifacts':      return this.listArtifacts(args, req);
-      case 'get_artifact':        return this.getArtifact(args, req);
-      case 'get_artifact_template': return this.getTemplateTool(args);
-      case 'search':              return handleSearchTool(args, req, this.searchSvc, this.spacesService);
-      case 'submit_artifact':     return handleSubmitArtifactTool(args, req, this.artifacts, this.spacesService, this.templatesService);
-      case 'load_runbook':        return this.loadRunbookTool(args, req);
-      default:                    return this.errorResult(`unknown tool: ${name}`);
+      case 'list_skills':           return this.listSkills(args, req);
+      case 'load_skill':            return this.loadSkill(args, req);
+      case 'list_artifacts':        return this.listArtifacts(args, req);
+      case 'get_artifact':          return this.getArtifact(args, req);
+      case 'get_artifact_template': return Promise.resolve(this.getTemplateTool(args));
+      case 'search':                return handleSearchTool(args, req, this.searchSvc, this.spacesService);
+      case 'submit_artifact':       return handleSubmitArtifactTool(args, req, this.artifacts, this.spacesService, this.templatesService);
+      case 'load_runbook':          return this.loadRunbookTool(args, req);
+      default:                      return Promise.resolve(this.errorResult(`unknown tool: ${name}`));
     }
   }
 
@@ -315,4 +389,28 @@ export class McpToolsService {
   private errorResult(msg: string): McpToolResult {
     return { content: [{ type: 'text', text: `Error: ${msg}` }], isError: true };
   }
+}
+
+// --- Audit helpers (module-scoped, no state) ---
+
+// Extract resource id from args when tool identifies a single target.
+function extractResourceId(name: string, args: Record<string, unknown>): string | undefined {
+  if (name === 'get_artifact' && args.id != null) return String(args.id);
+  if (name === 'load_skill' && typeof args.name === 'string') return args.name;
+  if (name === 'load_runbook' && typeof args.name === 'string') return args.name;
+  return undefined;
+}
+
+// Parse "Found N ..." pattern from list-style tool results for audit summary.
+function extractResultCount(result: McpToolResult): number | undefined {
+  const first = result.content?.[0];
+  const text = first && first.type === 'text' ? first.text : '';
+  const m = text.match(/^Found (\d+)/);
+  return m ? Number(m[1]) : undefined;
+}
+
+// Extract text from first content block for error message capture.
+function extractErrorText(result: McpToolResult): string {
+  const first = result.content?.[0];
+  return first && first.type === 'text' ? first.text : 'unknown error';
 }

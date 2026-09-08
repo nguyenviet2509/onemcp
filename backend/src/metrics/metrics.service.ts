@@ -26,6 +26,12 @@ export class MetricsService implements OnModuleInit {
   readonly alertMatches: Counter<string>;
   readonly alertSlackFailures: Counter<string>;
 
+  // MCP tool call audit counters (plan 260908-1552).
+  // F11 red-team fix: track audit write outcomes separately from tool call counter
+  // (onemcp_mcp_tool_calls_total). Diverge = audit path bug; alert if failures >0 5m.
+  readonly auditWritten: Counter<string>;
+  readonly auditWriteFailures: Counter<string>;
+
   constructor() {
     collectDefaultMetrics({ register: this.registry, prefix: 'onemcp_' });
 
@@ -107,6 +113,19 @@ export class MetricsService implements OnModuleInit {
       name: 'onemcp_alert_slack_failures_total',
       help: 'Alertmanager Slack post failures per alertname',
       labelNames: ['alertname'],
+      registers: [this.registry],
+    });
+
+    this.auditWritten = new Counter({
+      name: 'onemcp_audit_written_total',
+      help: 'Audit rows persisted for mcp.tool.call events',
+      labelNames: ['tool', 'status'],
+      registers: [this.registry],
+    });
+    this.auditWriteFailures = new Counter({
+      name: 'onemcp_audit_write_failures_total',
+      help: 'Audit write failures for mcp.tool.call events (alert >0 for 5m)',
+      labelNames: ['tool', 'status'],
       registers: [this.registry],
     });
   }
