@@ -144,6 +144,10 @@ services:
       ZITADEL_ISSUER: ${ZITADEL_ISSUER:-https://zitadel.000nethost.com}
       ZITADEL_JWKS_URI: ${ZITADEL_JWKS_URI:-https://zitadel.000nethost.com/oauth/v2/keys}
       ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
+      # Central RBAC audit ingress — fire-and-forget publish for cross-app UI.
+      # Empty URL/TOKEN disables (local audit_events remains as fallback).
+      CENTRAL_RBAC_AUDIT_INGEST_URL: ${CENTRAL_RBAC_AUDIT_INGEST_URL:-}
+      CENTRAL_RBAC_AUDIT_INGEST_TOKEN: ${CENTRAL_RBAC_AUDIT_INGEST_TOKEN:-}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
