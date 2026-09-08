@@ -28,12 +28,14 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
 
   // Run migrations pending trước khi accept traffic.
+  // transaction: 'each' — cho phép per-migration override transaction mode.
+  // Cần cho migrations dùng CREATE INDEX CONCURRENTLY (transaction = false).
   const ds = app.get(DataSource);
   const pending = await ds.showMigrations();
   if (pending) {
     const logger = app.get(Logger);
     logger.log('Running pending migrations...', 'Bootstrap');
-    await ds.runMigrations();
+    await ds.runMigrations({ transaction: 'each' });
     logger.log('Migrations complete', 'Bootstrap');
   }
 
