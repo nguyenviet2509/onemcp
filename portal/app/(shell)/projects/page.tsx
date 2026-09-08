@@ -270,12 +270,6 @@ export default function ProjectsPage() {
                               { label: 'Reject', variant: 'bad' as const, onClick: () => onReject(p.id) },
                             ]
                           : []),
-                        ...(isAdmin && (p.status === 'active' || p.status === 'approved')
-                          ? [{ label: 'Suspend', variant: 'warn' as const, onClick: () => onSuspend(p.id) }]
-                          : []),
-                        ...(isAdmin && p.status === 'suspended'
-                          ? [{ label: 'Resume', variant: 'ok' as const, onClick: () => onResume(p.id) }]
-                          : []),
                         ...(canEdit
                           ? [
                               { label: 'Edit', variant: 'neutral' as const, onClick: () => setEditing(p) },
@@ -293,6 +287,12 @@ export default function ProjectsPage() {
                                 },
                               },
                             ]
+                          : []),
+                        ...(isAdmin && (p.status === 'active' || p.status === 'approved')
+                          ? [{ label: 'Suspend', variant: 'warn' as const, onClick: () => onSuspend(p.id) }]
+                          : []),
+                        ...(isAdmin && p.status === 'suspended'
+                          ? [{ label: 'Resume', variant: 'ok' as const, onClick: () => onResume(p.id) }]
                           : []),
                         ...(isAdmin
                           ? [{ label: 'Delete', variant: 'bad' as const, onClick: () => onDelete(p) }]
