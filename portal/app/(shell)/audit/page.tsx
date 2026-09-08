@@ -284,9 +284,22 @@ export default function AuditPage() {
   );
 }
 
+// Format ISO timestamp as UTC+7 (Asia/Ho_Chi_Minh) — matches Vietnam operator TZ.
+const TS_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
+
 function fmtTs(iso: string): string {
-  const d = new Date(iso);
-  return d.toISOString().replace('T', ' ').slice(0, 19) + 'Z';
+  const parts = TS_FMT.formatToParts(new Date(iso));
+  const g = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  return `${g('year')}-${g('month')}-${g('day')} ${g('hour')}:${g('minute')}:${g('second')} +07`;
 }
 
 function StatusPill({ status }: { status: string }) {
