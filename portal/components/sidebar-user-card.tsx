@@ -113,16 +113,27 @@ export function SidebarUserCard() {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          {/* Sign out — OIDC: NextAuth signOut() (POST + CSRF). IAP: anchor tới oauth2-proxy. */}
+          {/* Sign out — fire audit event trước khi clear session.
+              Backend capture real IP (browser → nginx → backend qua X-Forwarded-For)
+              + username, publisher tự forward Central RBAC (bù cho Zitadel Actions
+              không emit event khi NextAuth chỉ clear cookie local). */}
           {AUTH_MODE === 'oidc' ? (
             <DropdownMenuItem
-              render={<button type="button" onClick={() => signOut({ callbackUrl: '/' })} />}
+              render={<button type="button" onClick={() => {
+                void apiFetch('/auth/logout-event', { method: 'POST', body: JSON.stringify({}) })
+                  .catch(() => {}) // audit fail không được block signOut
+                  .finally(() => signOut({ callbackUrl: '/' }));
+              }} />}
             >
               <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
               <span>{tCommon('signOut')}</span>
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem render={<a href="/oauth2/sign_out?rd=/" />}>
+            <DropdownMenuItem
+              render={<a href="/oauth2/sign_out?rd=/" onClick={() => {
+                void apiFetch('/auth/logout-event', { method: 'POST', body: JSON.stringify({}) }).catch(() => {});
+              }} />}
+            >
               <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
               <span>{tCommon('signOut')}</span>
             </DropdownMenuItem>

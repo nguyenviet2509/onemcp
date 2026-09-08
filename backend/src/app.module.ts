@@ -13,6 +13,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ArtifactsModule } from './artifacts/artifacts.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { AuditModule } from './audit/audit.module';
+import { AuthModule } from './auth/auth.module';
 import { dataSourceOptions } from './db/data-source';
 import { DepartmentsModule } from './departments/departments.module';
 import { HealthModule } from './health/health.module';
@@ -67,6 +68,7 @@ import { OAuthModule } from './oauth/oauth.module';
     UsersModule,
     AccessModule,
     AuditModule,
+    AuthModule,
     MetricsModule,
     StorageModule,
     SkillsModule,
