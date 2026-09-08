@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditEvent } from './entities/audit-event.entity';
@@ -16,14 +17,27 @@ export interface AuditWrite {
   sessionId?: string;
 }
 
+// Enrich bare username → full email for consistency với Zitadel-source events
+// (Zitadel gửi email full, OneMCP local users chỉ có username local-part).
+// Configurable qua AUDIT_ACTOR_EMAIL_DOMAIN env (default 'inet.vn' internal).
+function toActorEmail(username: string | null | undefined, domain: string): string {
+  if (!username) return '';
+  if (username.includes('@')) return username;
+  return `${username}@${domain}`;
+}
+
 @Injectable()
 export class AuditLogService {
   private readonly log = new Logger(AuditLogService.name);
+  private readonly emailDomain: string;
 
   constructor(
     @InjectRepository(AuditEvent) private readonly repo: Repository<AuditEvent>,
     private readonly centralPublisher: CentralRbacAuditPublisher,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.emailDomain = config.get<string>('AUDIT_ACTOR_EMAIL_DOMAIN', 'inet.vn').trim();
+  }
 
   // Fire-and-forget dual-write:
   //   1. Local audit_events (fallback if central unreachable)
@@ -47,11 +61,11 @@ export class AuditLogService {
 
     this.centralPublisher.publish({
       action: entry.action,
-      target_type: entry.resourceType ?? 'unknown',
-      target_id: entry.resourceId != null ? String(entry.resourceId) : 'unknown',
+      target_type: entry.resourceType ?? 'n/a',
+      target_id: entry.resourceId != null ? String(entry.resourceId) : 'n/a',
       actor_id: entry.actor?.id != null ? String(entry.actor.id) : 'service',
       actor_type: entry.actor ? 'user' : 'service',
-      actor_email: entry.actor?.username ?? '',
+      actor_email: toActorEmail(entry.actor?.username, this.emailDomain),
       before_state: entry.before,
       after_state: entry.after,
       ip: entry.ip,
