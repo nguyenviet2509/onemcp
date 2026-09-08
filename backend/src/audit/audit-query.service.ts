@@ -87,10 +87,14 @@ export class AuditQueryService {
     if (this.usersCache && now - this.usersCache.at < AuditQueryService.USERS_CACHE_TTL_MS) {
       return this.usersCache.users;
     }
+    // Note: e.actorUsername (TypeORM QB alias) maps to "actorUsername" quoted column.
+    // Raw string `e.actorUsername IS NOT NULL` works because TypeORM QB parses aliases,
+    // but keep quoted form defensively.
     const res = await this.repo
       .createQueryBuilder('e')
       .select('DISTINCT e.actorUsername', 'username')
-      .where(`e.action = 'mcp.tool.call' AND e.actorUsername IS NOT NULL`)
+      .where(`e.action = :action`, { action: 'mcp.tool.call' })
+      .andWhere(`e.actorUsername IS NOT NULL`)
       .limit(AuditQueryService.USERS_MAX)
       .getRawMany();
     const users = res

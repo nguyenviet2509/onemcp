@@ -26,9 +26,11 @@ export class AuditEventsMcpToolIndex1722500000000 implements MigrationInterface 
       await q.query(`DROP INDEX CONCURRENTLY IF EXISTS audit_events_actor_action_ts_idx`);
     }
 
+    // NOTE: audit_events columns are camelCase-quoted in Postgres (TypeORM default
+    // when no naming strategy is set). Quote them explicitly.
     await q.query(`
       CREATE INDEX CONCURRENTLY IF NOT EXISTS audit_events_actor_action_ts_idx
-      ON audit_events (actor_username, action, ts DESC)
+      ON audit_events ("actorUsername", action, ts DESC)
     `);
 
     // F4 post-verify: nếu build xong nhưng INVALID → fail migration để ops fix
