@@ -122,6 +122,7 @@ export class BearerAuthMiddleware implements NestMiddleware {
       departmentId: dbUser.departmentId,
       status: dbUser.status,
       claimedFromHeader: true,
+      clientId: payload.clientId,
     };
     next();
   }
