@@ -6,7 +6,10 @@ import { AuditLogService } from '../audit/audit-log.service';
 // Session lifecycle events triggered từ portal (NextAuth signOut) hoặc
 // backend flows không đi qua Zitadel — bổ sung cho Zitadel Actions v2
 // vốn không emit khi user chỉ clear cookie NextAuth local.
-@Controller('auth')
+//
+// Route ở /api/audit/* (KHÔNG /api/auth/*) vì nginx route /api/auth/* sang
+// portal (NextAuth namespace) — sẽ 400 nếu backend claim path đó.
+@Controller('audit')
 export class AuthController {
   constructor(private readonly audit: AuditLogService) {}
 

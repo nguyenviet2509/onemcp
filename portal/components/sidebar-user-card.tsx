@@ -120,7 +120,7 @@ export function SidebarUserCard() {
           {AUTH_MODE === 'oidc' ? (
             <DropdownMenuItem
               render={<button type="button" onClick={() => {
-                void apiFetch('/auth/logout-event', { method: 'POST', body: JSON.stringify({}) })
+                void apiFetch('/audit/logout-event', { method: 'POST', body: JSON.stringify({}) })
                   .catch(() => {}) // audit fail không được block signOut
                   .finally(() => signOut({ callbackUrl: '/' }));
               }} />}
@@ -131,7 +131,7 @@ export function SidebarUserCard() {
           ) : (
             <DropdownMenuItem
               render={<a href="/oauth2/sign_out?rd=/" onClick={() => {
-                void apiFetch('/auth/logout-event', { method: 'POST', body: JSON.stringify({}) }).catch(() => {});
+                void apiFetch('/audit/logout-event', { method: 'POST', body: JSON.stringify({}) }).catch(() => {});
               }} />}
             >
               <LogOut className="mr-2 size-3.5 shrink-0" aria-hidden />
