@@ -4,11 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditEvent } from './entities/audit-event.entity';
 import { AuditLogService } from './audit-log.service';
 import { AuditInterceptor } from './audit.interceptor';
+import { CentralRbacAuditPublisher } from './central-rbac-audit-publisher.service';
 
 @Global()
 @Module({
   imports: [TypeOrmModule.forFeature([AuditEvent])],
   providers: [
+    CentralRbacAuditPublisher,
     AuditLogService,
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
