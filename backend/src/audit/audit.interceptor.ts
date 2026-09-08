@@ -28,6 +28,10 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle();
     }
 
+    // Strip leading '/' so audit UI renders 'endpoint/api/mcp/' instead of
+    // 'endpoint//api/mcp/' (formatTarget joins resourceType + '/' + resourceId).
+    const resourceId = cleanPath.replace(/^\/+/, '');
+
     return next.handle().pipe(
       tap(() => {
         this.audit.record({
@@ -36,7 +40,7 @@ export class AuditInterceptor implements NestInterceptor {
           // Target hiển thị 'endpoint/<path>' trong audit UI — meaningful hơn 'unknown/unknown'.
           // Controller nào tự set resourceType/resourceId sẽ dùng riêng (VD oauth.client.register).
           resourceType: 'endpoint',
-          resourceId: cleanPath,
+          resourceId,
           ip: req.clientIp,
         });
       }),
