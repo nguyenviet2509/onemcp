@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { CurrentUser } from '../access/current-user.decorator';
 import { AuthedRequest, RequestUser } from '../common/user-request';
+import { AuditLogService } from '../audit/audit-log.service';
 import { AuthorizeParams, OAuthService, RegisterClientDto } from './oauth.service';
 
 // OAuth 2.1 Authorization Server public endpoints.
@@ -32,6 +33,7 @@ export class OAuthController {
   constructor(
     private readonly oauth: OAuthService,
     private readonly config: ConfigService,
+    private readonly audit: AuditLogService,
   ) {}
 
   // RFC 7591 DCR — 5 registrations per hour per IP.
@@ -41,8 +43,23 @@ export class OAuthController {
   async register(
     @Body() dto: RegisterClientDto,
     @CurrentUser() user: RequestUser | undefined,
+    @Req() req: AuthedRequest,
   ) {
-    return this.oauth.registerClient(dto, user?.id);
+    const res = await this.oauth.registerClient(dto, user?.id);
+    this.audit.record({
+      actor: user ?? null,
+      action: 'oauth.client.register',
+      resourceType: 'oauth_client',
+      resourceId: res.client_id,
+      after: {
+        client_name: res.client_name,
+        redirect_uris: res.redirect_uris,
+        token_endpoint_auth_method: res.token_endpoint_auth_method,
+        scope: res.scope,
+      },
+      ip: req.ip,
+    });
+    return res;
   }
 
   @Get('client-info')
@@ -102,6 +119,7 @@ export class OAuthController {
   async consent(
     @Body() body: Record<string, string>,
     @CurrentUser() user: RequestUser | undefined,
+    @Req() req: AuthedRequest,
   ): Promise<{ redirect: string }> {
     if (!user) throw new UnauthorizedException();
     const params: AuthorizeParams = {
@@ -113,6 +131,14 @@ export class OAuthController {
       state: body.state,
     };
     const code = await this.oauth.grantConsent(params, user.id, user.username);
+    this.audit.record({
+      actor: user,
+      action: 'oauth.consent.grant',
+      resourceType: 'oauth_client',
+      resourceId: params.clientId,
+      after: { scope: params.scope ?? '' },
+      ip: req.ip,
+    });
     const url = new URL(params.redirectUri);
     url.searchParams.set('code', code);
     if (params.state) url.searchParams.set('state', params.state);
@@ -122,33 +148,55 @@ export class OAuthController {
   // Token endpoint — 30 requests / minute / IP. Client_id-level dedup handled at store.
   @Throttle({ default: { limit: 30, ttl: 60 * 1000 } })
   @Post('token')
-  async token(@Body() body: Record<string, string>) {
+  async token(@Body() body: Record<string, string>, @Req() req: AuthedRequest) {
     const grantType = body.grant_type;
     if (grantType === 'authorization_code') {
-      return this.oauth.exchangeCode({
+      const res = await this.oauth.exchangeCode({
         code: body.code,
         codeVerifier: body.code_verifier,
         clientId: body.client_id,
         clientSecret: body.client_secret,
         redirectUri: body.redirect_uri,
       });
+      this.audit.record({
+        action: 'oauth.token.issue',
+        resourceType: 'oauth_client',
+        resourceId: body.client_id,
+        after: { grant_type: grantType, scope: res.scope },
+        ip: req.ip,
+      });
+      return res;
     }
     if (grantType === 'refresh_token') {
-      return this.oauth.refresh({
+      const res = await this.oauth.refresh({
         refreshToken: body.refresh_token,
         clientId: body.client_id,
         clientSecret: body.client_secret,
       });
+      this.audit.record({
+        action: 'oauth.token.refresh',
+        resourceType: 'oauth_client',
+        resourceId: body.client_id,
+        after: { grant_type: grantType, scope: res.scope },
+        ip: req.ip,
+      });
+      return res;
     }
     throw new BadRequestException(`unsupported grant_type: ${grantType}`);
   }
 
   @Post('revoke')
   @HttpCode(200)
-  async revoke(@Body() body: Record<string, string>) {
+  async revoke(@Body() body: Record<string, string>, @Req() req: AuthedRequest) {
     if (!body.token) throw new BadRequestException('token required');
     const hint = body.token_type_hint === 'refresh_token' || body.token_type_hint === 'access_token' ? body.token_type_hint : undefined;
     await this.oauth.revoke({ token: body.token, tokenTypeHint: hint });
+    this.audit.record({
+      action: 'oauth.token.revoke',
+      resourceType: 'oauth_token',
+      after: { token_type_hint: hint ?? 'unknown' },
+      ip: req.ip,
+    });
     // RFC 7009: MUST return 200 regardless of token validity.
     return {};
   }

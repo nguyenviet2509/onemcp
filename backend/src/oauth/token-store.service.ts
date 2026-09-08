@@ -5,6 +5,16 @@ import Redis from 'ioredis';
 // Redis-backed opaque token store for OAuth 2.1 AS.
 // Namespace: `oauth:{kind}:{token}` — kinds: code, access, refresh.
 // TTL enforced by Redis EX — expired keys disappear, no cleanup job needed.
+//
+// Token TTL policy (audited 2026-09-08, internal INET users, 200 max):
+//   CODE_TTL    = 60s     — OAuth 2.1 recommend max 60s for authorization_code
+//   ACCESS_TTL  = 1h      — short-lived; MCP client uses refresh token when expired
+//   REFRESH_TTL = 30d     — balance UX (avoid weekly re-consent) vs. compromise blast radius
+// Rotation: refresh_token single-use — consumeRefresh() deletes old, mintTokens() issues
+// new pair. Stolen refresh token detectable when legitimate client uses next → old
+// refresh fails → user notices. This is RFC 6749 §10.4 recommended pattern.
+// Trade-off note: 30d refresh is longer than OWASP baseline (7d) — accepted for
+// internal-only scope. Review if opening to external users.
 
 export interface AuthorizationCodePayload {
   clientId: string;
