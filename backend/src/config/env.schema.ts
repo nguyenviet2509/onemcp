@@ -56,6 +56,12 @@ export const envSchema = z.object({
   ZITADEL_JWKS_URI: z.string().default('https://zitadel.000nethost.com/oauth/v2/keys'),
   ZITADEL_CLIENT_ID: z.string().default(''),
 
+  // Central RBAC → OneMCP revoke webhook (POST /api/auth/sso/revoke). Shared secret dùng để
+  // verify HMAC-SHA256 signature (msg = `${userEmail}|revoke`). Central set cùng giá trị
+  // trong `rbac.apps.revoke_secret`. Rỗng = endpoint disabled (backward-compat).
+  // Sinh: openssl rand -hex 32
+  SSO_REVOKE_SECRET: z.string().default(''),
+
   // OAuth 2.1 AS metadata (RFC 8414) + protected resource metadata (RFC 9728).
   // OAUTH_ISSUER = the external URL where AS lives. Endpoints derived from it.
   // Set to real domain when TLS + DNS ready. For IP-only pilot: http://<vps-ip>.
