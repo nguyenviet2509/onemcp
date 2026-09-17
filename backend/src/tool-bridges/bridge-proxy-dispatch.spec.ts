@@ -19,6 +19,7 @@ import { ToolUpstream } from './entities/tool-upstream.entity';
 import { RequestUser } from '../common/user-request';
 import { Registry } from 'prom-client';
 import { initHashSecret } from '../mcp/mcp-args-redactor';
+import { createBridgeSchema, updateBridgeSchema } from './dto/bridge.dto';
 
 // ─── readCapped ───────────────────────────────────────────────────────────────
 
@@ -268,5 +269,74 @@ describe('BridgeDispatcherService', () => {
     expect(mockAudit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'mcp.tool.call' }),
     );
+  });
+
+  // H1: Path C audit must fire unconditionally, regardless of env flag.
+  it('publishes audit record when Path C guard blocks header-path user', async () => {
+    const user = makeUser({ authPath: 'header', zitadelSub: undefined });
+    await expect(dispatcher.dispatch(makeBridge(), {}, user)).rejects.toThrow(ForbiddenException);
+    expect(mockAudit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'mcp.tool.call',
+        after: expect.objectContaining({ status: 'denied', error: 'path_c_no_oauth' }),
+      }),
+    );
+  });
+
+  // H1: Same for oauth path without sub.
+  it('publishes audit record when Path C guard blocks oauth user without sub', async () => {
+    const user = makeUser({ authPath: 'oauth', zitadelSub: undefined });
+    await expect(dispatcher.dispatch(makeBridge(), {}, user)).rejects.toThrow(ForbiddenException);
+    expect(mockAudit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        after: expect.objectContaining({ status: 'denied' }),
+      }),
+    );
+  });
+});
+
+// ─── Bridge DTO reserved-name blocklist (M1) ──────────────────────────────────
+
+describe('createBridgeSchema / updateBridgeSchema reserved name guard', () => {
+  const validPayload = {
+    upstreamId: '00000000-0000-0000-0000-000000000001',
+    name: 'my_custom_tool',
+    description: 'A custom bridge',
+    method: 'GET' as const,
+    path: '/api/devices',
+    paramSchema: { type: 'object' },
+    permissionId: 'osh.read',
+    enabled: true,
+  };
+
+  it('accepts a non-reserved bridge name', () => {
+    const result = createBridgeSchema.safeParse(validPayload);
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects reserved name "search" on create', () => {
+    const result = createBridgeSchema.safeParse({ ...validPayload, name: 'search' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain('search');
+    }
+  });
+
+  it('rejects reserved name "get_artifact" on create', () => {
+    const result = createBridgeSchema.safeParse({ ...validPayload, name: 'get_artifact' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects reserved name "load_skill" on update', () => {
+    const result = updateBridgeSchema.safeParse({ name: 'load_skill' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain('load_skill');
+    }
+  });
+
+  it('accepts undefined name on update (optional field)', () => {
+    const result = updateBridgeSchema.safeParse({ description: 'updated desc' });
+    expect(result.success).toBe(true);
   });
 });

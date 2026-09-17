@@ -39,13 +39,20 @@ export class BridgeDispatcherService implements OnModuleInit {
     // Path C guard: bridge tools require Zitadel OAuth (need sub for downstream RBAC check).
     if (user.authPath === 'header' || !user.zitadelSub) {
       this.metrics.callsTotal.inc({ tool: bridge.name, upstream_status: 'n/a', outcome: 'path_c_block' });
+      // Audit denial unconditionally — evidence must not disappear regardless of outer env flag.
+      this.publishAudit(bridge.name, args, user, randomUUID(), 'denied', ip, 'path_c_no_oauth');
       throw new ForbiddenException('Bridge tools require OAuth authentication (Zitadel sub missing)');
     }
+
+    const correlationId = randomUUID();
+    const startMs = Date.now();
 
     // Validate required fields from param_schema.
     const schemaRequired = (bridge.paramSchema as { required?: string[] }).required ?? [];
     for (const field of schemaRequired) {
       if (!(field in args)) {
+        this.metrics.callsTotal.inc({ tool: bridge.name, upstream_status: 'n/a', outcome: 'validation_error' });
+        this.publishAudit(bridge.name, args, user, correlationId, 'validation_error', ip, `Missing required argument: ${field}`);
         return this.errorResult(`Missing required argument: ${field}`);
       }
     }
@@ -56,9 +63,6 @@ export class BridgeDispatcherService implements OnModuleInit {
       // Log but don't abort — write-time validation already enforced structure.
       this.log.warn(`bridge=${bridge.name} param_schema meta-check failed (DB entry may be corrupted)`);
     }
-
-    const correlationId = randomUUID();
-    const startMs = Date.now();
     const toolLabel = bridge.name;
 
     try {
@@ -101,7 +105,8 @@ export class BridgeDispatcherService implements OnModuleInit {
       const latency = (Date.now() - startMs) / 1000;
       this.metrics.latencySeconds.observe({ tool: toolLabel }, latency);
       this.metrics.callsTotal.inc({ tool: toolLabel, upstream_status: 'error', outcome: 'error' });
-      this.publishAudit(toolLabel, args, user, correlationId, 'error', ip);
+      const errMsg = `${(err as Error).name ?? 'Error'}: ${(err as Error).message?.slice(0, 500) ?? ''}`;
+      this.publishAudit(toolLabel, args, user, correlationId, 'error', ip, errMsg);
       throw err;
     }
   }
@@ -113,6 +118,7 @@ export class BridgeDispatcherService implements OnModuleInit {
     correlationId: string,
     upstreamStatus: string,
     ip?: string,
+    errorMsg?: string,
   ): void {
     try {
       const redacted = redactArgs(toolName, args);
@@ -126,7 +132,7 @@ export class BridgeDispatcherService implements OnModuleInit {
           user_sub: user.zitadelSub,
           correlation_id: correlationId,
         },
-        after: { status: upstreamStatus },
+        after: { status: upstreamStatus, ...(errorMsg ? { error: errorMsg } : {}) },
         ip,
         sessionId: user.clientId ?? `bridge:${user.username}`,
       });

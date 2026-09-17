@@ -1,10 +1,20 @@
 import { z } from 'zod';
+import { KNOWN_MCP_TOOLS } from '../../mcp/mcp-args-redactor';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE'] as const;
 
+// Static tool names that cannot be used as bridge names — a bridge with the same
+// name would silently shadow the built-in, breaking core MCP functionality.
+const RESERVED_TOOL_NAMES: ReadonlySet<string> = new Set(KNOWN_MCP_TOOLS);
+
+const bridgeNameField = z.string().min(1).max(64).refine(
+  (name) => !RESERVED_TOOL_NAMES.has(name),
+  (name) => ({ message: `Bridge name '${name}' collides with built-in static tool` }),
+);
+
 export const createBridgeSchema = z.object({
   upstreamId: z.string().uuid(),
-  name: z.string().min(1).max(64),
+  name: bridgeNameField,
   description: z.string().min(1),
   method: z.enum(HTTP_METHODS),
   path: z.string().min(1).max(512),
@@ -15,7 +25,7 @@ export const createBridgeSchema = z.object({
 
 export const updateBridgeSchema = z.object({
   upstreamId: z.string().uuid().optional(),
-  name: z.string().min(1).max(64).optional(),
+  name: bridgeNameField.optional(),
   description: z.string().min(1).optional(),
   method: z.enum(HTTP_METHODS).optional(),
   path: z.string().min(1).max(512).optional(),
