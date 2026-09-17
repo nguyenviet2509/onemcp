@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
@@ -64,6 +65,7 @@ export class OAuthService {
     @InjectRepository(OAuthClient) private readonly clients: Repository<OAuthClient>,
     @InjectRepository(OAuthConsent) private readonly consents: Repository<OAuthConsent>,
     private readonly store: OAuthTokenStore,
+    private readonly config: ConfigService,
   ) {}
 
   // --- Client registration (RFC 7591 DCR) ---
@@ -168,6 +170,13 @@ export class OAuthService {
     const scopes = requested.filter((s) => client.scopes.includes(s));
     if (scopes.length === 0) {
       throw new BadRequestException('no valid scope in request');
+    }
+
+    // DEV-ONLY: skip consent screen — auto-issue code for local smoke test.
+    // Portal consent page is not running locally (Windows EPERM build). This env is NOT set in prod.
+    if (this.config.get<string>('DEV_OAUTH_AUTO_APPROVE') === 'true') {
+      const code = await this.issueAuthorizationCode(client, params, userId, username, scopes);
+      return { action: 'auto-code', code };
     }
 
     const existingConsent = await this.consents.findOne({ where: { userId, clientId: client.clientId } });

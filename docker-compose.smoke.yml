@@ -168,6 +168,8 @@ services:
       MCP_TOOL_AUDIT_RETENTION_ENABLED: ${MCP_TOOL_AUDIT_RETENTION_ENABLED:-true}
       # DEV-ONLY: inject username for /api/oauth/authorize bypass (no portal/oauth2-proxy in smoke)
       DEV_OAUTH_AUTHORIZE_TRUST: ${DEV_OAUTH_AUTHORIZE_TRUST:-admin}
+      # DEV-ONLY: skip portal consent screen — auto-issue authorization code (portal not running in smoke)
+      DEV_OAUTH_AUTO_APPROVE: ${DEV_OAUTH_AUTO_APPROVE:-true}
     volumes:
       - git-mirrors:/var/lib/onemcp/mirrors
     ports:
