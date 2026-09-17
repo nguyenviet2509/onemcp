@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { LayoutDashboard, FileText, Search, Wrench, ClipboardCheck, Boxes, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, Search, Wrench, ClipboardCheck, Boxes, Shield, Cable } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { apiFetch } from '@/lib/api-client';
 import { listArtifacts } from '@/lib/api/artifacts';
@@ -16,18 +16,19 @@ interface MeMinimal { roles?: string[] }
 // Shield for Audit = dept-admin-only per-call log viewer (plan 260908-1552 phase 07).
 const NAV_ITEMS: Array<{
   href: string;
-  key: 'dashboard' | 'artifacts' | 'search' | 'skills' | 'review' | 'projects' | 'audit';
+  key: 'dashboard' | 'artifacts' | 'search' | 'skills' | 'review' | 'projects' | 'audit' | 'toolBridges';
   icon: React.ComponentType<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>;
   showCount?: boolean;
   adminOnly?: boolean;
 }> = [
-  { href: '/',                 key: 'dashboard', icon: LayoutDashboard },
-  { href: '/artifacts',        key: 'artifacts', icon: FileText },
-  { href: '/search',           key: 'search',    icon: Search },
-  { href: '/skills',           key: 'skills',    icon: Wrench },
-  { href: '/projects',         key: 'projects',  icon: Boxes },
-  { href: '/artifacts/review', key: 'review',    icon: ClipboardCheck, showCount: true },
-  { href: '/audit',            key: 'audit',     icon: Shield, adminOnly: true },
+  { href: '/',                       key: 'dashboard',    icon: LayoutDashboard },
+  { href: '/artifacts',              key: 'artifacts',    icon: FileText },
+  { href: '/search',                 key: 'search',       icon: Search },
+  { href: '/skills',                 key: 'skills',       icon: Wrench },
+  { href: '/projects',               key: 'projects',     icon: Boxes },
+  { href: '/artifacts/review',       key: 'review',       icon: ClipboardCheck, showCount: true },
+  { href: '/audit',                  key: 'audit',        icon: Shield, adminOnly: true },
+  { href: '/admin/tool-bridges',     key: 'toolBridges',  icon: Cable, adminOnly: true },
 ];
 
 export function SidebarNav() {

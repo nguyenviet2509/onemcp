@@ -13,7 +13,11 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../access/current-user.decorator';
 import { RequestUser } from '../common/user-request';
+import { AuditLogService } from '../audit/audit-log.service';
+import { z } from 'zod';
 import { createBridgeSchema, updateBridgeSchema } from './dto/bridge.dto';
+
+const testBridgeSchema = z.object({ args: z.record(z.unknown()).default({}) });
 import { ToolBridgesService } from './tool-bridges.service';
 
 function requireToolBridgeAdmin(user: RequestUser | undefined): void {
@@ -24,7 +28,10 @@ function requireToolBridgeAdmin(user: RequestUser | undefined): void {
 
 @Controller('api/admin/tool-bridges')
 export class ToolBridgesController {
-  constructor(private readonly svc: ToolBridgesService) {}
+  constructor(
+    private readonly svc: ToolBridgesService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   @Post()
   @HttpCode(201)
@@ -57,6 +64,21 @@ export class ToolBridgesController {
     const parsed = updateBridgeSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
     return this.svc.update(id, parsed.data);
+  }
+
+  // Dry-run schema-only test — does NOT fetch upstream (no side-effect).
+  @Post(':id/test')
+  async dryRunTest(
+    @CurrentUser() user: RequestUser | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    requireToolBridgeAdmin(user);
+    const parsed = testBridgeSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    const result = await this.svc.dryRunTest(id, parsed.data.args);
+    this.audit.record({ actor: user, action: 'tool.admin_dry_test', resourceType: 'tool_bridge', resourceId: id });
+    return result;
   }
 
   // Soft-disable — preserves FK references + audit history.
