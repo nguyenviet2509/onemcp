@@ -1,0 +1,17 @@
+{
+  "name": "mock-osh-admin",
+  "version": "1.0.0",
+  "description": "DEV-ONLY mock server simulating osh_admin HTTP API for OneMCP bridge smoke testing",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

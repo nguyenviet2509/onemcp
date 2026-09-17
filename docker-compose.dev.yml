@@ -1,0 +1,28 @@
+# DEV-ONLY overlay — extends docker-compose.yml for local development.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# Or standalone for mock only: docker compose -f docker-compose.dev.yml up mock-osh-admin
+#
+# DO NOT merge into docker-compose.yml (prod).
+
+name: onemcp
+
+services:
+  # ─── DEV-ONLY: mock osh_admin upstream ───────────────────────────────────
+  # Simulates osh_admin HTTP API for OneMCP tool-bridge smoke testing.
+  # base_url registered in OneMCP DB: http://mock-osh-admin:8080
+  # bearer:                           dev-fixed-token  (plaintext OK, dev-only)
+  # Remove or comment this block when swapping to real osh_admin (P5d).
+  mock-osh-admin:
+    build: ./mock-osh-admin
+    container_name: mock-osh-admin
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      MOCK_BEARER: ${MOCK_BEARER:-dev-fixed-token}
+    ports:
+      - "127.0.0.1:8080:8080"   # localhost:8080 for direct curl debug
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
