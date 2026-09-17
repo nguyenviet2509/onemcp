@@ -2,14 +2,23 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ToolBridge } from './entities/tool-bridge.entity';
+import { ToolUpstreamsService } from './tool-upstreams.service';
 import { CreateBridgeDto, UpdateBridgeDto, BridgeResponse } from './dto/bridge.dto';
 import { ParamSchemaValidator } from './param-schema.validator';
+
+export interface DryRunResult {
+  schema_valid: boolean;
+  errors: string[] | null;
+  resolved_url: string;
+  would_send_headers: Record<string, string>;
+}
 
 @Injectable()
 export class ToolBridgesService {
   constructor(
     @InjectRepository(ToolBridge) private readonly repo: Repository<ToolBridge>,
     private readonly paramSchemaValidator: ParamSchemaValidator,
+    private readonly upstreamsSvc: ToolUpstreamsService,
   ) {}
 
   async create(dto: CreateBridgeDto): Promise<BridgeResponse> {
@@ -64,7 +73,70 @@ export class ToolBridgesService {
     await this.repo.save(row);
   }
 
-  // Used by P2 RBAC guard to lookup permission_id for a bridge by name.
+  // Dry-run: validate args vs param_schema + resolve URL preview. NEVER fetches upstream.
+  async dryRunTest(id: string, args: unknown): Promise<DryRunResult> {
+    const bridge = await this.findOrFail(id);
+    const upstream = await this.upstreamsSvc.get(bridge.upstreamId);
+
+    // Validate args against bridge param_schema using structural check (same approach as ParamSchemaValidator).
+    // Full ajv not in deps — validate required fields and type hints structurally.
+    const schema = bridge.paramSchema as {
+      properties?: Record<string, { type?: string }>;
+      required?: string[];
+    };
+    const errors: string[] = [];
+
+    if (args === null || typeof args !== 'object' || Array.isArray(args)) {
+      errors.push('args must be a JSON object');
+    } else {
+      const argsObj = args as Record<string, unknown>;
+      if (schema.required) {
+        for (const req of schema.required) {
+          if (!(req in argsObj)) errors.push(`Missing required field: ${req}`);
+        }
+      }
+      if (schema.properties) {
+        for (const [key, propDef] of Object.entries(schema.properties)) {
+          if (!(key in argsObj)) continue;
+          const val = argsObj[key];
+          if (propDef.type) {
+            const actual = Array.isArray(val) ? 'array' : typeof val;
+            const expected = propDef.type === 'integer' ? 'number' : propDef.type;
+            if (actual !== expected) errors.push(`Field "${key}": expected ${propDef.type}, got ${actual}`);
+          }
+        }
+      }
+    }
+
+    // Build resolved URL preview — substitute :param placeholders from args.
+    let resolvedPath = bridge.path;
+    if (errors.length === 0 && typeof args === 'object' && args !== null) {
+      const argsObj = args as Record<string, unknown>;
+      resolvedPath = resolvedPath.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, name: string) =>
+        name in argsObj ? encodeURIComponent(String(argsObj[name])) : `:${name}`,
+      );
+    }
+    const resolvedUrl = `${upstream.baseUrl.replace(/\/$/, '')}${resolvedPath}`;
+
+    return {
+      schema_valid: errors.length === 0,
+      errors: errors.length > 0 ? errors : null,
+      resolved_url: resolvedUrl,
+      would_send_headers: {
+        'Authorization': 'Bearer ***',
+        'User-Agent': 'OneMCP-ToolBridge/1.0',
+        'X-Correlation-Id': '<generated-per-request>',
+        'Content-Type': bridge.method !== 'GET' ? 'application/json' : '<not-sent>',
+      },
+    };
+  }
+
+  // P3 dispatch: list all enabled bridges for tools/list merge.
+  async listEnabled(): Promise<ToolBridge[]> {
+    return this.repo.find({ where: { enabled: true }, order: { createdAt: 'ASC' } });
+  }
+
+  // Used by P2 RBAC guard / P3 dispatch to lookup bridge by name.
   async findByName(name: string): Promise<ToolBridge | null> {
     return this.repo.findOne({ where: { name, enabled: true } });
   }

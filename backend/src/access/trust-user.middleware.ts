@@ -88,6 +88,7 @@ export class TrustUserMiddleware implements NestMiddleware {
       departmentId: user.departmentId,
       status: user.status,
       claimedFromHeader: true,
+      authPath: 'header', // X-Onemcp-User legacy — no verifiable Zitadel sub (Path C guard).
     };
     next();
   }

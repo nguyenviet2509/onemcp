@@ -15,6 +15,9 @@ import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillsService } from '../skills/skills.service';
 import { SpacesService } from '../spaces/spaces.service';
 import { TemplatesService } from '../templates/templates.service';
+import { BridgeDispatcherService } from '../tool-bridges/bridge-dispatcher.service';
+import { ToolBridgesService } from '../tool-bridges/tool-bridges.service';
+import { ToolBridge } from '../tool-bridges/entities/tool-bridge.entity';
 import { initHashSecret, redactArgs, sanitizeForLog } from './mcp-args-redactor';
 import { McpToolDefinition, McpToolResult } from './mcp-jsonrpc.types';
 import { handleSearchTool } from './tools/search-tool-handler';
@@ -38,6 +41,8 @@ export class McpToolsService implements OnModuleInit {
     private readonly audit: AuditLogService,
     private readonly metrics: MetricsService,
     private readonly config: ConfigService,
+    private readonly bridgeDispatcher: BridgeDispatcherService,
+    private readonly toolBridges: ToolBridgesService,
   ) {}
 
   onModuleInit(): void {
@@ -49,6 +54,20 @@ export class McpToolsService implements OnModuleInit {
       const secret = this.config.get<string>('MCP_AUDIT_HASH_SECRET', '') || '';
       initHashSecret(secret);
       this.log.log(`MCP tool audit ENABLED (HMAC hash active)`);
+    }
+  }
+
+  // Async list merging static tools + all enabled dynamic bridges.
+  // NO permission filter on bridge list — distributed check done by osh_admin (plan 260917-0902).
+  async listDefinitions(): Promise<McpToolDefinition[]> {
+    const staticDefs = this.definitions();
+    try {
+      const bridges = await this.toolBridges.listEnabled();
+      const bridgeDefs = bridges.map(bridgeToDefinition);
+      return [...staticDefs, ...bridgeDefs];
+    } catch (err) {
+      this.log.error(`listEnabled bridges failed — returning static only: ${(err as Error).message}`);
+      return staticDefs;
     }
   }
 
@@ -237,7 +256,15 @@ export class McpToolsService implements OnModuleInit {
     return result ?? this.errorResult('unknown dispatch failure');
   }
 
-  private dispatch(name: string, args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+  private async dispatch(name: string, args: Record<string, unknown>, req: AuthedRequest): Promise<McpToolResult> {
+    // Dynamic bridge lookup — takes precedence over static for bridge-registered names.
+    // Static tool names are blocklisted in bridge creation (enforced at write time).
+    const bridge = await this.toolBridges.findByName(name).catch(() => null);
+    if (bridge) {
+      // Path C guard: bridge tools require Zitadel OAuth sub (enforced in BridgeDispatcherService).
+      return this.bridgeDispatcher.dispatch(bridge, args, req.user!, req.clientIp);
+    }
+
     switch (name) {
       case 'list_skills':           return this.listSkills(args, req);
       case 'load_skill':            return this.loadSkill(args, req);
@@ -389,6 +416,25 @@ export class McpToolsService implements OnModuleInit {
   private errorResult(msg: string): McpToolResult {
     return { content: [{ type: 'text', text: `Error: ${msg}` }], isError: true };
   }
+}
+
+// --- Bridge helpers ---
+
+// Map ToolBridge DB entity to MCP tool definition for tools/list response.
+function bridgeToDefinition(bridge: ToolBridge): McpToolDefinition {
+  const schema = bridge.paramSchema as {
+    properties?: Record<string, unknown>;
+    required?: string[];
+  };
+  return {
+    name: bridge.name,
+    description: bridge.description,
+    inputSchema: {
+      type: 'object',
+      properties: schema.properties ?? {},
+      ...(schema.required ? { required: schema.required } : {}),
+    },
+  };
 }
 
 // --- Audit helpers (module-scoped, no state) ---

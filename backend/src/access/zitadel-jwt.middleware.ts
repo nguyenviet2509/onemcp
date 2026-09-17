@@ -247,6 +247,10 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
         departmentId: dbUser.departmentId,
         status: dbUser.status,
         claimedFromHeader: true, // JWT verified — cryptographic. Field tên legacy.
+        // Zitadel sub populated here — used by bridge tools to forward X-Onemcp-User-Sub
+        // so downstream osh_admin can do distributed RBAC check (plan 260917-0902).
+        zitadelSub: sub || null,
+        authPath: 'oauth',
       };
       next();
     } catch (err) {

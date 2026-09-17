@@ -123,6 +123,10 @@ export class BearerAuthMiddleware implements NestMiddleware {
       status: dbUser.status,
       claimedFromHeader: true,
       clientId: payload.clientId,
+      // OneMCP opaque OAuth token path — no Zitadel sub in token payload.
+      // Bridge tools need zitadelSub for downstream RBAC: users who logged via
+      // ZitadelJwtMiddleware have sub; opaque-token users via /oauth/token don't.
+      authPath: 'oauth',
     };
     next();
   }

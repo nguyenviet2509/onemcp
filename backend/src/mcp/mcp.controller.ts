@@ -47,7 +47,7 @@ export class McpController {
           return this.ok(rid, {});
 
         case 'tools/list':
-          return this.ok(rid, { tools: this.tools.definitions() });
+          return this.ok(rid, { tools: await this.tools.listDefinitions() });
 
         case 'tools/call': {
           const params = body.params ?? {};

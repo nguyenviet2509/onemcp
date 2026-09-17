@@ -61,6 +61,12 @@ export class ToolUpstreamsService {
     return this.cipher.decrypt(row.bearerCiphertext);
   }
 
+  // Internal-only: used by P3 dispatch layer to get raw entity (baseUrl + timeoutMs).
+  // Never expose bearerCiphertext outside dispatch layer (bearer obtained separately via getDecryptedBearer).
+  async getEntity(id: string): Promise<ToolUpstream> {
+    return this.findOrFail(id);
+  }
+
   private async findOrFail(id: string): Promise<ToolUpstream> {
     const row = await this.repo.findOne({ where: { id } });
     if (!row) throw new NotFoundException(`tool_upstream ${id} not found`);

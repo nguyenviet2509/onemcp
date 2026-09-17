@@ -7,6 +7,7 @@ import { SkillVersion } from '../skills/entities/skill-version.entity';
 import { SkillsModule } from '../skills/skills.module';
 import { SpacesModule } from '../spaces/spaces.module';
 import { TemplatesModule } from '../templates/templates.module';
+import { ToolBridgesModule } from '../tool-bridges/tool-bridges.module';
 import { McpController } from './mcp.controller';
 import { McpSdkServerFactory } from './mcp-sdk-server.factory';
 import { McpSessionStore } from './mcp-session.store';
@@ -18,6 +19,7 @@ import { ProtectedResourceController } from './well-known/protected-resource.con
 // Phase 1C: import SpacesModule + TemplatesModule for submit_artifact validation.
 // Phase P1-streamable: add SDK server factory + session store + streamable controller.
 // Phase P2-P3: `.well-known/oauth-authorization-server` + `oauth-protected-resource` metadata.
+// Phase P3-bridge: import ToolBridgesModule for dynamic bridge dispatch.
 @Module({
   imports: [
     SkillsModule,
@@ -25,6 +27,7 @@ import { ProtectedResourceController } from './well-known/protected-resource.con
     SearchModule,
     SpacesModule,
     TemplatesModule,
+    ToolBridgesModule,
     TypeOrmModule.forFeature([Skill, SkillVersion]),
   ],
   providers: [McpToolsService, McpSdkServerFactory, McpSessionStore],
