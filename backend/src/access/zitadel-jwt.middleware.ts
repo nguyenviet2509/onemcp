@@ -240,6 +240,15 @@ export class ZitadelJwtMiddleware implements NestMiddleware {
         throw new UnauthorizedException('user_disabled');
       }
 
+      // Persist sub so BearerAuthMiddleware (opaque token path) can read it from DB.
+      // Fire-and-forget: sub is stable per Zitadel user, update is idempotent no-op after first time.
+      if (sub && dbUser.zitadelSub !== sub) {
+        this.users.setZitadelSub(dbUser.id, sub).catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          this.log.warn(`setZitadelSub failed for user=${username}: ${msg}`);
+        });
+      }
+
       req.user = {
         id: dbUser.id,
         username: dbUser.username,

@@ -29,6 +29,12 @@ export class User {
   @Column({ type: 'varchar', length: 64, nullable: true })
   gitlabId!: string | null;
 
+  // Zitadel subject claim (opaque string, e.g. "234567890"). Populated when user
+  // authenticates via Zitadel OAuth (ZitadelJwtMiddleware persists on login).
+  // NULL for legacy trust-header-only users → blocked from bridge tools (Path C guard).
+  @Column({ name: 'zitadel_sub', type: 'varchar', length: 256, nullable: true })
+  zitadelSub!: string | null;
+
   @Column({ type: 'varchar', length: 200, nullable: true })
   email!: string | null;
 

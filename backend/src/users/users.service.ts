@@ -33,6 +33,12 @@ export class UsersService {
     return this.repo.findOne({ where: { id } });
   }
 
+  // Persist Zitadel sub on successful Zitadel JWT login — allows opaque OAuth token
+  // path (BearerAuthMiddleware) to retrieve sub from DB for bridge tool Path C guard.
+  async setZitadelSub(userId: number, sub: string): Promise<void> {
+    await this.repo.update({ id: userId }, { zitadelSub: sub });
+  }
+
   // Idempotent upsert by email — used by bridge auto-provision endpoint.
   // Derives username from email local-part: lowercase, strip non-[a-z0-9._-].
   // Validates @inet.vn domain at service boundary (caller also validates, defence in depth).
