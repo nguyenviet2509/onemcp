@@ -53,6 +53,19 @@ export class TrustUserMiddleware implements NestMiddleware {
       return;
     }
 
+    // DEV-ONLY: bypass identity header requirement for /api/oauth/authorize + /consent
+    // when env DEV_OAUTH_AUTHORIZE_TRUST is set. Auto-injects username from env for
+    // local smoke test (no portal/oauth2-proxy to inject header). DO NOT set in prod.
+    const devTrustUser = this.config.get<string>('DEV_OAUTH_AUTHORIZE_TRUST');
+    if (
+      devTrustUser &&
+      (path.startsWith('/api/oauth/authorize') || path.startsWith('/api/oauth/consent'))
+    ) {
+      // Fake header injection — reuses code path below via req.headers assignment.
+      (req.headers as Record<string, string>)[this.headerName] = devTrustUser;
+      this.log.warn(`DEV bypass: injected ${this.headerName}=${devTrustUser} for ${path}`);
+    }
+
     // If ApiKeyMiddleware already authenticated this request, skip trust-header processing.
     if (req.user) {
       next();

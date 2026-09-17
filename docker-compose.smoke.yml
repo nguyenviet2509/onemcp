@@ -1,0 +1,212 @@
+# SMOKE-TEST standalone compose — DEV-ONLY, do NOT commit.
+# Brings up minimal services for plan 260917-0902 Claude Desktop E2E smoke.
+# Skips: tei (large model), portal (not needed for MCP), nginx (direct backend),
+#        oauth2-proxy, certbot, all observability sidecars.
+#
+# Port assignments (no conflict with monitor_appilcation stack):
+#   postgres  → 127.0.0.1:5433  (monitor has :5432)
+#   redis     → 127.0.0.1:6380  (monitor has :6379)
+#   minio     → 127.0.0.1:9010 / 9011
+#   backend   → 127.0.0.1:3000
+#   mock-osh-admin → 127.0.0.1:8080
+
+name: onemcp
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-onemcp}
+      POSTGRES_USER: ${POSTGRES_USER:-onemcp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-onemcp-dev-2026}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./ops/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onemcp} -d ${POSTGRES_DB:-onemcp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "work_mem=4MB"
+      - "-c"
+      - "max_connections=50"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - "redis-server"
+      - "--appendonly"
+      - "yes"
+      - "--appendfsync"
+      - "everysec"
+      - "--maxmemory"
+      - "512mb"
+      - "--maxmemory-policy"
+      - "noeviction"
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9011"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-onemcp}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-onemcp-dev-minio}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:9010:9000"
+      - "127.0.0.1:9011:9011"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mock-osh-admin:
+    build: ./mock-osh-admin
+    container_name: mock-osh-admin
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      MOCK_BEARER: ${MOCK_BEARER:-dev-fixed-token}
+    ports:
+      - "127.0.0.1:8082:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.smoke
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      POSTGRES_URL: postgres://${POSTGRES_USER:-onemcp}:${POSTGRES_PASSWORD:-onemcp-dev-2026}@postgres:5432/${POSTGRES_DB:-onemcp}
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-onemcp}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-onemcp-dev-minio}
+      MINIO_BUCKET: ${MINIO_BUCKET:-onemcp-artifacts}
+      ATTACHMENT_MAX_MB: ${ATTACHMENT_MAX_MB:-100}
+      USER_ALLOW_CIDR: ${USER_ALLOW_CIDR:-0.0.0.0/0}
+      ADMIN_ALLOW_CIDR: ${ADMIN_ALLOW_CIDR:-0.0.0.0/0}
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32,172.16.0.0/12,10.0.0.0/8}
+      TRUST_USER_HEADER: ${TRUST_USER_HEADER:-X-Onemcp-User}
+      DEFAULT_ROLE: ${DEFAULT_ROLE:-contributor}
+      MAINTAINER_USERNAMES: ${MAINTAINER_USERNAMES:-}
+      ADMIN_USERNAMES: ${ADMIN_USERNAMES:-admin}
+      EMERGENCY_LOCKDOWN: ${EMERGENCY_LOCKDOWN:-false}
+      GIT_MIRROR_ROOT: /var/lib/onemcp/mirrors
+      GITLAB_BASE_URL: ${GITLAB_BASE_URL:-}
+      GITLAB_WEBHOOK_SECRET: ${GITLAB_WEBHOOK_SECRET:-dev-webhook-secret}
+      GITLAB_MIRROR_TOKEN: ${GITLAB_MIRROR_TOKEN:-}
+      GITLAB_SSO_BASE_URL: ${GITLAB_SSO_BASE_URL:-}
+      GITLAB_OAUTH_APP_ID: ${GITLAB_OAUTH_APP_ID:-}
+      GITLAB_OAUTH_APP_SECRET: ${GITLAB_OAUTH_APP_SECRET:-}
+      GITLAB_OAUTH_PROJECT_REDIRECT_URI: ${GITLAB_OAUTH_PROJECT_REDIRECT_URI:-http://localhost:3000/api/projects/oauth/callback}
+      WEBHOOK_PUBLIC_BASE_URL: ${WEBHOOK_PUBLIC_BASE_URL:-http://localhost:3000}
+      SKILLS_MONO_REPO: ${SKILLS_MONO_REPO:-onemcp/skills-kythuat}
+      SKILLS_MONO_BRANCH: ${SKILLS_MONO_BRANCH:-main}
+      SKILL_SYNC_CRON: ${SKILL_SYNC_CRON:-*/15 * * * *}
+      SKILL_APPROVE_RATE_LIMIT: ${SKILL_APPROVE_RATE_LIMIT:-20}
+      ONEMCP_ENABLE_OPS_TYPES: ${ONEMCP_ENABLE_OPS_TYPES:-0}
+      ONEMCP_KNOWN_SERVICES: ${ONEMCP_KNOWN_SERVICES:-postgres,redis,nginx,minio,backend,portal}
+      ALERTMANAGER_WEBHOOK_TOKEN: ${ALERTMANAGER_WEBHOOK_TOKEN:-}
+      SLACK_ONCALL_WEBHOOK_URL: ${SLACK_ONCALL_WEBHOOK_URL:-}
+      RUNBOOK_EVENTS_RETAIN_DAYS: ${RUNBOOK_EVENTS_RETAIN_DAYS:-90}
+      ALERTMANAGER_SYSTEM_USER: ${ALERTMANAGER_SYSTEM_USER:-system-alertmanager}
+      ALERTMANAGER_DEDUP_TTL_MIN: ${ALERTMANAGER_DEDUP_TTL_MIN:-240}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-true}
+      # TEI not running in smoke — disable embedding (backend gracefully handles missing TEI)
+      EMBEDDING_URL: http://localhost:9999
+      ONEMCP_ENCRYPTION_KEY: ${ONEMCP_ENCRYPTION_KEY}
+      OAUTH_ISSUER: ${OAUTH_ISSUER:-http://localhost:3000}
+      OAUTH_RESOURCE_URL: ${OAUTH_RESOURCE_URL:-http://localhost:3000/api/mcp}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL:-http://localhost:3001}
+      MCP_AUTH_MODE: ${MCP_AUTH_MODE:-optional}
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-jsonrpc}
+      ZITADEL_OIDC_ENABLED: ${ZITADEL_OIDC_ENABLED:-true}
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-https://zitadel.000nethost.com}
+      ZITADEL_JWKS_URI: ${ZITADEL_JWKS_URI:-https://zitadel.000nethost.com/oauth/v2/keys}
+      ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-387060281072746499}
+      CENTRAL_RBAC_AUDIT_INGEST_URL: ${CENTRAL_RBAC_AUDIT_INGEST_URL:-}
+      CENTRAL_RBAC_AUDIT_INGEST_TOKEN: ${CENTRAL_RBAC_AUDIT_INGEST_TOKEN:-}
+      MCP_TOOL_AUDIT_ENABLED: ${MCP_TOOL_AUDIT_ENABLED:-false}
+      MCP_AUDIT_HASH_SECRET: ${MCP_AUDIT_HASH_SECRET:-dev-audit-secret-placeholder-32chars-min}
+      MCP_TOOL_AUDIT_RETENTION_DAYS: ${MCP_TOOL_AUDIT_RETENTION_DAYS:-90}
+      MCP_TOOL_AUDIT_RETENTION_ENABLED: ${MCP_TOOL_AUDIT_RETENTION_ENABLED:-true}
+      # DEV-ONLY: inject username for /api/oauth/authorize bypass (no portal/oauth2-proxy in smoke)
+      DEV_OAUTH_AUTHORIZE_TRUST: ${DEV_OAUTH_AUTHORIZE_TRUST:-admin}
+    volumes:
+      - git-mirrors:/var/lib/onemcp/mirrors
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    stop_grace_period: 30s
+
+  portal:
+    build:
+      context: .
+      dockerfile: portal/Dockerfile.smoke
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+      AUTH_MODE: ${AUTH_MODE:-oidc}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_TRUST_HOST: 'true'
+      AUTH_URL: ${AUTH_URL:-http://localhost:3001}
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-https://zitadel.000nethost.com}
+      ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-387060281072746499}
+      ZITADEL_CLIENT_SECRET: ${ZITADEL_CLIENT_SECRET:-}
+    ports:
+      - "127.0.0.1:3001:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg-data:
+  redis-data:
+  minio-data:
+  git-mirrors:
