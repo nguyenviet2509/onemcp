@@ -27,7 +27,7 @@ export class RbacManifestController {
 const manifest = {
   schema: '1',
   service: 'onemcp',
-  version: '2026.08.27',
+  version: '2026.09.17',
   permissions: [
     // Knowledge Base
     { id: 'onemcp:kb.read', description: 'Đọc knowledge base (search, browse, view spaces + artifacts)' },
@@ -57,6 +57,7 @@ const manifest = {
     // Admin
     { id: 'onemcp:admin.settings', description: 'Sửa OneMCP global settings' },
     { id: 'onemcp:admin.users', description: 'Quản lý users + role assignments trong OneMCP scope' },
+    { id: 'onemcp:admin.tool-bridges', description: 'Manage tool bridge registry (upstreams + bridges)' },
   ],
   default_roles: [
     {
@@ -91,7 +92,7 @@ const manifest = {
         'onemcp:departments.manage', 'onemcp:spaces.manage', 'onemcp:spaces.grant',
         'onemcp:attachments.upload', 'onemcp:attachments.download',
         'onemcp:apikeys.manage', 'onemcp:audit.read', 'onemcp:audit.read_all',
-        'onemcp:admin.settings', 'onemcp:admin.users',
+        'onemcp:admin.settings', 'onemcp:admin.users', 'onemcp:admin.tool-bridges',
       ],
     },
   ],

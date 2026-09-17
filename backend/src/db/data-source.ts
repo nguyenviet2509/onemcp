@@ -21,13 +21,15 @@ import { Project } from '../projects/entities/project.entity';
 import { OAuthClient } from '../oauth/entities/oauth-client.entity';
 import { OAuthConsent } from '../oauth/entities/oauth-consent.entity';
 import { SavedSearch } from '../saved-searches/saved-search.entity';
+import { ToolUpstream } from '../tool-bridges/entities/tool-upstream.entity';
+import { ToolBridge } from '../tool-bridges/entities/tool-bridge.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.POSTGRES_URL,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
-  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding, Space, Template, ApiKey, Project, OAuthClient, OAuthConsent, SavedSearch],
+  entities: [Department, User, Role, UserRole, AuditEvent, Skill, SkillVersion, SkillLoadEvent, Artifact, ArtifactVersion, RunbookLoadEvent, Attachment, AlertmanagerDedup, Embedding, Space, Template, ApiKey, Project, OAuthClient, OAuthConsent, SavedSearch, ToolUpstream, ToolBridge],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsRun: false,
 };

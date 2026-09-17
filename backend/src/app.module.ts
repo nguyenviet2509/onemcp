@@ -30,6 +30,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { ProjectsModule } from './projects/projects.module';
 import { OAuthModule } from './oauth/oauth.module';
+import { ToolBridgesModule } from './tool-bridges/tool-bridges.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { OAuthModule } from './oauth/oauth.module';
     CryptoModule,
     ProjectsModule,
     OAuthModule,
+    ToolBridgesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
